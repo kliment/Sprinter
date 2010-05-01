@@ -1,0 +1,9 @@
+Tonokip RepRap firmware rewrite based off of Hydra-mmm firmware.
+
+TODO:
+Inactivity timer failsafe that can be enabled/disabled by using a custom Mcode.
+Max Endstop support (easy).
+Add support for DC Extruders.
+Store internal position using steps(long int) instead of units(float).
+
+Test thermocouple support.
