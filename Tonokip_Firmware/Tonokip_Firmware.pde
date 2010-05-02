@@ -379,14 +379,14 @@ inline void get_coordinates()
 void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remaining, unsigned long z_steps_remaining, unsigned long e_steps_remaining) // make linear move with preset speeds and destinations, see G0 and G1
 {
   //Determine direction of movement
-  if (destination_x > current_x) digitalWrite(X_DIR_PIN,HIGH);
-  else digitalWrite(X_DIR_PIN,LOW);
-  if (destination_y > current_y) digitalWrite(Y_DIR_PIN,HIGH);
-  else digitalWrite(Y_DIR_PIN,LOW);
-  if (destination_z > current_z) digitalWrite(Z_DIR_PIN,HIGH);
-  else digitalWrite(Z_DIR_PIN,LOW);
-  if (destination_e > current_e) digitalWrite(E_DIR_PIN,HIGH);
-  else digitalWrite(E_DIR_PIN,LOW);
+  if (destination_x > current_x) digitalWrite(X_DIR_PIN,!INVERT_X_DIR);
+  else digitalWrite(X_DIR_PIN,INVERT_X_DIR);
+  if (destination_y > current_y) digitalWrite(Y_DIR_PIN,!INVERT_Y_DIR);
+  else digitalWrite(Y_DIR_PIN,INVERT_Y_DIR);
+  if (destination_z > current_z) digitalWrite(Z_DIR_PIN,!INVERT_Z_DIR);
+  else digitalWrite(Z_DIR_PIN,INVERT_Z_DIR);
+  if (destination_e > current_e) digitalWrite(E_DIR_PIN,!INVERT_E_DIR);
+  else digitalWrite(E_DIR_PIN,INVERT_E_DIR);
   
   //Only enable axis that are moving. If the axis doesn't need to move then it can stay disabled depending on configuration.
   if(x_steps_remaining) enable_x();

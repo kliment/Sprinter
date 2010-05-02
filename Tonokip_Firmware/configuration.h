@@ -32,6 +32,11 @@ const bool DISABLE_Y = false;
 const bool DISABLE_Z = true;
 const bool DISABLE_E = false;
 
+const bool INVERT_X_DIR = false;
+const bool INVERT_Y_DIR = false;
+const bool INVERT_Z_DIR = false;
+const bool INVERT_E_DIR = false;
+
 //Endstop Settings
 const bool ENDSTOPS_INVERTING = true;
 const bool min_software_endstops = false; //If true, axis won't move to coordinates less than zero.
