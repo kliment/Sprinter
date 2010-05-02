@@ -27,35 +27,35 @@
 #error Oops!  Make sure you have 'Arduino Diecimila' selected from the boards menu.
 #endif
 
-#define X_STEP_PIN   (byte)2
-#define X_DIR_PIN    (byte)3
-#define X_ENABLE_PIN (byte)-1
-#define X_MIN_PIN    (byte)4
-#define X_MAX_PIN    (byte)9
+#define X_STEP_PIN          2
+#define X_DIR_PIN           3
+#define X_ENABLE_PIN       -1
+#define X_MIN_PIN           4
+#define X_MAX_PIN           9
 
-#define Y_STEP_PIN   (byte)10
-#define Y_DIR_PIN    (byte)7
-#define Y_ENABLE_PIN (byte)-1
-#define Y_MIN_PIN    (byte)8
-#define Y_MAX_PIN    (byte)13
+#define Y_STEP_PIN         10
+#define Y_DIR_PIN           7
+#define Y_ENABLE_PIN       -1
+#define Y_MIN_PIN           8
+#define Y_MAX_PIN          13
 
-#define Z_STEP_PIN   (byte)19
-#define Z_DIR_PIN    (byte)18
-#define Z_ENABLE_PIN (byte)5
-#define Z_MIN_PIN    (byte)17
-#define Z_MAX_PIN    (byte)16
+#define Z_STEP_PIN         19
+#define Z_DIR_PIN          18
+#define Z_ENABLE_PIN        5
+#define Z_MIN_PIN          17
+#define Z_MAX_PIN          16
 
-#define E_STEP_PIN   (byte)11
-#define E_DIR_PIN    (byte)12
-#define E_ENABLE_PIN (byte)-1
+#define E_STEP_PIN         11
+#define E_DIR_PIN          12
+#define E_ENABLE_PIN       -1
 
-#define LED_PIN      (byte)-1
-#define FAN_PIN      (byte)-1
-#define PS_ON_PIN    (byte)15
-#define KILL_PIN     (byte)-1
+#define LED_PIN            -1
+#define FAN_PIN            -1
+#define PS_ON_PIN          15
+#define KILL_PIN           -1
 
-#define HEATER_0_PIN (byte)6
-#define TEMP_0_PIN   (byte)0    // MUST USE ANALOG INPUT NUMBERING NOT DIGITAL OUTPUT NUMBERING!!!!!!!!!
+#define HEATER_0_PIN        6
+#define TEMP_0_PIN          0    // MUST USE ANALOG INPUT NUMBERING NOT DIGITAL OUTPUT NUMBERING!!!!!!!!!
 
 
 
@@ -96,35 +96,35 @@
 #error Oops!  Make sure you have 'Sanguino' selected from the 'Tools -> Boards' menu.
 #endif
 
-#define X_STEP_PIN   (byte)15
-#define X_DIR_PIN    (byte)18
-#define X_ENABLE_PIN (byte)19
-#define X_MIN_PIN    (byte)20
-#define X_MAX_PIN    (byte)21
+#define X_STEP_PIN         15
+#define X_DIR_PIN          18
+#define X_ENABLE_PIN       19
+#define X_MIN_PIN          20
+#define X_MAX_PIN          21
 
-#define Y_STEP_PIN   (byte)23
-#define Y_DIR_PIN    (byte)22
-#define Y_ENABLE_PIN (byte)19
-#define Y_MIN_PIN    (byte)25
-#define Y_MAX_PIN    (byte)26
+#define Y_STEP_PIN         23
+#define Y_DIR_PIN          22
+#define Y_ENABLE_PIN       19
+#define Y_MIN_PIN          25
+#define Y_MAX_PIN          26
 
-#define Z_STEP_PIN   (byte)29
-#define Z_DIR_PIN    (byte)30
-#define Z_ENABLE_PIN (byte)31
-#define Z_MIN_PIN    (byte)2
-#define Z_MAX_PIN    (byte)1
+#define Z_STEP_PIN         29
+#define Z_DIR_PIN          30
+#define Z_ENABLE_PIN       31
+#define Z_MIN_PIN           2
+#define Z_MAX_PIN           1
 
-#define E_STEP_PIN   (byte)12
-#define E_DIR_PIN    (byte)16
-#define E_ENABLE_PIN (byte)3
+#define E_STEP_PIN         12
+#define E_DIR_PIN          16
+#define E_ENABLE_PIN        3
 
-#define LED_PIN      (byte)0
-#define FAN_PIN      (byte)-1
-#define PS_ON_PIN    (byte)-1
-#define KILL_PIN     (byte)-1
+#define LED_PIN             0
+#define FAN_PIN            -1
+#define PS_ON_PIN          -1
+#define KILL_PIN           -1
 
-#define HEATER_0_PIN (byte)14
-#define TEMP_0_PIN   (byte)4 //D27   // MUST USE ANALOG INPUT NUMBERING NOT DIGITAL OUTPUT NUMBERING!!!!!!!!!
+#define HEATER_0_PIN       14
+#define TEMP_0_PIN          4 //D27   // MUST USE ANALOG INPUT NUMBERING NOT DIGITAL OUTPUT NUMBERING!!!!!!!!!
 
 /*  Unused (1) (2) (3) 4 5 6 7 8 9 10 11 12 13 (14) (15) (16) 17 (18) (19) (20) (21) (22) (23) 24 (25) (26) (27) 28 (29) (30) (31)  */
 
@@ -162,7 +162,7 @@
 
 #define E_STEP_PIN      17
 #define E_DIR_PIN       16
-#define E_ENABLE_PIN (byte)-1
+#define E_ENABLE_PIN    -1
 
 #define LED_PIN          0
 
@@ -177,11 +177,11 @@
 //pin for controlling the PSU.
 #define PS_ON_PIN       14
 
-#define FAN_PIN      (byte)-1
-#define KILL_PIN     (byte)-1
+#define FAN_PIN         -1
+#define KILL_PIN        -1
 
-#define HEATER_0_PIN (byte)-1
-#define TEMP_0_PIN   (byte)-1    // MUST USE ANALOG INPUT NUMBERING NOT DIGITAL OUTPUT NUMBERING!!!!!!!!!
+#define HEATER_0_PIN    -1
+#define TEMP_0_PIN      -1    // MUST USE ANALOG INPUT NUMBERING NOT DIGITAL OUTPUT NUMBERING!!!!!!!!!
 
 
 
@@ -197,35 +197,35 @@
 #error Oops!  Make sure you have 'Arduino Mega' selected from the 'Tools -> Boards' menu.
 #endif
 
-#define X_STEP_PIN   (byte)22
-#define X_DIR_PIN    (byte)23
-#define X_ENABLE_PIN (byte)24
-#define X_MIN_PIN    (byte)2
-#define X_MAX_PIN    (byte)3
+#define X_STEP_PIN         22
+#define X_DIR_PIN          23
+#define X_ENABLE_PIN       24
+#define X_MIN_PIN           2
+#define X_MAX_PIN           3
 
-#define Y_STEP_PIN   (byte)25
-#define Y_DIR_PIN    (byte)26
-#define Y_ENABLE_PIN (byte)27
-#define Y_MIN_PIN    (byte)18
-#define Y_MAX_PIN    (byte)19
+#define Y_STEP_PIN         25
+#define Y_DIR_PIN          26
+#define Y_ENABLE_PIN       27
+#define Y_MIN_PIN          18
+#define Y_MAX_PIN          19
 
-#define Z_STEP_PIN   (byte)28
-#define Z_DIR_PIN    (byte)29
-#define Z_ENABLE_PIN (byte)30
-#define Z_MIN_PIN    (byte)20
-#define Z_MAX_PIN    (byte)21
+#define Z_STEP_PIN         28
+#define Z_DIR_PIN          29
+#define Z_ENABLE_PIN       30
+#define Z_MIN_PIN          20
+#define Z_MAX_PIN          21
 
-#define E_STEP_PIN   (byte)4
-#define E_DIR_PIN    (byte)31
-#define E_ENABLE_PIN (byte)-1
+#define E_STEP_PIN          4
+#define E_DIR_PIN          31
+#define E_ENABLE_PIN       -1
 
-#define LED_PIN      (byte)-1
-#define FAN_PIN      (byte)-1
-#define PS_ON_PIN    (byte)10
-#define KILL_PIN     (byte)-1
+#define LED_PIN            -1
+#define FAN_PIN            -1
+#define PS_ON_PIN          10
+#define KILL_PIN           -1
 
-#define HEATER_0_PIN (byte)6
-#define TEMP_0_PIN   (byte)0    // MUST USE ANALOG INPUT NUMBERING NOT DIGITAL OUTPUT NUMBERING!!!!!!!!!
+#define HEATER_0_PIN        6
+#define TEMP_0_PIN          0    // MUST USE ANALOG INPUT NUMBERING NOT DIGITAL OUTPUT NUMBERING!!!!!!!!!
 
 
 
@@ -241,38 +241,35 @@
 #error Oops!  Make sure you have 'Arduino Duemilanove w/ ATMega328' selected from the 'Tools -> Boards' menu.
 #endif
 
-#define X_STEP_PIN   (byte)19
-#define X_DIR_PIN    (byte)18
-#define X_ENABLE_PIN (byte)-1
-#define X_MIN_PIN    (byte)17
-#define X_MAX_PIN    (byte)-1
+#define X_STEP_PIN         19
+#define X_DIR_PIN          18
+#define X_ENABLE_PIN       -1
+#define X_MIN_PIN          17
+#define X_MAX_PIN          -1
 
-#define Y_STEP_PIN   (byte)10
-#define Y_DIR_PIN    (byte)7
-#define Y_ENABLE_PIN (byte)-1
-#define Y_MIN_PIN    (byte)8
-#define Y_MAX_PIN    (byte)-1
+#define Y_STEP_PIN         10
+#define Y_DIR_PIN           7
+#define Y_ENABLE_PIN       -1
+#define Y_MIN_PIN           8
+#define Y_MAX_PIN          -1
 
-#define Z_STEP_PIN   (byte)13
-#define Z_DIR_PIN    (byte)3
-#define Z_ENABLE_PIN (byte)2
-#define Z_MIN_PIN    (byte)4
-#define Z_MAX_PIN    (byte)-1
+#define Z_STEP_PIN         13
+#define Z_DIR_PIN           3
+#define Z_ENABLE_PIN        2
+#define Z_MIN_PIN           4
+#define Z_MAX_PIN          -1
 
-//#define BASE_HEATER_PIN   (byte)1
-//#define POWER_SUPPLY_PIN (byte)16
+#define E_STEP_PIN         11
+#define E_DIR_PIN          12
+#define E_ENABLE_PIN       -1
 
-#define E_STEP_PIN   (byte)11
-#define E_DIR_PIN    (byte)12
-#define E_ENABLE_PIN (byte)-1
+#define LED_PIN            -1
+#define FAN_PIN             5
+#define PS_ON_PIN          -1
+#define KILL_PIN           -1
 
-#define LED_PIN      (byte)-1
-#define FAN_PIN      (byte)5
-#define PS_ON_PIN    (byte)-1
-#define KILL_PIN     (byte)-1
-
-#define HEATER_0_PIN (byte)6
-#define TEMP_0_PIN   (byte)0    // MUST USE ANALOG INPUT NUMBERING NOT DIGITAL OUTPUT NUMBERING!!!!!!!!!
+#define HEATER_0_PIN        6
+#define TEMP_0_PIN          0    // MUST USE ANALOG INPUT NUMBERING NOT DIGITAL OUTPUT NUMBERING!!!!!!!!!
 
 
 
