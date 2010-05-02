@@ -208,7 +208,7 @@ inline void process_commands()
         
         time_for_move = max(X_TIME_FOR_MOVE,Y_TIME_FOR_MOVE);
         time_for_move = max(time_for_move,Z_TIME_FOR_MOVE);
-        //time_for_move = max(time_for_move,E_TIME_FOR_MOVE); //Commented so E axis doesn't trigger max feedrate.
+        time_for_move = max(time_for_move,E_TIME_FOR_MOVE);
 
         if(x_steps_to_take) x_interval = time_for_move/x_steps_to_take;
         if(y_steps_to_take) y_interval = time_for_move/y_steps_to_take;
