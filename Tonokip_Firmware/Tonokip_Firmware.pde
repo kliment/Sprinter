@@ -28,7 +28,7 @@
 // M82  - Set E codes absolute (default)
 // M83  - Set E codes relative while in Absolute Coordinates (G90) mode
 // M84  - Disable steppers until next move
-
+// M85  - Set inactivity shutdown timer with parameter S<seconds>. To disable set zero (default)
 
 //Stepper Movement Variables
 bool direction_x, direction_y, direction_z, direction_e;
@@ -55,7 +55,9 @@ char *strchr_pointer; // just a pointer to find chars in the cmd string like X, 
 int target_raw = 0;
 int current_raw;
 
-
+//Inactivity shutdown variables
+unsigned long previous_millis_cmd=0;
+unsigned long max_inactive_time = 0;
 
 void setup()
 { 
@@ -94,6 +96,9 @@ void loop()
 {
   get_command();
   manage_heater();
+  
+  //shutdown if not receiving any new commands
+  if( (millis()-previous_millis_cmd) >  max_inactive_time ) if(max_inactive_time) kill();
 }
 
 inline void get_command() 
@@ -278,10 +283,9 @@ inline void process_commands()
         if (code_seen('S')) target_raw = temp2analog(code_value());
         break;
       case 105: // M105
-          Serial.print("T:");
-          Serial.println( analog2temp(analogRead(TEMP_0_PIN)) ); 
-          if(code_seen('N')) Serial.println("ok");  // If M105 is sent from generated gcode, then it needs a response.
-          return; //If RepSnapper sends the M105 then DON'T respond "ok".
+        Serial.print("T:");
+        Serial.println( analog2temp(analogRead(TEMP_0_PIN)) ); 
+        if(!code_seen('N')) return;  // If M105 is sent from generated gcode, then it needs a response.
         break;
       case 109: // M109 - Wait for heater to reach target.
         if (code_seen('S')) target_raw = temp2analog(code_value());
@@ -314,6 +318,10 @@ inline void process_commands()
         disable_z();
         disable_e();
         break;
+      case 85: // M85
+        code_seen('S');
+        max_inactive_time = code_value()*1000; 
+        break;
     }
     
   }
@@ -332,6 +340,7 @@ inline void FlushSerialRequestResend()
 
 inline void ClearToSend()
 {
+  previous_millis_cmd = millis();
   Serial.println("ok"); 
 }
 
@@ -565,7 +574,7 @@ inline void kill()
   
   while(1)
   {
-    Serial.print("Fatal Exception Shutdown, Last Line: ");
+    Serial.print("Shutdown, Last Line: ");
     Serial.println(gcode_LastN);
     delay(5000); // 5 Second delay
   }
