@@ -98,8 +98,7 @@ void loop()
   get_command();
   manage_heater();
   
-  //shutdown if not receiving any new commands
-  if( (millis()-previous_millis_cmd) >  max_inactive_time ) if(max_inactive_time) kill();
+  manage_inactivity(1); //shutdown if not receiving any new commands
 }
 
 inline void get_command() 
@@ -439,6 +438,8 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
     if( (millis() - previous_millis_heater) >= 500 ) {
       manage_heater();
       previous_millis_heater = millis();
+      
+      manage_inactivity(2);
     }
   }
   
@@ -568,7 +569,7 @@ float analog2temp(int raw) {
   }
 }
 
-inline void kill()
+inline void kill(byte debug)
 {
   if(HEATER_0_PIN > -1) digitalWrite(HEATER_0_PIN,LOW);
   
@@ -581,8 +582,11 @@ inline void kill()
   
   while(1)
   {
-    Serial.print("Shutdown, Last Line: ");
+    if(debug == 1) Serial.print("Inactivity Shutdown, Last Line: ");
+    if(debug == 2) Serial.print("Linear Move Abort, Last Line: ");
     Serial.println(gcode_LastN);
     delay(5000); // 5 Second delay
   }
 }
+
+inline void manage_inactivity(byte debug) { if( (millis()-previous_millis_cmd) >  max_inactive_time ) if(max_inactive_time) kill(debug); }
