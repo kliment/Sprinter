@@ -29,6 +29,7 @@
 // M83  - Set E codes relative while in Absolute Coordinates (G90) mode
 // M84  - Disable steppers until next move
 // M85  - Set inactivity shutdown timer with parameter S<seconds>. To disable set zero (default)
+// M92  - Set axis_steps_per_unit - same syntax as G92
 
 //Stepper Movement Variables
 bool direction_x, direction_y, direction_z, direction_e;
@@ -321,6 +322,12 @@ inline void process_commands()
       case 85: // M85
         code_seen('S');
         max_inactive_time = code_value()*1000; 
+        break;
+      case 92: // M92
+        if(code_seen('X')) x_steps_per_unit = code_value();
+        if(code_seen('Y')) y_steps_per_unit = code_value();
+        if(code_seen('Z')) z_steps_per_unit = code_value();
+        if(code_seen('E')) e_steps_per_unit = code_value();
         break;
     }
     
