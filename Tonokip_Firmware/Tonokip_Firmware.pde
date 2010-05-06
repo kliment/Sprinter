@@ -104,7 +104,7 @@ void loop()
 inline void get_command() 
 { 
 
-  if( Serial.available() ) {
+  if( Serial.available() > 0 ) {
     serial_char = Serial.read();
     if(serial_char == '\n' || serial_char == '\r' || serial_char == ':' || serial_count >= (MAX_CMD_SIZE - 1) ) 
     {
