@@ -29,6 +29,7 @@
 // M83  - Set E codes relative while in Absolute Coordinates (G90) mode
 // M84  - Disable steppers until next move
 // M85  - Set inactivity shutdown timer with parameter S<seconds>. To disable set zero (default)
+// M86  - If Endstop is Not Activated then Abort Print. Specify X and/or Y
 // M92  - Set axis_steps_per_unit - same syntax as G92
 
 //Stepper Movement Variables
@@ -322,6 +323,10 @@ inline void process_commands()
         code_seen('S');
         max_inactive_time = code_value()*1000; 
         break;
+      case 86: // M86 If Endstop is Not Activated then Abort Print
+        if(code_seen('X')) if( digitalRead(X_MIN_PIN) == ENDSTOPS_INVERTING ) kill(3);
+        if(code_seen('Y')) if( digitalRead(Y_MIN_PIN) == ENDSTOPS_INVERTING ) kill(4);
+        break;
       case 92: // M92
         if(code_seen('X')) x_steps_per_unit = code_value();
         if(code_seen('Y')) y_steps_per_unit = code_value();
@@ -582,8 +587,13 @@ inline void kill(byte debug)
   
   while(1)
   {
-    if(debug == 1) Serial.print("Inactivity Shutdown, Last Line: ");
-    if(debug == 2) Serial.print("Linear Move Abort, Last Line: ");
+    switch(debug)
+    {
+      case 1: Serial.print("Inactivity Shutdown, Last Line: "); break;
+      case 2: Serial.print("Linear Move Abort, Last Line: "); break;
+      case 3: Serial.print("Homing X Min Stop Fail, Last Line: "); break;
+      case 4: Serial.print("Homing Y Min Stop Fail, Last Line: "); break;
+    } 
     Serial.println(gcode_LastN);
     delay(5000); // 5 Second delay
   }
