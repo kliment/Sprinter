@@ -1,4 +1,3 @@
-
 #ifndef PARAMETERS_H
 #define PARAMETERS_H
 
@@ -42,7 +41,7 @@ const bool DISABLE_E = false;
 const bool INVERT_X_DIR = false;
 const bool INVERT_Y_DIR = false;
 const bool INVERT_Z_DIR = true;
-const bool INVERT_E_DIR = true;
+const bool INVERT_E_DIR = false;
 
 //Endstop Settings
 const bool ENDSTOPS_INVERTING = true;
