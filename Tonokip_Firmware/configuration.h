@@ -18,7 +18,7 @@ float x_steps_per_unit = 80.376;
 float y_steps_per_unit = 80.376;
 float z_steps_per_unit = 6667.184;
 float e_steps_per_unit = 16;
-float max_feedrate = 3000;
+float max_feedrate = 18000;
 
 //float x_steps_per_unit = 10.047;
 //float y_steps_per_unit = 10.047;
