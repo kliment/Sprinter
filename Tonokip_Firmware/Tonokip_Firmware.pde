@@ -20,6 +20,8 @@
 //RepRap M Codes
 // M104 - Set target temp
 // M105 - Read current temp
+// M106 - Fan on
+// M107 - Fan off
 // M109 - Wait for current temp to reach target temp.
 
 //Custom M Codes
@@ -301,6 +303,12 @@ inline void process_commands()
           manage_heater();
         }
         break;
+      case 106: //M106 Fan On
+        digitalWrite(FAN_PIN, HIGH);
+        break;
+      case 107: //M107 Fan Off
+        digitalWrite(FAN_PIN, LOW);
+        break;
       case 80: // M81 - ATX Power On
         if(PS_ON_PIN > -1) pinMode(PS_ON_PIN,OUTPUT); //GND
         break;
@@ -511,8 +519,16 @@ inline void manage_heater()
   current_raw = analogRead(TEMP_0_PIN);                  // If using thermistor, when the heater is colder than targer temp, we get a higher analog reading than target, 
   if(USE_THERMISTOR) current_raw = 1023 - current_raw;   // this switches it up so that the reading appears lower than target for the control logic.
   
-  if(current_raw >= target_raw) digitalWrite(HEATER_0_PIN,LOW);
-  else digitalWrite(HEATER_0_PIN,HIGH);
+  if(current_raw >= target_raw)
+   {
+     digitalWrite(HEATER_0_PIN,LOW);
+     digitalWrite(LED_PIN,LOW);
+   }
+  else 
+  {
+    digitalWrite(HEATER_0_PIN,HIGH);
+    digitalWrite(LED_PIN,HIGH);
+  }
 }
 
 // Takes temperature value as input and returns corresponding analog value from RepRap thermistor temp table.
