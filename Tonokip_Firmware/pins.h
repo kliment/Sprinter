@@ -220,11 +220,16 @@
 #define E_ENABLE_PIN       30
 
 #define LED_PIN            13
-#define FAN_PIN            -1
+
+//#define FAN_PIN            11 // UNCOMMENT THIS LINE FOR V1.0
+#define FAN_PIN            9 // THIS LINE FOR V1.1
+
 #define PS_ON_PIN          -1
 #define KILL_PIN           -1
 
-#define HEATER_0_PIN        12
+//#define HEATER_0_PIN        12  // UNCOMMENT THIS LINE FOR V1.0
+#define HEATER_0_PIN       10 // THIS LINE FOR V1.1
+
 #define TEMP_0_PIN          2   // MUST USE ANALOG INPUT NUMBERING NOT DIGITAL OUTPUT NUMBERING!!!!!!!!!
 
 
