@@ -193,8 +193,11 @@
 *
 ****************************************************************************************/
 #elif MOTHERBOARD == 3
+//////////////////FIX THIS//////////////
 #ifndef __AVR_ATmega1280__
-#error Oops!  Make sure you have 'Arduino Mega' selected from the 'Tools -> Boards' menu.
+ #ifndef __AVR_ATmega2560__
+ #error Oops!  Make sure you have 'Arduino Mega' selected from the 'Tools -> Boards' menu.
+ #endif
 #endif
 
 #define X_STEP_PIN         26
