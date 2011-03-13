@@ -1,9 +1,9 @@
-Tonokip RepRap firmware rewrite based off of Hydra-mmm firmware.
+This is a firmware for RAMPS and other reprap single-processor electronics setups. It supports printing from SD card, active heatbed control, and ATmega internal pullups.
 
-TODO:
-Inactivity timer failsafe that can be enabled/disabled by using a custom Mcode.
-Max Endstop support (easy).
-Add support for DC Extruders.
-Store internal position using steps(long int) instead of units(float).
+This work is licensed under the GNU GPL v3 or (at the user's discretion) any later version.
 
-Test thermocouple support.
+It is based on Tonokips's firmware, which was licensed under GPL v2 or later.
+
+
+
+
