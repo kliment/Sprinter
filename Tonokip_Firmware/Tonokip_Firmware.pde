@@ -4,6 +4,7 @@
 #include "configuration.h"
 #include "pins.h"
 #include "ThermistorTable.h"
+#include "BedThermistorTable.h"
 #ifdef SDSUPPORT
 #include "SdFat.h"
 #endif
@@ -504,13 +505,13 @@ inline void process_commands()
         if (code_seen('S')) target_raw = temp2analog(code_value());
         break;
       case 140: // M140 set bed temp
-        if (code_seen('S')) target_bed_raw = temp2analog(code_value());
+        if (code_seen('S')) target_bed_raw = temp2analogBed(code_value());
         break;
       case 105: // M105
         Serial.print("T:");
         Serial.println( analog2temp(analogRead(TEMP_0_PIN)) ); 
         Serial.print("Bed:");
-        Serial.println( analog2temp(analogRead(TEMP_1_PIN)) ); 
+        Serial.println( analog2tempBed(analogRead(TEMP_1_PIN)) ); 
         if(!code_seen('N')) {
             return;  // If M105 is sent from generated gcode, then it needs a response.
         }
@@ -776,7 +777,7 @@ inline void manage_heater()
     }
 }
 
-// Takes temperature value as input and returns corresponding analog value from RepRap thermistor temp table.
+// Takes hot end temperature value as input and returns corresponding analog value from RepRap thermistor temp table.
 // This is needed because PID in hydra firmware hovers around a given analog value, not a temp value.
 // This function is derived from inversing the logic from a portion of getTemperature() in FiveD RepRap firmware.
 float temp2analog(int celsius) {
@@ -806,7 +807,38 @@ float temp2analog(int celsius) {
   }
 }
 
+// Takes bed temperature value as input and returns corresponding analog value from RepRap thermistor temp table.
+// This is needed because PID in hydra firmware hovers around a given analog value, not a temp value.
+// This function is derived from inversing the logic from a portion of getTemperature() in FiveD RepRap firmware.
+float temp2analogBed(int celsius) {
+  if(USE_THERMISTOR) {
+    int raw = 0;
+    byte i;
+    
+    for (i=1; i<NUMTEMPS; i++)
+    {
+      if (bedtemptable[i][1] < celsius)
+      {
+        raw = bedtemptable[i-1][0] + 
+          (celsius - bedtemptable[i-1][1]) * 
+          (bedtemptable[i][0] - bedtemptable[i-1][0]) /
+          (bedtemptable[i][1] - bedtemptable[i-1][1]);
+      
+        break;
+      }
+    }
+
+    // Overflow: Set to last value in the table
+    if (i == NUMTEMPS) raw = bedtemptable[i-1][0];
+
+    return 1023 - raw;
+  } else {
+    return celsius * (1024.0/(5.0*100.0));
+  }
+}
+
 // Derived from RepRap FiveD extruder::getTemperature()
+// For hot end thermistor.
 float analog2temp(int raw) {
   if(USE_THERMISTOR) {
     int celsius = 0;
@@ -827,6 +859,36 @@ float analog2temp(int raw) {
 
     // Overflow: Set to last value in the table
     if (i == NUMTEMPS) celsius = temptable[i-1][1];
+
+    return celsius;
+    
+  } else {
+    return raw * ((5.0*100.0)/1024.0);
+  }
+}
+
+// Derived from RepRap FiveD extruder::getTemperature()
+// For bed thermistor.
+float analog2tempBed(int raw) {
+  if(USE_THERMISTOR) {
+    int celsius = 0;
+    byte i;
+
+    for (i=1; i<NUMTEMPS; i++)
+    {
+      if (bedtemptable[i][0] > raw)
+      {
+        celsius  = bedtemptable[i-1][1] + 
+          (raw - bedtemptable[i-1][0]) * 
+          (bedtemptable[i][1] - bedtemptable[i-1][1]) /
+          (bedtemptable[i][0] - bedtemptable[i-1][0]);
+
+        break;
+      }
+    }
+
+    // Overflow: Set to last value in the table
+    if (i == NUMTEMPS) celsius = bedtemptable[i-1][1];
 
     return celsius;
     
