@@ -3,8 +3,7 @@
 
 #include "configuration.h"
 #include "pins.h"
-#include "ThermistorTable.h"
-#include "BedThermistorTable.h"
+
 #ifdef SDSUPPORT
 #include "SdFat.h"
 #endif
@@ -815,7 +814,7 @@ float temp2analogBed(int celsius) {
     int raw = 0;
     byte i;
     
-    for (i=1; i<NUMTEMPS; i++)
+    for (i=1; i<BNUMTEMPS; i++)
     {
       if (bedtemptable[i][1] < celsius)
       {
@@ -829,7 +828,7 @@ float temp2analogBed(int celsius) {
     }
 
     // Overflow: Set to last value in the table
-    if (i == NUMTEMPS) raw = bedtemptable[i-1][0];
+    if (i == BNUMTEMPS) raw = bedtemptable[i-1][0];
 
     return 1023 - raw;
   } else {
