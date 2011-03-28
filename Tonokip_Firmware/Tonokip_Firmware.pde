@@ -274,9 +274,9 @@ inline void get_command()
 		}
 
 	}
-	else if(strstr(cmdbuffer[bufindw], "M105") != NULL){
-		Serial.println("ok"); 
-	}
+//	else if(strstr(cmdbuffer[bufindw], "M105") != NULL){
+//		Serial.println("ok"); 
+//	}
     
     
 	
