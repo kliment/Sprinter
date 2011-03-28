@@ -98,7 +98,7 @@ int16_t n;
 void initsd(){
 sdactive=false;
 
-if (!card.init(SPI_HALF_SPEED)){
+if (!card.init(SPI_FULL_SPEED)){
     if (!card.init(SPI_HALF_SPEED))
       Serial.println("SD init fail");
 }
@@ -115,6 +115,10 @@ else
 
 void setup()
 { 
+  Serial.begin(BAUDRATE);
+  Serial.println("start");
+
+
 //cmdbuffer[0]="\0";
 //cmdbuffer[1]="\0";
 //cmdbuffer[2]=char[4];
@@ -157,13 +161,11 @@ void setup()
 
   if(HEATER_0_PIN > -1) pinMode(HEATER_0_PIN,OUTPUT);
   
-  Serial.begin(BAUDRATE);
  
 #ifdef SDSUPPORT
 initsd();
 #endif
  
-  Serial.println("start");
   
 }
 
@@ -271,6 +273,9 @@ inline void get_command()
 			break;
 		}
 
+	}
+	else if(strstr(cmdbuffer[bufindw], "M105") != NULL){
+		Serial.println("ok"); 
 	}
     
     
@@ -511,9 +516,6 @@ inline void process_commands()
         Serial.println( analog2temp(analogRead(TEMP_0_PIN)) ); 
         Serial.print("Bed:");
         Serial.println( analog2tempBed(analogRead(TEMP_1_PIN)) ); 
-        if(!code_seen('N')) {
-            return;  // If M105 is sent from generated gcode, then it needs a response.
-        }
         break;
       case 109: // M109 - Wait for heater to reach target.
         if (code_seen('S')) target_raw = temp2analog(code_value());
