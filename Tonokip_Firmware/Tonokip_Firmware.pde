@@ -91,6 +91,7 @@ SdFile root;
 SdFile file;
 uint32_t filesize=0;
 uint32_t sdpos=0;
+unsigned long timediff=0;
 bool sdmode=false;
 bool sdactive=false;
 int16_t n;
@@ -363,7 +364,7 @@ inline void process_commands()
         y_steps_to_take = abs(destination_y - current_y)*y_steps_per_unit;
         z_steps_to_take = abs(destination_z - current_z)*z_steps_per_unit;
         e_steps_to_take = abs(destination_e - current_e)*e_steps_per_unit;
-
+        
         #define X_TIME_FOR_MOVE ((float)x_steps_to_take / (x_steps_per_unit*feedrate/60000000))
         #define Y_TIME_FOR_MOVE ((float)y_steps_to_take / (y_steps_per_unit*feedrate/60000000))
         #define Z_TIME_FOR_MOVE ((float)z_steps_to_take / (z_steps_per_unit*feedrate/60000000))
@@ -653,10 +654,10 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
   else digitalWrite(E_DIR_PIN,INVERT_E_DIR);
   
   //Only enable axis that are moving. If the axis doesn't need to move then it can stay disabled depending on configuration.
-  if(x_steps_remaining) enable_x();
-  if(y_steps_remaining) enable_y();
-  if(z_steps_remaining) enable_z();
-  if(e_steps_remaining) enable_e();
+  if(x_steps_remaining) { enable_x(); do_x_step(); x_steps_remaining--;}
+  if(y_steps_remaining) { enable_y(); do_y_step(); y_steps_remaining--;}
+  if(z_steps_remaining) { enable_z(); do_z_step(); z_steps_remaining--;}
+  if(e_steps_remaining) { enable_e(); do_e_step(); e_steps_remaining--;}
 
   if(X_MIN_PIN > -1) if(!direction_x) if(digitalRead(X_MIN_PIN) != ENDSTOPS_INVERTING) x_steps_remaining=0;
   if(Y_MIN_PIN > -1) if(!direction_y) if(digitalRead(Y_MIN_PIN) != ENDSTOPS_INVERTING) y_steps_remaining=0;
@@ -668,22 +669,27 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
   while(x_steps_remaining + y_steps_remaining + z_steps_remaining + e_steps_remaining > 0) // move until no more steps remain
   { 
     if(x_steps_remaining) {
-      if ((micros()-previous_micros_x) >= x_interval) { do_x_step(); x_steps_remaining--; }
       if(X_MIN_PIN > -1) if(!direction_x) if(digitalRead(X_MIN_PIN) != ENDSTOPS_INVERTING) x_steps_remaining=0;
+      timediff=micros()-previous_micros_x;
+      while(timediff >= x_interval && x_steps_remaining) { do_x_step(); x_steps_remaining--; timediff-=x_interval;}
     }
     
     if(y_steps_remaining) {
-      if ((micros()-previous_micros_y) >= y_interval) { do_y_step(); y_steps_remaining--; }
       if(Y_MIN_PIN > -1) if(!direction_y) if(digitalRead(Y_MIN_PIN) != ENDSTOPS_INVERTING) y_steps_remaining=0;
+      timediff=micros()-previous_micros_y;
+      while(timediff >= y_interval && y_steps_remaining) { do_y_step(); y_steps_remaining--; timediff-=y_interval;}
     }
     
     if(z_steps_remaining) {
-      if ((micros()-previous_micros_z) >= z_interval) { do_z_step(); z_steps_remaining--; }
       if(Z_MIN_PIN > -1) if(!direction_z) if(digitalRead(Z_MIN_PIN) != ENDSTOPS_INVERTING) z_steps_remaining=0;
+      timediff=micros()-previous_micros_z;
+      while(timediff >= z_interval && z_steps_remaining) { do_z_step(); z_steps_remaining--; timediff-=z_interval;}
     }    
     
-    if(e_steps_remaining) if ((micros()-previous_micros_e) >= e_interval) { do_e_step(); e_steps_remaining--; }
-    
+    if(e_steps_remaining){
+      timediff=micros()-previous_micros_e;
+      while(timediff >= e_interval && e_steps_remaining) { do_e_step(); e_steps_remaining--; timediff-=e_interval;}
+    }
     if( (millis() - previous_millis_heater) >= 500 ) {
       manage_heater();
       previous_millis_heater = millis();
