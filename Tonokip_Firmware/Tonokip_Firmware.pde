@@ -59,6 +59,8 @@ float time_for_move;
 long gcode_N, gcode_LastN;
 bool relative_mode = false;  //Determines Absolute or Relative Coordinates
 bool relative_mode_e = false;  //Determines Absolute or Relative E Codes while in Absolute Coordinates mode. E is always relative in Relative Coordinates mode.
+long timediff=0;
+
 
 // comm variables
 #define MAX_CMD_SIZE 256
@@ -91,7 +93,6 @@ SdFile root;
 SdFile file;
 uint32_t filesize=0;
 uint32_t sdpos=0;
-long timediff=0;
 bool sdmode=false;
 bool sdactive=false;
 int16_t n;
