@@ -91,7 +91,7 @@ SdFile root;
 SdFile file;
 uint32_t filesize=0;
 uint32_t sdpos=0;
-unsigned long timediff=0;
+long timediff=0;
 bool sdmode=false;
 bool sdactive=false;
 int16_t n;
@@ -347,8 +347,9 @@ inline bool code_seen(char code)
   strchr_pointer = strchr(cmdbuffer[bufindr], code);
   return (strchr_pointer != NULL);  //Return True if a character was found
 }
-
-
+ //experimental feedrate calc
+float d=0;
+float xdiff=0,ydiff=0,zdiff=0,ediff=0;
 
 inline void process_commands()
 {
@@ -360,11 +361,33 @@ inline void process_commands()
       case 0: // G0 -> G1
       case 1: // G1
         get_coordinates(); // For X Y Z E F
-        x_steps_to_take = abs(destination_x - current_x)*x_steps_per_unit;
-        y_steps_to_take = abs(destination_y - current_y)*y_steps_per_unit;
-        z_steps_to_take = abs(destination_z - current_z)*z_steps_per_unit;
-        e_steps_to_take = abs(destination_e - current_e)*e_steps_per_unit;
-        
+        xdiff=(destination_x - current_x);
+        ydiff=(destination_y - current_y);
+        zdiff=(destination_z - current_z);
+        ediff=(destination_e - current_e);
+        x_steps_to_take = abs(xdiff)*x_steps_per_unit;
+        y_steps_to_take = abs(ydiff)*y_steps_per_unit;
+        z_steps_to_take = abs(zdiff)*z_steps_per_unit;
+        e_steps_to_take = abs(ediff)*e_steps_per_unit;
+        if(feedrate<10)
+            feedrate=10;
+        /*//experimental feedrate calc
+        if(abs(xdiff)>0.1 && abs(ydiff)>0.1)
+            d=sqrt(xdiff*xdiff+ydiff*ydiff);
+        else if(abs(xdiff)>0.1)
+            d=abs(xdiff);
+        else if(abs(ydiff)>0.1)
+            d=abs(ydiff);
+        else if(abs(zdiff)>0.05)
+            d=abs(zdiff);
+        else if(abs(ediff)>0.1)
+            d=abs(ediff);
+        else d=1; //extremely slow move, should be okay for moves under 0.1mm
+        time_for_move=(xdiff/(feedrate/60000000));
+        //time=60000000*dist/feedrate
+        //int feedz=(60000000*zdiff)/time_for_move;
+        //if(feedz>maxfeed)
+        */
         #define X_TIME_FOR_MOVE ((float)x_steps_to_take / (x_steps_per_unit*feedrate/60000000))
         #define Y_TIME_FOR_MOVE ((float)y_steps_to_take / (y_steps_per_unit*feedrate/60000000))
         #define Z_TIME_FOR_MOVE ((float)z_steps_to_take / (z_steps_per_unit*feedrate/60000000))
