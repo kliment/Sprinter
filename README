@@ -4,6 +4,11 @@ This work is licensed under the GNU GPL v3 or (at the user's discretion) any lat
 
 It is based on Tonokips's firmware, which was licensed under GPL v2 or later.
 
+WARNING: The configuration file now has a value to set the wanted temperature table file. If you copy and paste a temperature file from older versions, make sure that the configuration is pointing to it. For example:
+#include "ThermistorTable.h"
 
-
-
+WARNING_2: In addition, you can optionally use a different thermistor table for hot-end and bed. To do so, comment the following line in configuration.h:
+#define bedtemptable temptable
+Then add a line pointing to your second thermistor table, for example:
+#include "BedThermistorTable.h"
+Finally, make sure that the nozzle thermistor table, inside ThermistorTable.h in this case, is defined as "temptable" and that the bed thermistor table is defined as "bedtemptable".
