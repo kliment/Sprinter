@@ -873,8 +873,8 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
     if(e_steps_remaining){
       timediff=micros()-previous_micros_e;
       unsigned int final_e_steps_remaining = 0;
-      if (steep_x && x_steps_to_take > 0) final_e_steps_remaining = e_steps_to_take * (x_steps_remaining) / ((float) x_steps_to_take);
-      else if (steep_y && y_steps_to_take > 0) final_e_steps_remaining = e_steps_to_take * (y_steps_remaining) / ((float) y_steps_to_take);
+      if (steep_x && x_steps_to_take > 0) final_e_steps_remaining = e_steps_to_take * x_steps_remaining / x_steps_to_take;
+      else if (steep_y && y_steps_to_take > 0) final_e_steps_remaining = e_steps_to_take * y_steps_remaining / y_steps_to_take;
       if (final_e_steps_remaining > 0)  while(e_steps_remaining > final_e_steps_remaining) { do_e_step(); e_steps_remaining--; timediff-=e_interval;}
       else if (x_steps_to_take > 0 || y_steps_to_take > 0)  while(e_steps_remaining) { do_e_step(); e_steps_remaining--; timediff-=e_interval;}
       else while (timediff >= e_interval && e_steps_remaining) { do_e_step(); e_steps_remaining--; timediff-=e_interval;}
