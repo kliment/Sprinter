@@ -671,108 +671,40 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
   
   unsigned long start_move_micros = micros(); 
   unsigned int delta_x = x_steps_remaining;
-  unsigned long previous_nanos_x;
   unsigned long x_interval_nanos;
   unsigned int delta_y = y_steps_remaining;
-  unsigned long previous_nanos_y;
   unsigned long y_interval_nanos;
   unsigned int delta_z = z_steps_remaining;
-  unsigned long previous_nanos_z;
   unsigned long z_interval_nanos;
-  unsigned int delta_e = e_steps_remaining;
-  unsigned long previous_nanos_e;
-  unsigned long e_interval_nanos;
   float interval;
   boolean steep_y = delta_y > delta_x;// && delta_y > delta_e && delta_y > delta_z;
   boolean steep_x = delta_x >= delta_y;// && delta_x > delta_e && delta_x > delta_z;
   //boolean steep_z = delta_z > delta_x && delta_z > delta_y && delta_z > delta_e;
   int error_x;
   int error_y;
-  int error_e;
   int error_z;
   float full_velocity_units = 0.3;
   unsigned long full_velocity_steps;
-  //unsigned int steps_per_micros;
-  unsigned long timediff_nanos;
+  
   if(steep_y) {
    error_x = delta_y / 2;
-   error_e = delta_y / 2;
    previous_micros_y=micros();
    interval = y_interval;
    full_velocity_steps = full_velocity_units * y_steps_per_unit;
    if (full_velocity_steps > y_steps_remaining) full_velocity_steps = y_steps_remaining;
-   //previous_nanos_y= (start_move_micros - micros()) * 1000;
-   //steps_per_micros = 1000 * delta_y / (time_for_move * 1000);
-   //y_interval_nanos = y_interval * 1000;
   } else if (steep_x) {
    error_y = delta_x / 2;
-   error_e = delta_x / 2;
    previous_micros_x=micros();
    interval = x_interval;
    full_velocity_steps = full_velocity_units * x_steps_per_unit;
    if (full_velocity_steps > x_steps_remaining) full_velocity_steps = x_steps_remaining;
-   //previous_nanos_x= (start_move_micros - micros()) * 1000;
-   //x_interval_nanos = x_interval * 1000;
-  } else {
-   error_x = delta_e / 2;
-   error_y = delta_e / 2;
-   previous_micros_e=micros();
-   interval = e_interval;
-   full_velocity_steps = full_velocity_units * e_steps_per_unit;
-   if (full_velocity_steps > e_steps_remaining) full_velocity_steps = e_steps_remaining;
-   //previous_nanos_e= (start_move_micros - micros()) * 1000;
-   //e_interval_nanos = e_interval * 1000;
   }
-  int counter;
-  //float start_velocity = 0.001;
   float full_interval = interval;
-  //float velocity_multiplier;
-  //unsigned long total_move_time;
-  //unsigned long acceleration_move_time;
   unsigned long steps_done = 0;
   unsigned int steps_acceleration_check = 100;
   
-/*  unsigned int delta_
-  unsigned int delta_x = x_steps_remaining;
-  unsigned int delta_y = y_steps_remaining;
-  unsigned int delta_z = z_steps_remaining;
-  unsigned int delta_e = e_steps_remaining;
-  boolean steep_y = delta_y > delta_x && delta_y > delta_e;
-  boolean steep_x = delta_x > delta_y && delta_x > delta_e;
-  int error_x;
-  int error_y;
-  int error_e;
-  unsigned int steps_per_micros;
-  if(steep_y) {
-   error_x = delta_y / 2;
-   error_e = delta_y / 2;
-   previous_micros_y=micros();
-   steps_per_micros = 1000 * delta_y / (time_for_move * 1000);
-  } else if (steep_x) {
-   error_y = delta_x / 2;
-   error_e = delta_x / 2;
-   previous_micros_x=micros();
-  } else {
-   error_x = delta_e / 2;
-   error_y = delta_e / 2;
-   previous_micros_e=micros();
-  }
-  int counter;*/
-  
-  
-   
-  while(x_steps_remaining + y_steps_remaining + z_steps_remaining + e_steps_remaining > 0) // move until no more steps remain
-  { 
-    /*total_move_time = micros() - start_move_micros;
-    if (velocity_multiplier < 1 && total_move_time - acceleration_move_time > 100 &&x_steps_remaining + y_steps_remaining > 0) {
-      float velocity_multiplier = total_move_time / full_velocity_microseconds;
-      if (velocity_multiplier > 1) velocity_multiplier = 1;
-      interval = full_interval / velocity_multiplier;
-      acceleration_move_time = total_move_time;
-    } else {
-      interval = full_interval;
-    }*/
-    
+  // move until no more steps remain 
+  while(x_steps_remaining + y_steps_remaining + z_steps_remaining + e_steps_remaining > 0) { 
     if (steps_done < full_velocity_steps && steps_done / full_velocity_steps < 1 && (steps_done % steps_acceleration_check == 0)) {
       if(steps_done == 0) {
         interval = full_interval * steps_acceleration_check / full_velocity_steps;
@@ -794,57 +726,25 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
         while(timediff >= interval) {
           y_steps_remaining--; timediff-=interval;
           error_x = error_x - delta_x;
-          //error_e = error_e - delta_e;
           do_y_step();
           if(error_x < 0) {
             do_x_step(); x_steps_remaining--;
             error_x = error_x + delta_y;
           }
-          /*if(error_e < 0) {
-            do_e_step(); e_steps_remaining--;
-            error_e = error_e + delta_y;
-          }*/
         }
       } else if (steep_x) {
         timediff=micros() - previous_micros_x;
         while(timediff >= interval) {
           x_steps_remaining--; timediff-=interval;
           error_y = error_y - delta_y;
-          //error_e = error_e - delta_e;
           do_x_step();
           if(error_y < 0) { 
             do_y_step(); y_steps_remaining--;
             error_y = error_y + delta_x;
           }
-          /*if(error_e < 0) {
-            do_e_step(); e_steps_remaining--;
-            error_e = error_e + delta_x;
-          }*/
-        }
-      } else {
-        timediff=micros() - previous_micros_e;
-        while(timediff >= interval) {
-          e_steps_remaining--; timediff-=interval;
-          error_y = error_y - delta_y;
-          error_x = error_x - delta_x;
-          do_e_step(); 
-          if(error_y < 0) { 
-            do_y_step(); y_steps_remaining--;
-            error_y = error_y + delta_e;
-          }
-          if(error_x < 0) {
-            do_x_step(); x_steps_remaining--;
-            error_x = error_x + delta_e;
-          }
         }
       }
     }
-    
-    /*if(y_steps_remaining) {
-      if(Y_MIN_PIN > -1) if(!direction_y) if(digitalRead(Y_MIN_PIN) != ENDSTOPS_INVERTING) y_steps_remaining=0;
-      timediff=micros()-previous_micros_y;
-      while(timediff >= y_interval && y_steps_remaining) { do_y_step(); y_steps_remaining--; timediff-=y_interval;}
-    }*/
     
     if(z_steps_remaining) {
       if(Z_MIN_PIN > -1) if(!direction_z) if(digitalRead(Z_MIN_PIN) != ENDSTOPS_INVERTING) z_steps_remaining=0;
