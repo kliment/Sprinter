@@ -81,7 +81,8 @@ int target_raw = 0;
 int current_raw;
 int target_bed_raw = 0;
 int current_bed_raw;
-
+float tt=0,bt=0;
+        
 //Inactivity shutdown variables
 unsigned long previous_millis_cmd=0;
 unsigned long max_inactive_time = 0;
@@ -99,7 +100,8 @@ int16_t n;
 
 void initsd(){
 sdactive=false;
-
+if(root.isOpen())
+    root.close();
 if (!card.init(SPI_FULL_SPEED)){
     if (!card.init(SPI_HALF_SPEED))
       Serial.println("SD init fail");
@@ -120,11 +122,6 @@ void setup()
   Serial.begin(BAUDRATE);
   Serial.println("start");
 
-
-//cmdbuffer[0]="\0";
-//cmdbuffer[1]="\0";
-//cmdbuffer[2]=char[4];
-//cmdbuffer[3]=char[4];
   for(int i=0;i<BUFSIZE;i++){
       fromsd[i]=false;
   }
@@ -165,6 +162,10 @@ void setup()
   
  
 #ifdef SDSUPPORT
+
+//power to SD reader
+pinMode(48,OUTPUT); 
+digitalWrite(48,HIGH);
 initsd();
 #endif
  
@@ -180,18 +181,10 @@ void loop()
 	get_command();
   
   if(buflen){
-    //Serial.print("buflen: ");
-    //Serial.print(buflen);
-   //Serial.print(", bufindr: ");
-    //Serial.print(bufindr);
-  //Serial.print(", bufindw: ");
-    //Serial.println(bufindw);
-
     process_commands();
     
     buflen=(buflen-1);
     bufindr=(bufindr+1)%BUFSIZE;
-    //Serial.println("ok");
     }
   
   manage_heater();
@@ -209,7 +202,6 @@ inline void get_command()
     {
       if(!serial_count) return; //if empty line
       cmdbuffer[bufindw][serial_count] = 0; //terminate string
-      //Serial.println(cmdbuffer[bufindw]);
       if(!comment_mode){
     fromsd[bufindw]=false;
   if(strstr(cmdbuffer[bufindw], "N") != NULL)
@@ -276,18 +268,8 @@ inline void get_command()
 		}
 
 	}
-//	else if(strstr(cmdbuffer[bufindw], "M105") != NULL){
-//		Serial.println("ok"); 
-//	}
-    
-    
-	
         bufindw=(bufindw+1)%BUFSIZE;
         buflen+=1;
-        //Serial.print("Received: ");
-        //Serial.println(gcode_LastN);
-        //Serial.print("Buflen: ");
-        //Serial.println(buflen);
         
       }
       comment_mode = false; //for new command
@@ -315,14 +297,9 @@ if(!sdmode || serial_count!=0){
         }
       if(!serial_count) return; //if empty line
       cmdbuffer[bufindw][serial_count] = 0; //terminate string
-      //Serial.println(cmdbuffer[bufindw]);
       if(!comment_mode){
         fromsd[bufindw]=true;
         buflen+=1;
-        //Serial.print("Received: ");
-         //   Serial.println(cmdbuffer[bufindw]);
-           // Serial.print("Buflen: ");
-            //Serial.println(buflen);
         bufindw=(bufindw+1)%BUFSIZE;
       }
       comment_mode = false; //for new command
@@ -491,12 +468,7 @@ inline void process_commands()
                 Serial.println(file.fileSize());
                 sdpos=0;
                 filesize=file.fileSize();
-                //int i=0;
-                //while ((n = file.read(buf, sizeof(buf))) > 0) {
-                //    for (uint8_t i = 0; i < n; i++) Serial.print(buf[i]);
-                //}
                 Serial.println("File selected");
-                //file.close();
             }
             else{
                 Serial.println("file.open failed");
@@ -537,11 +509,16 @@ inline void process_commands()
         if (code_seen('S')) target_bed_raw = temp2analogBed(code_value());
         break;
       case 105: // M105
+        tt=analog2temp(analogRead(TEMP_0_PIN));
+        bt=analog2tempBed(analogRead(TEMP_1_PIN));
         Serial.print("T:");
-        Serial.println( analog2temp(analogRead(TEMP_0_PIN)) ); 
-        Serial.print("Bed:");
-        Serial.println( analog2tempBed(analogRead(TEMP_1_PIN)) ); 
-        break;
+        Serial.println(tt); 
+        Serial.print("ok T:");
+        Serial.print(tt); 
+        Serial.print(" B:");
+        Serial.println(bt); 
+        return;
+        //break;
       case 109: // M109 - Wait for heater to reach target.
         if (code_seen('S')) target_raw = temp2analog(code_value());
         previous_millis_heater = millis(); 
@@ -686,6 +663,9 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
   if(X_MIN_PIN > -1) if(!direction_x) if(digitalRead(X_MIN_PIN) != ENDSTOPS_INVERTING) x_steps_remaining=0;
   if(Y_MIN_PIN > -1) if(!direction_y) if(digitalRead(Y_MIN_PIN) != ENDSTOPS_INVERTING) y_steps_remaining=0;
   if(Z_MIN_PIN > -1) if(!direction_z) if(digitalRead(Z_MIN_PIN) != ENDSTOPS_INVERTING) z_steps_remaining=0;
+  if(X_MAX_PIN > -1) if(direction_x) if(digitalRead(X_MAX_PIN) != ENDSTOPS_INVERTING) x_steps_remaining=0;
+  if(Y_MAX_PIN > -1) if(direction_y) if(digitalRead(Y_MAX_PIN) != ENDSTOPS_INVERTING) y_steps_remaining=0;
+  if(Z_MAX_PIN > -1) if(direction_z) if(digitalRead(Z_MAX_PIN) != ENDSTOPS_INVERTING) z_steps_remaining=0;
   
   previous_millis_heater = millis();
   
@@ -807,6 +787,8 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
     if(x_steps_remaining || y_steps_remaining) {
       if(X_MIN_PIN > -1) if(!direction_x) if(digitalRead(X_MIN_PIN) != ENDSTOPS_INVERTING) x_steps_remaining=0;
       if(Y_MIN_PIN > -1) if(!direction_y) if(digitalRead(Y_MIN_PIN) != ENDSTOPS_INVERTING) y_steps_remaining=0;
+      if(X_MAX_PIN > -1) if(direction_x) if(digitalRead(X_MAX_PIN) != ENDSTOPS_INVERTING) x_steps_remaining=0;
+      if(Y_MAX_PIN > -1) if(direction_y) if(digitalRead(Y_MAX_PIN) != ENDSTOPS_INVERTING) y_steps_remaining=0;
       if(steep_y) {
         timediff = micros() - previous_micros_y;
         while(timediff >= interval) {
@@ -866,6 +848,7 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
     
     if(z_steps_remaining) {
       if(Z_MIN_PIN > -1) if(!direction_z) if(digitalRead(Z_MIN_PIN) != ENDSTOPS_INVERTING) z_steps_remaining=0;
+      if(Z_MAX_PIN > -1) if(direction_z) if(digitalRead(Z_MAX_PIN) != ENDSTOPS_INVERTING) z_steps_remaining=0;
       timediff=micros()-previous_micros_z;
       while(timediff >= z_interval && z_steps_remaining) { do_z_step(); z_steps_remaining--; timediff-=z_interval;}
     }    
