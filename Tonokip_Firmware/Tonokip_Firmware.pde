@@ -53,7 +53,7 @@ unsigned long previous_micros=0, previous_micros_x=0, previous_micros_y=0, previ
 unsigned long x_steps_to_take, y_steps_to_take, z_steps_to_take, e_steps_to_take;
 float destination_x =0.0, destination_y = 0.0, destination_z = 0.0, destination_e = 0.0;
 float current_x = 0.0, current_y = 0.0, current_z = 0.0, current_e = 0.0;
-float x_interval, y_interval, z_interval, e_interval; // for speed delay
+long x_interval, y_interval, z_interval, e_interval; // for speed delay
 float feedrate = 1500, next_feedrate;
 float time_for_move;
 long gcode_N, gcode_LastN;
@@ -96,6 +96,7 @@ uint32_t filesize=0;
 uint32_t sdpos=0;
 bool sdmode=false;
 bool sdactive=false;
+bool savetosd=false;
 int16_t n;
 
 void initsd(){
@@ -114,6 +115,28 @@ else
         sdactive=true;
 
 }
+
+inline void write_command(char *buf){
+    char* begin=buf;
+    char* npos=0;
+    char* end=buf+strlen(buf)-1;
+    
+    file.writeError = false;
+    if((npos=strchr(buf, 'N')) != NULL){
+        begin = strchr(npos,' ')+1;
+        end =strchr(npos, '*')-1;
+    }
+    end[1]='\r';
+    end[2]='\n';
+    end[3]='\0';
+    //Serial.println(begin);
+    file.write(begin);
+    if (file.writeError){
+        Serial.println("error writing to file");
+    }
+}
+
+
 #endif
 
 
@@ -121,7 +144,6 @@ void setup()
 { 
   Serial.begin(BAUDRATE);
   Serial.println("start");
-
   for(int i=0;i<BUFSIZE;i++){
       fromsd[i]=false;
   }
@@ -181,8 +203,23 @@ void loop()
 	get_command();
   
   if(buflen){
+#ifdef SDSUPPORT
+    if(savetosd){
+        if(strstr(cmdbuffer[bufindr],"M29")==NULL){
+            write_command(cmdbuffer[bufindr]);
+            file.sync();
+            Serial.println("ok");
+        }else{
+            file.close();
+            savetosd=false;
+            Serial.println("Done saving file.");
+        }
+    }else{
+        process_commands();
+    }
+#else
     process_commands();
-    
+#endif
     buflen=(buflen-1);
     bufindr=(bufindr+1)%BUFSIZE;
     }
@@ -191,7 +228,6 @@ void loop()
   
   manage_inactivity(1); //shutdown if not receiving any new commands
 }
-
 
 
 inline void get_command() 
@@ -209,7 +245,6 @@ inline void get_command()
     strchr_pointer = strchr(cmdbuffer[bufindw], 'N');
     gcode_N = (strtol(&cmdbuffer[bufindw][strchr_pointer - cmdbuffer[bufindw] + 1], NULL, 10));
     if(gcode_N != gcode_LastN+1 && (strstr(cmdbuffer[bufindw], "M110") == NULL) ) {
-    //if(gcode_N != gcode_LastN+1 && !code_seen("M110") ) {   //Hmm, compile size is different between using this vs the line above even though it should be the same thing. Keeping old method.
       Serial.print("Serial Error: Line Number is not Last Line Number+1, Last Line:");
       Serial.println(gcode_LastN);
       Serial.println(gcode_N);
@@ -261,6 +296,10 @@ inline void get_command()
 		switch((int)((strtod(&cmdbuffer[bufindw][strchr_pointer - cmdbuffer[bufindw] + 1], NULL)))){
 		case 0:
 		case 1:
+              #ifdef SDSUPPORT
+              if(savetosd)
+                break;
+              #endif
 			  Serial.println("ok"); 
 			  break;
 		default:
@@ -332,6 +371,7 @@ float xdiff=0,ydiff=0,zdiff=0,ediff=0;
 inline void process_commands()
 {
   unsigned long codenum; //throw away variable
+  char *starpos=NULL;
   if(code_seen('G'))
   {
     switch((int)code_value())
@@ -500,6 +540,27 @@ inline void process_commands()
         }else{
             Serial.println("Not SD printing");
         }
+        break;
+      case 28: //M28 - Start SD write
+        file.close();
+        sdmode=false;
+        starpos=(strchr(strchr_pointer+4,'*'));
+        if(starpos!=NULL)
+            *starpos='\0';
+        if (!file.open(&root, strchr_pointer+4, O_CREAT | O_APPEND | O_WRITE | O_TRUNC))
+        {
+          Serial.print("open failed, File: ");
+          Serial.print(strchr_pointer+4);
+          Serial.print(".");
+        }else{
+        savetosd = true;
+        Serial.print("Writing to file: ");
+        Serial.println(strchr_pointer+4);
+        }
+        break;
+      case 29: //M29 - Stop SD write
+        //processed in write to file routine above
+        //savetosd=false;
         break;
 #endif
       case 104: // M104
@@ -676,30 +737,30 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
   unsigned long y_interval_nanos;
   unsigned int delta_z = z_steps_remaining;
   unsigned long z_interval_nanos;
-  float interval;
+  long interval;
   boolean steep_y = delta_y > delta_x;// && delta_y > delta_e && delta_y > delta_z;
   boolean steep_x = delta_x >= delta_y;// && delta_x > delta_e && delta_x > delta_z;
   //boolean steep_z = delta_z > delta_x && delta_z > delta_y && delta_z > delta_e;
   int error_x;
   int error_y;
   int error_z;
-  float full_velocity_units = 0.3;
+  long full_velocity_units = 30;
   unsigned long full_velocity_steps;
   
   if(steep_y) {
    error_x = delta_y / 2;
    previous_micros_y=micros();
    interval = y_interval;
-   full_velocity_steps = full_velocity_units * y_steps_per_unit;
+   full_velocity_steps = full_velocity_units * y_steps_per_unit /100;
    if (full_velocity_steps > y_steps_remaining) full_velocity_steps = y_steps_remaining;
   } else if (steep_x) {
    error_y = delta_x / 2;
    previous_micros_x=micros();
    interval = x_interval;
-   full_velocity_steps = full_velocity_units * x_steps_per_unit;
+   full_velocity_steps = full_velocity_units * x_steps_per_unit /100;
    if (full_velocity_steps > x_steps_remaining) full_velocity_steps = x_steps_remaining;
   }
-  float full_interval = interval;
+  long full_interval = interval;
   unsigned long steps_done = 0;
   unsigned int steps_acceleration_check = 100;
   
@@ -723,7 +784,7 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
       if(Y_MAX_PIN > -1) if(direction_y) if(digitalRead(Y_MAX_PIN) != ENDSTOPS_INVERTING) y_steps_remaining=0;
       if(steep_y) {
         timediff = micros() - previous_micros_y;
-        while(timediff >= interval) {
+        while(timediff >= interval && y_steps_remaining>0) {
           y_steps_remaining--; timediff-=interval;
           error_x = error_x - delta_x;
           do_y_step();
@@ -734,7 +795,7 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
         }
       } else if (steep_x) {
         timediff=micros() - previous_micros_x;
-        while(timediff >= interval) {
+        while(timediff >= interval && x_steps_remaining>0) {
           x_steps_remaining--; timediff-=interval;
           error_y = error_y - delta_y;
           do_x_step();
