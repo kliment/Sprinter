@@ -8,6 +8,9 @@
 //Comment out to disable SD support
 #define SDSUPPORT 1
 
+//Acceleration settings
+float full_velocity_units = 3.0;
+
 // THERMOCOUPLE SUPPORT UNTESTED... USE WITH CAUTION!!!!
 const bool USE_THERMISTOR = true; //Set to false if using thermocouple
 
