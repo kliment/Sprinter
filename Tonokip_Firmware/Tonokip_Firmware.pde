@@ -52,6 +52,10 @@ bool direction_x, direction_y, direction_z, direction_e;
 unsigned long previous_micros=0, previous_micros_x=0, previous_micros_y=0, previous_micros_z=0, previous_micros_e=0, previous_millis_heater;
 unsigned long x_steps_to_take, y_steps_to_take, z_steps_to_take, e_steps_to_take;
 unsigned long long_full_velocity_units = full_velocity_units * 100;
+unsigned long max_x_interval = 1000000.0 / (min_units_per_second * x_steps_per_unit);
+unsigned long max_y_interval = 1000000.0 / (min_units_per_second * y_steps_per_unit);
+unsigned long max_interval;
+boolean acceleration_enabled;
 float destination_x =0.0, destination_y = 0.0, destination_z = 0.0, destination_e = 0.0;
 float current_x = 0.0, current_y = 0.0, current_z = 0.0, current_e = 0.0;
 long x_interval, y_interval, z_interval, e_interval; // for speed delay
@@ -758,6 +762,7 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
    full_velocity_steps = min(virtual_full_velocity_steps, delta_y / 2);
    steps_remaining = delta_y;
    steps_to_take = delta_y;
+   max_interval = max_y_interval;
   } else if (steep_x) {
    error_y = delta_x / 2;
    previous_micros_x=micros();
@@ -766,27 +771,29 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
    full_velocity_steps = min(virtual_full_velocity_steps, delta_x / 2);
    steps_remaining = delta_x;
    steps_to_take = delta_x;
+   max_interval = max_x_interval;
   }
   if(full_velocity_steps == 0) full_velocity_steps++;
-  long full_interval = interval;
+  long full_interval = max(interval, max_interval - ((max_interval - full_interval) * full_velocity_steps / virtual_full_velocity_steps));
+  if(full_interval == interval) acceleration_enabled = false;
   unsigned long steps_done = 0;
   unsigned int steps_acceleration_check = 1;
   
   // move until no more steps remain 
   while(x_steps_remaining + y_steps_remaining + z_steps_remaining + e_steps_remaining > 0) { 
-    if (steps_done < full_velocity_steps && steps_done / full_velocity_steps < 1 && (steps_done % steps_acceleration_check == 0)) {
+    if (acceleration_enabled && steps_done < full_velocity_steps && steps_done / full_velocity_steps < 1 && (steps_done % steps_acceleration_check == 0)) {
       if(steps_done == 0) {
-        interval = full_interval * virtual_full_velocity_steps;
+        interval = max_interval;
       } else {
-        interval = full_interval * virtual_full_velocity_steps / steps_done;
+        interval = max_interval - ((max_interval - full_interval) * steps_done / virtual_full_velocity_steps);
       }
-    } else if (steps_remaining < full_velocity_steps) {
+    } else if (acceleration_enabled && steps_remaining < full_velocity_steps) {
       if(steps_remaining == 0) {
-        interval = full_interval * virtual_full_velocity_steps;
+        interval = max_interval;
       } else {
-        interval = full_interval * virtual_full_velocity_steps / steps_remaining;
+        interval = max_interval - ((max_interval - full_interval) * steps_remaining / virtual_full_velocity_steps);
       }
-    } else if (steps_done - full_velocity_steps >= 1){
+    } else if (steps_done - full_velocity_steps >= 1 || !acceleration_enabled){
       interval = full_interval;
     }
       
