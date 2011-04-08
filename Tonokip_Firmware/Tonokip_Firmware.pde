@@ -506,6 +506,9 @@ inline void process_commands()
         if(sdactive){
             sdmode=false;
             file.close();
+            starpos=(strchr(strchr_pointer+4,'*'));
+            if(starpos!=NULL)
+                *starpos='\0';
             if (file.open(&root, strchr_pointer+4, O_READ)) {
                 Serial.print("File opened:");
                 Serial.print(strchr_pointer+4);
@@ -547,20 +550,22 @@ inline void process_commands()
         }
         break;
       case 28: //M28 - Start SD write
-        file.close();
-        sdmode=false;
-        starpos=(strchr(strchr_pointer+4,'*'));
-        if(starpos!=NULL)
-            *starpos='\0';
-        if (!file.open(&root, strchr_pointer+4, O_CREAT | O_APPEND | O_WRITE | O_TRUNC))
-        {
-          Serial.print("open failed, File: ");
-          Serial.print(strchr_pointer+4);
-          Serial.print(".");
-        }else{
-        savetosd = true;
-        Serial.print("Writing to file: ");
-        Serial.println(strchr_pointer+4);
+        if(sdactive){
+            file.close();
+            sdmode=false;
+            starpos=(strchr(strchr_pointer+4,'*'));
+            if(starpos!=NULL)
+                *starpos='\0';
+            if (!file.open(&root, strchr_pointer+4, O_CREAT | O_APPEND | O_WRITE | O_TRUNC))
+            {
+            Serial.print("open failed, File: ");
+            Serial.print(strchr_pointer+4);
+            Serial.print(".");
+            }else{
+            savetosd = true;
+            Serial.print("Writing to file: ");
+            Serial.println(strchr_pointer+4);
+            }
         }
         break;
       case 29: //M29 - Stop SD write
