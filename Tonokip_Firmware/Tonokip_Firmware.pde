@@ -778,9 +778,10 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
    steps_to_take = delta_x;
    max_interval = max_x_interval;
   }
+  acceleration_enabled = true;
   if(full_velocity_steps == 0) full_velocity_steps++;
   long full_interval = max(interval, max_interval - ((max_interval - full_interval) * full_velocity_steps / virtual_full_velocity_steps));
-  if(full_interval == interval) acceleration_enabled = false;
+  if(interval > max_interval) acceleration_enabled = false;
   unsigned long steps_done = 0;
   unsigned int steps_acceleration_check = 1;
   
