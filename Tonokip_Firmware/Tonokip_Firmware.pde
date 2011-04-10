@@ -49,7 +49,7 @@
 
 //Stepper Movement Variables
 bool direction_x, direction_y, direction_z, direction_e;
-unsigned long previous_micros=0, previous_micros_x=0, previous_micros_y=0, previous_micros_z=0, previous_micros_e=0, previous_millis_heater;
+unsigned long previous_micros=0, previous_micros_x=0, previous_micros_y=0, previous_micros_z=0, previous_micros_e=0, previous_millis_heater, previous_millis_bed_heater;
 unsigned long x_steps_to_take, y_steps_to_take, z_steps_to_take, e_steps_to_take;
 unsigned long long_full_velocity_units = full_velocity_units * 100;
 unsigned long max_x_interval = 1000000.0 / (min_units_per_second * x_steps_per_unit);
@@ -87,6 +87,18 @@ int current_raw;
 int target_bed_raw = 0;
 int current_bed_raw;
 float tt=0,bt=0;
+#ifdef PIDTEMP
+int temp_iState=0;
+int temp_dState=0;
+int pTerm;
+int iTerm;
+int dTerm;
+    //int output;
+int error;
+int temp_iState_min = 100*-PID_INTEGRAL_DRIVE_MAX/PID_IGAIN;
+int temp_iState_max = 100*PID_INTEGRAL_DRIVE_MAX/PID_IGAIN;
+#endif
+
         
 //Inactivity shutdown variables
 unsigned long previous_millis_cmd=0;
@@ -924,9 +936,21 @@ inline void  enable_e() { if(E_ENABLE_PIN > -1) digitalWrite(E_ENABLE_PIN, E_ENA
 
 inline void manage_heater()
 {
+  
   current_raw = analogRead(TEMP_0_PIN);                  // If using thermistor, when the heater is colder than targer temp, we get a higher analog reading than target, 
   if(USE_THERMISTOR) current_raw = 1023 - current_raw;   // this switches it up so that the reading appears lower than target for the control logic.
   
+  #ifdef PIDTEMP
+    error = target_raw - current_raw;
+    pTerm = (PID_PGAIN * error)/100;
+    temp_iState += error;
+    temp_iState = constrain(temp_iState, temp_iState_min, temp_iState_max);
+    iTerm = (PID_IGAIN * temp_iState) /100;
+    dTerm = (PID_DGAIN * (current_raw - temp_dState))/100;
+    temp_dState = current_raw;
+    analogWrite(HEATER_0_PIN, constrain(pTerm + iTerm - dTerm, 0, PID_MAX));
+
+  #else
   if(current_raw >= target_raw)
    {
      digitalWrite(HEATER_0_PIN,LOW);
@@ -937,6 +961,13 @@ inline void manage_heater()
     digitalWrite(HEATER_0_PIN,HIGH);
     digitalWrite(LED_PIN,HIGH);
   }
+  #endif
+  
+  if(millis()-previous_millis_bed_heater<5000)
+    return;
+  previous_millis_bed_heater = millis();
+  
+      
   current_bed_raw = analogRead(TEMP_1_PIN);                  // If using thermistor, when the heater is colder than targer temp, we get a higher analog reading than target, 
   if(USE_THERMISTOR) current_bed_raw = 1023 - current_bed_raw;   // this switches it up so that the reading appears lower than target for the control logic.
   

@@ -15,6 +15,18 @@ float min_units_per_second = 35.0; // the minimum feedrate
 // THERMOCOUPLE SUPPORT UNTESTED... USE WITH CAUTION!!!!
 const bool USE_THERMISTOR = true; //Set to false if using thermocouple
 
+//PID settings:
+//Uncomment the following line to enable PID support. This is untested and could be disastrous. Be careful.
+//#define PIDTEMP 1
+#ifdef PIDTEMP
+#define PID_MAX 255 // limits current to nozzle
+#define PID_INTEGRAL_DRIVE_MAX 220
+#define PID_PGAIN 180 //100 is 1.0
+#define PID_IGAIN 2 //100 is 1.0
+#define PID_DGAIN 100 //100 is 1.0
+#endif
+
+
 // Calibration formulas
 // e_extruded_steps_per_mm = e_feedstock_steps_per_mm * (desired_extrusion_diameter^2 / feedstock_diameter^2)
 // new_axis_steps_per_mm = previous_axis_steps_per_mm * (test_distance_instructed/test_distance_traveled)
@@ -25,7 +37,7 @@ float x_steps_per_unit = 80.376;
 float y_steps_per_unit = 80.376;
 float z_steps_per_unit = 3200/1.25;
 float e_steps_per_unit = 16;
-float max_feedrate = 18000;
+float max_feedrate = 200000; //mmm, acceleration!
 
 //float x_steps_per_unit = 10.047;
 //float y_steps_per_unit = 10.047;
