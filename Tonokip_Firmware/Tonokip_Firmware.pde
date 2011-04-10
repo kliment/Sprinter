@@ -561,14 +561,18 @@ inline void process_commands()
             Serial.println("Not SD printing");
         }
         break;
-      case 28: //M28 - Start SD write
+            case 28: //M28 - Start SD write
         if(sdactive){
+          char* npos=0;
             file.close();
             sdmode=false;
             starpos=(strchr(strchr_pointer+4,'*'));
-            if(starpos!=NULL)
-                *starpos='\0';
-            if (!file.open(&root, strchr_pointer+4, O_CREAT | O_APPEND | O_WRITE | O_TRUNC))
+            if(starpos!=NULL){
+              npos=strchr(cmdbuffer[bufindr], 'N');
+              strchr_pointer = strchr(npos,' ')+1;
+              *starpos='\0';
+            }
+      if (!file.open(&root, strchr_pointer+4, O_CREAT | O_APPEND | O_WRITE | O_TRUNC))
             {
             Serial.print("open failed, File: ");
             Serial.print(strchr_pointer+4);
