@@ -520,7 +520,7 @@ inline void process_commands()
             file.close();
             starpos=(strchr(strchr_pointer+4,'*'));
             if(starpos!=NULL)
-                *starpos='\0';
+                *(starpos-1)='\0';
             if (file.open(&root, strchr_pointer+4, O_READ)) {
                 Serial.print("File opened:");
                 Serial.print(strchr_pointer+4);
@@ -570,7 +570,7 @@ inline void process_commands()
             if(starpos!=NULL){
               npos=strchr(cmdbuffer[bufindr], 'N');
               strchr_pointer = strchr(npos,' ')+1;
-              *starpos='\0';
+              *(starpos-1)='\0';
             }
       if (!file.open(&root, strchr_pointer+4, O_CREAT | O_APPEND | O_WRITE | O_TRUNC))
             {
@@ -1108,11 +1108,12 @@ float analog2tempBed(int raw) {
 inline void kill(byte debug)
 {
   if(HEATER_0_PIN > -1) digitalWrite(HEATER_0_PIN,LOW);
+  if(HEATER_1_PIN > -1) digitalWrite(HEATER_1_PIN,LOW);
   
-  disable_x;
-  disable_y;
-  disable_z;
-  disable_e;
+  disable_x();
+  disable_y();
+  disable_z();
+  disable_e();
   
   if(PS_ON_PIN > -1) pinMode(PS_ON_PIN,INPUT);
   
