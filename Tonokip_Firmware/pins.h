@@ -298,7 +298,7 @@
 * Gen6 pin assignment
 *
 ****************************************************************************************/
-#elif MOTHERBOARD == 4
+#elif MOTHERBOARD == 5
 
 #ifndef __AVR_ATmega644P__
     #error Oops!  Make sure you have 'Sanguino' selected from the 'Tools -> Boards' menu.
