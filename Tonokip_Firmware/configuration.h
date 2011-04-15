@@ -3,7 +3,7 @@
 
 // NO RS485/EXTRUDER CONTROLLER SUPPORT
 // PLEASE VERIFY PIN ASSIGNMENTS FOR YOUR CONFIGURATION!!!!!!!
-#define MOTHERBOARD 3 // ATMEGA168 0, SANGUINO 1, MOTHERBOARD = 2, MEGA 3, ATMEGA328 4
+#define MOTHERBOARD 3 // ATMEGA168 = 0, SANGUINO = 1, MOTHERBOARD = 2, MEGA/RAMPS = 3, ATMEGA328 = 4, Gen6 = 5
 
 //Comment out to disable SD support
 #define SDSUPPORT 1
@@ -72,9 +72,10 @@ const bool INVERT_E_DIR = false;
 //#include "ThermistorTable_200k.h"
 //#include "BedThermistorTable_200k.h"
 
-//Identical thermistors on heater and bed:
+//Identical thermistors on heater and bed - use this if you have no heated bed or if the thermistors are the same on both:
 #include "ThermistorTable_200k.h"
 //#include "ThermistorTable_100k.h"
+//#include "ThermistorTable_mendelparts.h"
 #define BNUMTEMPS NUMTEMPS
 #define bedtemptable temptable
 

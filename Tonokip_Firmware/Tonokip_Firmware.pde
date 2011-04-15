@@ -118,10 +118,11 @@ int16_t n;
 
 void initsd(){
 sdactive=false;
+#if SDSS>-1
 if(root.isOpen())
     root.close();
-if (!card.init(SPI_FULL_SPEED)){
-    if (!card.init(SPI_HALF_SPEED))
+if (!card.init(SPI_FULL_SPEED,SDSS)){
+    if (!card.init(SPI_HALF_SPEED,SDSS))
       Serial.println("SD init fail");
 }
 else if (!volume.init(&card))
@@ -130,7 +131,7 @@ else if (!root.openRoot(&volume))
       Serial.println("openRoot failed");
 else 
         sdactive=true;
-
+#endif
 }
 
 inline void write_command(char *buf){
@@ -203,9 +204,12 @@ void setup()
 #ifdef SDSUPPORT
 
 //power to SD reader
-pinMode(48,OUTPUT); 
-digitalWrite(48,HIGH);
+#if SDPOWER > -1
+pinMode(SDPOWER,OUTPUT); 
+digitalWrite(SDPOWER,HIGH);
+#endif
 initsd();
+
 #endif
  
   
@@ -596,14 +600,26 @@ inline void process_commands()
         if (code_seen('S')) target_bed_raw = temp2analogBed(code_value());
         break;
       case 105: // M105
+        #if TEMP_0_PIN>-1
         tt=analog2temp(analogRead(TEMP_0_PIN));
+        #endif
+        #if TEMP_1_PIN>-1
         bt=analog2tempBed(analogRead(TEMP_1_PIN));
+        #endif
+        #if TEMP_0_PIN>-1
+        
         Serial.print("T:");
         Serial.println(tt); 
+        #if TEMP_1_PIN>-1
+        
         Serial.print("ok T:");
         Serial.print(tt); 
         Serial.print(" B:");
         Serial.println(bt); 
+        #endif
+        #else
+        Serial.println("No thermistors - no temp");
+        #endif
         return;
         //break;
       case 109: // M109 - Wait for heater to reach target.
@@ -942,7 +958,7 @@ inline void  enable_e() { if(E_ENABLE_PIN > -1) digitalWrite(E_ENABLE_PIN, E_ENA
 
 inline void manage_heater()
 {
-  
+  #if TEMP_0_PIN > -1
   current_raw = analogRead(TEMP_0_PIN);                  // If using thermistor, when the heater is colder than targer temp, we get a higher analog reading than target, 
   if(USE_THERMISTOR) current_raw = 1023 - current_raw;   // this switches it up so that the reading appears lower than target for the control logic.
   
@@ -968,12 +984,12 @@ inline void manage_heater()
     digitalWrite(LED_PIN,HIGH);
   }
   #endif
-  
+  #endif
   if(millis()-previous_millis_bed_heater<5000)
     return;
   previous_millis_bed_heater = millis();
   
-      
+    #if TEMP_1_PIN > -1
   current_bed_raw = analogRead(TEMP_1_PIN);                  // If using thermistor, when the heater is colder than targer temp, we get a higher analog reading than target, 
   if(USE_THERMISTOR) current_bed_raw = 1023 - current_bed_raw;   // this switches it up so that the reading appears lower than target for the control logic.
   
@@ -985,6 +1001,7 @@ inline void manage_heater()
   {
     digitalWrite(HEATER_1_PIN,HIGH);
     }
+    #endif
 }
 
 // Takes hot end temperature value as input and returns corresponding analog value from RepRap thermistor temp table.
