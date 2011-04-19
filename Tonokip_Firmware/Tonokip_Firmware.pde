@@ -83,9 +83,9 @@ char *strchr_pointer; // just a pointer to find chars in the cmd string like X, 
 
 //manage heater variables
 int target_raw = 0;
-int current_raw;
+int current_raw =0;
 int target_bed_raw = 0;
-int current_bed_raw;
+int current_bed_raw=0;
 float tt=0,bt=0;
 #ifdef PIDTEMP
 int temp_iState=0;
