@@ -81,7 +81,10 @@ int serial_count = 0;
 boolean comment_mode = false;
 char *strchr_pointer; // just a pointer to find chars in the cmd string like X, Y, Z, E, etc
 
-//manage heater variables
+// Manage heater variables. For a thermistor or AD595 thermocouple, raw values refer to the 
+// reading from the analog pin. For a MAX6675 thermocouple, the raw value is the temperature in 0.25 
+// degree increments (i.e. 100=25 deg). 
+
 int target_raw = 0;
 int current_raw =0;
 int target_bed_raw = 0;
@@ -200,6 +203,19 @@ void setup()
 
   if(HEATER_0_PIN > -1) pinMode(HEATER_0_PIN,OUTPUT);
   
+#ifdef HEATER_USES_MAX6675
+  digitalWrite(SCK_PIN,0);
+  pinMode(SCK_PIN,OUTPUT);
+
+  digitalWrite(MOSI_PIN,1);
+  pinMode(MOSI_PIN,OUTPUT);
+
+  digitalWrite(MISO_PIN,1);
+  pinMode(MISO_PIN,INPUT);
+
+  digitalWrite(SS_PIN,1);
+  pinMode(SS_PIN,OUTPUT);
+#endif  
  
 #ifdef SDSUPPORT
 
@@ -600,25 +616,24 @@ inline void process_commands()
         if (code_seen('S')) target_bed_raw = temp2analogBed(code_value());
         break;
       case 105: // M105
-        #if TEMP_0_PIN>-1
-        tt=analog2temp(analogRead(TEMP_0_PIN));
+        #if (TEMP_0_PIN>-1) || defined (HEATER_USES_MAX6675)
+          tt=analog2temp(current_raw);
         #endif
         #if TEMP_1_PIN>-1
-        bt=analog2tempBed(analogRead(TEMP_1_PIN));
+          bt=analog2tempBed(current_bed_raw);
         #endif
-        #if TEMP_0_PIN>-1
+        #if (TEMP_0_PIN>-1) || defined (HEATER_USES_MAX6675)
+          Serial.print("T:");
+          Serial.println(tt); 
+          #if TEMP_1_PIN>-1
         
-        Serial.print("T:");
-        Serial.println(tt); 
-        #if TEMP_1_PIN>-1
-        
-        Serial.print("ok T:");
-        Serial.print(tt); 
-        Serial.print(" B:");
-        Serial.println(bt); 
-        #endif
+            Serial.print("ok T:");
+            Serial.print(tt); 
+            Serial.print(" B:");
+            Serial.println(bt); 
+          #endif
         #else
-        Serial.println("No thermistors - no temp");
+          Serial.println("No thermistors - no temp");
         #endif
         return;
         //break;
@@ -629,7 +644,7 @@ inline void process_commands()
           if( (millis()-previous_millis_heater) > 1000 ) //Print Temp Reading every 1 second while heating up.
           {
             Serial.print("T:");
-            Serial.println( analog2temp(analogRead(TEMP_0_PIN)) ); 
+            Serial.println( analog2temp(current_raw) ); 
             previous_millis_heater = millis(); 
           }
           manage_heater();
@@ -966,59 +981,133 @@ inline void  enable_y() { if(Y_ENABLE_PIN > -1) digitalWrite(Y_ENABLE_PIN, Y_ENA
 inline void  enable_z() { if(Z_ENABLE_PIN > -1) digitalWrite(Z_ENABLE_PIN, Z_ENABLE_ON); }
 inline void  enable_e() { if(E_ENABLE_PIN > -1) digitalWrite(E_ENABLE_PIN, E_ENABLE_ON); }
 
-inline void manage_heater()
-{
-  #if TEMP_0_PIN > -1
-  current_raw = analogRead(TEMP_0_PIN);                  // If using thermistor, when the heater is colder than targer temp, we get a higher analog reading than target, 
-  if(USE_THERMISTOR) current_raw = 1023 - current_raw;   // this switches it up so that the reading appears lower than target for the control logic.
-  
-  #ifdef PIDTEMP
-    error = target_raw - current_raw;
-    pTerm = (PID_PGAIN * error)/100;
-    temp_iState += error;
-    temp_iState = constrain(temp_iState, temp_iState_min, temp_iState_max);
-    iTerm = (PID_IGAIN * temp_iState) /100;
-    dTerm = (PID_DGAIN * (current_raw - temp_dState))/100;
-    temp_dState = current_raw;
-    analogWrite(HEATER_0_PIN, constrain(pTerm + iTerm - dTerm, 0, PID_MAX));
+#define HEAT_INTERVAL 250
 
-  #else
-  if(current_raw >= target_raw)
-   {
-     digitalWrite(HEATER_0_PIN,LOW);
-     digitalWrite(LED_PIN,LOW);
-   }
+unsigned long max6675_previous_millis = 0;
+int max6675_temp = 2000;
+
+inline int read_max6675()
+{
+  if (millis() - max6675_previous_millis < HEAT_INTERVAL) 
+    return max6675_temp;
+  
+  max6675_previous_millis = millis();
+
+  max6675_temp = 0;
+    
+  #ifdef	PRR
+    PRR &= ~(1<<PRSPI);
+  #elif defined PRR0
+    PRR0 &= ~(1<<PRSPI);
+  #endif
+  
+  SPCR = (1<<MSTR) | (1<<SPE) | (1<<SPR0);
+  
+  // enable TT_MAX6675
+  digitalWrite(SS_PIN, 0);
+  
+  // ensure 100ns delay - a bit extra is fine
+  delay(1);
+  
+  // read MSB
+  SPDR = 0;
+  for (;(SPSR & (1<<SPIF)) == 0;);
+  max6675_temp = SPDR;
+  max6675_temp <<= 8;
+  
+  // read LSB
+  SPDR = 0;
+  for (;(SPSR & (1<<SPIF)) == 0;);
+  max6675_temp |= SPDR;
+  
+  // disable TT_MAX6675
+  digitalWrite(SS_PIN, 1);
+
+  if (max6675_temp & 4) 
+  {
+    // thermocouple open
+    max6675_temp = 2000;
+  }
   else 
   {
-    digitalWrite(HEATER_0_PIN,HIGH);
-    digitalWrite(LED_PIN,HIGH);
+    max6675_temp = max6675_temp >> 3;
   }
+
+  return max6675_temp;
+}
+
+inline void manage_heater()
+{
+  #ifdef HEATER_USES_THERMISTOR
+    current_raw = analogRead(TEMP_0_PIN); 
+    // When using thermistor, when the heater is colder than targer temp, we get a higher analog reading than target, 
+    // this switches it up so that the reading appears lower than target for the control logic.
+    current_raw = 1023 - current_raw;
+  #elif defined HEATER_USES_AD595
+    current_raw = analogRead(TEMP_0_PIN);    
+  #elif defined HEATER_USES_MAX6675
+    current_raw = read_max6675();
   #endif
+  
+  #if (TEMP_0_PIN > -1) || defined (HEATER_USES_MAX66675)
+    #ifdef PIDTEMP
+      error = target_raw - current_raw;
+      pTerm = (PID_PGAIN * error)/100;
+      temp_iState += error;
+      temp_iState = constrain(temp_iState, temp_iState_min, temp_iState_max);
+      iTerm = (PID_IGAIN * temp_iState) /100;
+      dTerm = (PID_DGAIN * (current_raw - temp_dState))/100;
+      temp_dState = current_raw;
+      analogWrite(HEATER_0_PIN, constrain(pTerm + iTerm - dTerm, 0, PID_MAX));
+    #else
+      if(current_raw >= target_raw)
+      {
+        digitalWrite(HEATER_0_PIN,LOW);
+        digitalWrite(LED_PIN,LOW);
+      }
+      else 
+      {
+        digitalWrite(HEATER_0_PIN,HIGH);
+        digitalWrite(LED_PIN,HIGH);
+      }
+    #endif
   #endif
+  
   if(millis()-previous_millis_bed_heater<5000)
     return;
   previous_millis_bed_heater = millis();
+
+  #ifdef BED_USES_THERMISTOR
+
+    current_bed_raw = analogRead(TEMP_1_PIN);                  
+
+    // If using thermistor, when the heater is colder than targer temp, we get a higher analog reading than target, 
+    // this switches it up so that the reading appears lower than target for the control logic.
+    current_bed_raw = 1023 - current_bed_raw;
+  #elif defined BED_USES_AD595
+    current_bed_raw = analogRead(TEMP_1_PIN);                  
+
+  #endif
   
-    #if TEMP_1_PIN > -1
-  current_bed_raw = analogRead(TEMP_1_PIN);                  // If using thermistor, when the heater is colder than targer temp, we get a higher analog reading than target, 
-  if(USE_THERMISTOR) current_bed_raw = 1023 - current_bed_raw;   // this switches it up so that the reading appears lower than target for the control logic.
-  
-  if(current_bed_raw >= target_bed_raw)
-   {
-     digitalWrite(HEATER_1_PIN,LOW);
-     }
-  else 
-  {
-    digitalWrite(HEATER_1_PIN,HIGH);
+
+  #if TEMP_1_PIN > -1
+    if(current_bed_raw >= target_bed_raw)
+    {
+      digitalWrite(HEATER_1_PIN,LOW);
     }
-    #endif
+    else 
+    {
+      digitalWrite(HEATER_1_PIN,HIGH);
+    }
+  #endif
 }
 
-// Takes hot end temperature value as input and returns corresponding analog value from RepRap thermistor temp table.
+// Takes hot end temperature value as input and returns corresponding raw value. 
+// For a thermistor, it uses the RepRap thermistor temp table.
 // This is needed because PID in hydra firmware hovers around a given analog value, not a temp value.
 // This function is derived from inversing the logic from a portion of getTemperature() in FiveD RepRap firmware.
 float temp2analog(int celsius) {
-  if(USE_THERMISTOR) {
+  #ifdef HEATER_USES_THERMISTOR
     int raw = 0;
     byte i;
     
@@ -1039,16 +1128,20 @@ float temp2analog(int celsius) {
     if (i == NUMTEMPS) raw = temptable[i-1][0];
 
     return 1023 - raw;
-  } else {
-    return celsius * (1024.0/(5.0*100.0));
-  }
+  #elif defined HEATER_USES_AD595
+    return celsius * (1024.0/(5.0 * 100.0));
+  #elif defined HEATER_USES_MAX6675
+    return celsius * 4.0;
+  #endif
 }
 
-// Takes bed temperature value as input and returns corresponding analog value from RepRap thermistor temp table.
+// Takes bed temperature value as input and returns corresponding raw value. 
+// For a thermistor, it uses the RepRap thermistor temp table.
 // This is needed because PID in hydra firmware hovers around a given analog value, not a temp value.
 // This function is derived from inversing the logic from a portion of getTemperature() in FiveD RepRap firmware.
 float temp2analogBed(int celsius) {
-  if(USE_THERMISTOR) {
+  #ifdef BED_USES_THERMISTOR
+
     int raw = 0;
     byte i;
     
@@ -1069,17 +1162,19 @@ float temp2analogBed(int celsius) {
     if (i == BNUMTEMPS) raw = bedtemptable[i-1][0];
 
     return 1023 - raw;
-  } else {
-    return celsius * (1024.0/(5.0*100.0));
-  }
+  #elif defined BED_USES_AD595
+    return celsius * (1024.0/(5.0 * 100.0));
+  #endif
 }
 
 // Derived from RepRap FiveD extruder::getTemperature()
-// For hot end thermistor.
+// For hot end temperature measurement.
 float analog2temp(int raw) {
-  if(USE_THERMISTOR) {
+  #ifdef HEATER_USES_THERMISTOR
     int celsius = 0;
     byte i;
+    
+    raw = 1023 - raw;
 
     for (i=1; i<NUMTEMPS; i++)
     {
@@ -1098,18 +1193,21 @@ float analog2temp(int raw) {
     if (i == NUMTEMPS) celsius = temptable[i-1][1];
 
     return celsius;
-    
-  } else {
-    return raw * ((5.0*100.0)/1024.0);
-  }
+  #elif defined HEATER_USES_AD595
+    return raw * ((5.0 * 100.0) / 1024.0);
+  #elif defined HEATER_USES_MAX6675
+    return raw * 0.25;
+  #endif
 }
 
 // Derived from RepRap FiveD extruder::getTemperature()
-// For bed thermistor.
+// For bed temperature measurement.
 float analog2tempBed(int raw) {
-  if(USE_THERMISTOR) {
+  #ifdef BED_USES_THERMISTOR
     int celsius = 0;
     byte i;
+
+    raw = 1023 - raw;
 
     for (i=1; i<NUMTEMPS; i++)
     {
@@ -1129,9 +1227,9 @@ float analog2tempBed(int raw) {
 
     return celsius;
     
-  } else {
+  #elif defined BED_USES_AD595
     return raw * ((5.0*100.0)/1024.0);
-  }
+  #endif
 }
 
 inline void kill(byte debug)
