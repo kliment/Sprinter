@@ -774,6 +774,7 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
   
   previous_millis_heater = millis();
   
+  //Define variables that are needed for the Bresenham algorithm. Please note that  Z is not currently included in the Bresenham algorithm.
   unsigned long start_move_micros = micros(); 
   unsigned int delta_x = x_steps_remaining;
   unsigned long x_interval_nanos;
@@ -793,6 +794,7 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
   unsigned long steps_remaining;
   unsigned long steps_to_take;
   
+  //Do some Bresenham calculations depending on which axis will lead it.
   if(steep_y) {
    error_x = delta_y / 2;
    previous_micros_y=micros();
@@ -819,8 +821,9 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
   unsigned long steps_done = 0;
   unsigned int steps_acceleration_check = 1;
   
-  // move until no more steps remain 
-  while(x_steps_remaining + y_steps_remaining + z_steps_remaining + e_steps_remaining > 0) { 
+  //move until no more steps remain 
+  while(x_steps_remaining + y_steps_remaining + z_steps_remaining + e_steps_remaining > 0) {
+    //If acceleration is enabled on this move and we are in the acceleration segment, calculate the current interval
     if (acceleration_enabled && steps_done < full_velocity_steps && steps_done / full_velocity_steps < 1 && (steps_done % steps_acceleration_check == 0)) {
       if(steps_done == 0) {
         interval = max_interval;
@@ -828,18 +831,18 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
         interval = max_interval - ((max_interval - full_interval) * steps_done / virtual_full_velocity_steps);
       }
     } else if (acceleration_enabled && steps_remaining < full_velocity_steps) {
+      //Else, if acceleration is enabled on this move and we are in the deceleration segment, calculate the current interval
       if(steps_remaining == 0) {
         interval = max_interval;
       } else {
         interval = max_interval - ((max_interval - full_interval) * steps_remaining / virtual_full_velocity_steps);
       }
     } else if (steps_done - full_velocity_steps >= 1 || !acceleration_enabled){
+      //Else, we are just use the full speed interval as current interval
       interval = full_interval;
     }
-      
-    
-    
-      
+
+    //If there are x or y steps remaining, perform Bresenham algorithm
     if(x_steps_remaining || y_steps_remaining) {
       if(X_MIN_PIN > -1) if(!direction_x) if(digitalRead(X_MIN_PIN) != ENDSTOPS_INVERTING) break;
       if(Y_MIN_PIN > -1) if(!direction_y) if(digitalRead(Y_MIN_PIN) != ENDSTOPS_INVERTING) break;
@@ -873,23 +876,29 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
         }
       }
     }
-    
+
+    //If there are z steps remaining, check if z steps must be taken
     if(z_steps_remaining) {
       if(Z_MIN_PIN > -1) if(!direction_z) if(digitalRead(Z_MIN_PIN) != ENDSTOPS_INVERTING) break;
       if(Z_MAX_PIN > -1) if(direction_z) if(digitalRead(Z_MAX_PIN) != ENDSTOPS_INVERTING) break;
       timediff=micros()-previous_micros_z;
       while(timediff >= z_interval && z_steps_remaining) { do_z_step(); z_steps_remaining--; timediff-=z_interval;}
-    }    
-    
+    }
+
+    //If there are e steps remaining, check if e steps must be taken
     if(e_steps_remaining){
       if (x_steps_to_take + y_steps_to_take <= 0) timediff=micros()-previous_micros_e;
       unsigned int final_e_steps_remaining = 0;
       if (steep_x && x_steps_to_take > 0) final_e_steps_remaining = e_steps_to_take * x_steps_remaining / x_steps_to_take;
       else if (steep_y && y_steps_to_take > 0) final_e_steps_remaining = e_steps_to_take * y_steps_remaining / y_steps_to_take;
+      //If this move has X or Y steps, let E follow the Bresenham pace
       if (final_e_steps_remaining > 0)  while(e_steps_remaining > final_e_steps_remaining) { do_e_step(); e_steps_remaining--;}
       else if (x_steps_to_take + y_steps_to_take > 0)  while(e_steps_remaining) { do_e_step(); e_steps_remaining--;}
+      //Else, normally check if e steps must be taken
       else while (timediff >= e_interval && e_steps_remaining) { do_e_step(); e_steps_remaining--; timediff-=e_interval;}
     }
+    
+    //If more that half second is passed since previous heating check, manage it
     if( (millis() - previous_millis_heater) >= 500 ) {
       manage_heater();
       previous_millis_heater = millis();
