@@ -52,9 +52,9 @@ bool direction_x, direction_y, direction_z, direction_e;
 unsigned long previous_micros=0, previous_micros_x=0, previous_micros_y=0, previous_micros_z=0, previous_micros_e=0, previous_millis_heater, previous_millis_bed_heater;
 unsigned long x_steps_to_take, y_steps_to_take, z_steps_to_take, e_steps_to_take;
 unsigned long long_full_velocity_units = full_velocity_units * 100;
-unsigned long max_x_interval = 1000000.0 / (min_units_per_second * x_steps_per_unit);
-unsigned long max_y_interval = 1000000.0 / (min_units_per_second * y_steps_per_unit);
-unsigned long max_interval;
+unsigned long max_x_interval = 100000000.0 / (min_units_per_second * x_steps_per_unit);
+unsigned long max_y_interval = 100000000.0 / (min_units_per_second * y_steps_per_unit);
+unsigned long max_interval, interval;
 boolean acceleration_enabled;
 float destination_x =0.0, destination_y = 0.0, destination_z = 0.0, destination_e = 0.0;
 float current_x = 0.0, current_y = 0.0, current_z = 0.0, current_e = 0.0;
@@ -436,10 +436,10 @@ inline void process_commands()
         time_for_move = max(time_for_move,Z_TIME_FOR_MOVE);
         if(time_for_move <= 0) time_for_move = max(time_for_move,E_TIME_FOR_MOVE);
 
-        if(x_steps_to_take) x_interval = time_for_move/x_steps_to_take;
-        if(y_steps_to_take) y_interval = time_for_move/y_steps_to_take;
-        if(z_steps_to_take) z_interval = time_for_move/z_steps_to_take;
-        if(e_steps_to_take && (x_steps_to_take + y_steps_to_take <= 0)) e_interval = time_for_move/e_steps_to_take;
+        if(x_steps_to_take) x_interval = time_for_move/x_steps_to_take*100;
+        if(y_steps_to_take) y_interval = time_for_move/y_steps_to_take*100;
+        if(z_steps_to_take) z_interval = time_for_move/z_steps_to_take*100;
+        if(e_steps_to_take && (x_steps_to_take + y_steps_to_take <= 0)) e_interval = time_for_move/e_steps_to_take*100;
         
         //#define DEBUGGING false
 	#if 0        
@@ -782,7 +782,6 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
   unsigned long y_interval_nanos;
   unsigned int delta_z = z_steps_remaining;
   unsigned long z_interval_nanos;
-  long interval;
   boolean steep_y = delta_y > delta_x;// && delta_y > delta_e && delta_y > delta_z;
   boolean steep_x = delta_x >= delta_y;// && delta_x > delta_e && delta_x > delta_z;
   //boolean steep_z = delta_z > delta_x && delta_z > delta_y && delta_z > delta_e;
@@ -797,7 +796,7 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
   //Do some Bresenham calculations depending on which axis will lead it.
   if(steep_y) {
    error_x = delta_y / 2;
-   previous_micros_y=micros();
+   previous_micros_y=micros()*100;
    interval = y_interval;
    virtual_full_velocity_steps = long_full_velocity_units * y_steps_per_unit /100;
    full_velocity_steps = min(virtual_full_velocity_steps, delta_y / 2);
@@ -806,7 +805,7 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
    max_interval = max_y_interval;
   } else if (steep_x) {
    error_y = delta_x / 2;
-   previous_micros_x=micros();
+   previous_micros_x=micros()*100;
    interval = x_interval;
    virtual_full_velocity_steps = long_full_velocity_units * x_steps_per_unit /100;
    full_velocity_steps = min(virtual_full_velocity_steps, delta_x / 2);
@@ -814,6 +813,8 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
    steps_to_take = delta_x;
    max_interval = max_x_interval;
   }
+  previous_micros_z=micros()*100;
+  previous_micros_e=micros()*100;
   acceleration_enabled = true;
   if(full_velocity_steps == 0) full_velocity_steps++;
   long full_interval = interval;//max(interval, max_interval - ((max_interval - full_interval) * full_velocity_steps / virtual_full_velocity_steps));
@@ -849,7 +850,7 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
       if(X_MAX_PIN > -1) if(direction_x) if(digitalRead(X_MAX_PIN) != ENDSTOPS_INVERTING) break;
       if(Y_MAX_PIN > -1) if(direction_y) if(digitalRead(Y_MAX_PIN) != ENDSTOPS_INVERTING) break;
       if(steep_y) {
-        timediff = micros() - previous_micros_y;
+        timediff = micros() * 100 - previous_micros_y;
         while(timediff >= interval && y_steps_remaining>0) {
           steps_done++;
           steps_remaining--;
@@ -862,7 +863,7 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
           }
         }
       } else if (steep_x) {
-        timediff=micros() - previous_micros_x;
+        timediff=micros() * 100 - previous_micros_x;
         while(timediff >= interval && x_steps_remaining>0) {
           steps_done++;
           steps_remaining--;
@@ -881,13 +882,13 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
     if(z_steps_remaining) {
       if(Z_MIN_PIN > -1) if(!direction_z) if(digitalRead(Z_MIN_PIN) != ENDSTOPS_INVERTING) break;
       if(Z_MAX_PIN > -1) if(direction_z) if(digitalRead(Z_MAX_PIN) != ENDSTOPS_INVERTING) break;
-      timediff=micros()-previous_micros_z;
+      timediff=micros() * 100-previous_micros_z;
       while(timediff >= z_interval && z_steps_remaining) { do_z_step(); z_steps_remaining--; timediff-=z_interval;}
     }
 
     //If there are e steps remaining, check if e steps must be taken
     if(e_steps_remaining){
-      if (x_steps_to_take + y_steps_to_take <= 0) timediff=micros()-previous_micros_e;
+      if (x_steps_to_take + y_steps_to_take <= 0) timediff=micros() * 100-previous_micros_e;
       unsigned int final_e_steps_remaining = 0;
       if (steep_x && x_steps_to_take > 0) final_e_steps_remaining = e_steps_to_take * x_steps_remaining / x_steps_to_take;
       else if (steep_y && y_steps_to_take > 0) final_e_steps_remaining = e_steps_to_take * y_steps_remaining / y_steps_to_take;
@@ -927,7 +928,7 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
 inline void do_x_step()
 {
   digitalWrite(X_STEP_PIN, HIGH);
-  previous_micros_x = micros();
+  previous_micros_x += interval;
   //delayMicroseconds(3);
   digitalWrite(X_STEP_PIN, LOW);
 }
@@ -935,7 +936,7 @@ inline void do_x_step()
 inline void do_y_step()
 {
   digitalWrite(Y_STEP_PIN, HIGH);
-  previous_micros_y = micros();
+  previous_micros_y += interval;
   //delayMicroseconds(3);
   digitalWrite(Y_STEP_PIN, LOW);
 }
@@ -943,7 +944,7 @@ inline void do_y_step()
 inline void do_z_step()
 {
   digitalWrite(Z_STEP_PIN, HIGH);
-  previous_micros_z = micros();
+  previous_micros_z += z_interval;
   //delayMicroseconds(3);
   digitalWrite(Z_STEP_PIN, LOW);
 }
@@ -951,7 +952,7 @@ inline void do_z_step()
 inline void do_e_step()
 {
   digitalWrite(E_STEP_PIN, HIGH);
-  previous_micros_e = micros();
+  previous_micros_e += e_interval;
   //delayMicroseconds(3);
   digitalWrite(E_STEP_PIN, LOW);
 }
