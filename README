@@ -4,6 +4,11 @@ This work is licensed under the GNU GPL v3 or (at the user's discretion) any lat
 
 It is based on Tonokips's firmware, which was licensed under GPL v2 or later.
 
+WARNING: This version (April 19th, 2011) fixes a bug that caused speeds to be lower than what
+    set in GCODE. So before attempting any print, you will have to check all
+    your axis max speed, including the extruder retract speed. Not following
+    this guidelines can seriously damage your printer.
+
 The configuration file now has an option to set the wanted temperature table file. If you copy and paste a temperature file from older versions, make sure that the configuration is pointing to it. For example:
 #include "ThermistorTable.h"
 
