@@ -982,7 +982,7 @@ inline void  enable_z() { if(Z_ENABLE_PIN > -1) digitalWrite(Z_ENABLE_PIN, Z_ENA
 inline void  enable_e() { if(E_ENABLE_PIN > -1) digitalWrite(E_ENABLE_PIN, E_ENABLE_ON); }
 
 #define HEAT_INTERVAL 250
-
+#ifdef HEATER_USES_MAX6675
 unsigned long max6675_previous_millis = 0;
 int max6675_temp = 2000;
 
@@ -1035,7 +1035,7 @@ inline int read_max6675()
 
   return max6675_temp;
 }
-
+#endif
 inline void manage_heater()
 {
   #ifdef HEATER_USES_THERMISTOR
