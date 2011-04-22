@@ -9,8 +9,9 @@
 #define SDSUPPORT 1
 
 //Acceleration settings
-float full_velocity_units = 10.0; // the units between minimum and G1 move feedrate
-float min_units_per_second = 35.0; // the minimum feedrate
+float full_velocity_units = 0.6; // the units between minimum and G1 move feedrate
+float min_units_per_second = 60.0; // the minimum feedrate
+float min_constant_speed_units = 0.6; // the minimum units of an accelerated move that must be done at constant speed
 
 // AD595 THERMOCOUPLE SUPPORT UNTESTED... USE WITH CAUTION!!!!
 
