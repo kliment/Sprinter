@@ -213,8 +213,8 @@ void setup()
   digitalWrite(MISO_PIN,1);
   pinMode(MISO_PIN,INPUT);
 
-  digitalWrite(SS_PIN,1);
-  pinMode(SS_PIN,OUTPUT);
+  digitalWrite(MAX6675_SS,1);
+  pinMode(MAX6675_SS,OUTPUT);
 #endif  
  
 #ifdef SDSUPPORT
@@ -1004,7 +1004,7 @@ inline int read_max6675()
   SPCR = (1<<MSTR) | (1<<SPE) | (1<<SPR0);
   
   // enable TT_MAX6675
-  digitalWrite(SS_PIN, 0);
+  digitalWrite(MAX6675_SS, 0);
   
   // ensure 100ns delay - a bit extra is fine
   delay(1);
@@ -1021,7 +1021,7 @@ inline int read_max6675()
   max6675_temp |= SPDR;
   
   // disable TT_MAX6675
-  digitalWrite(SS_PIN, 1);
+  digitalWrite(MAX6675_SS, 1);
 
   if (max6675_temp & 4) 
   {

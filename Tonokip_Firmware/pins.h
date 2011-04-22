@@ -252,9 +252,11 @@
 #define SCK_PIN             52
 #define MISO_PIN            50
 #define MOSI_PIN            51
-#define SS_PIN              53
-
+#define MAX6675_SS              53
+#else
+#define MAX6675_SS              49
 #endif
+
 
 
 /****************************************************************************************
