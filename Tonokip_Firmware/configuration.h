@@ -26,9 +26,9 @@ float min_units_per_second = 35.0; // the minimum feedrate
 #endif
 
 // Select one of these only to define how the nozzle temp is read.
-//#define HEATER_USES_THERMISTOR
+#define HEATER_USES_THERMISTOR
 //#define HEATER_USES_AD595
-#define HEATER_USES_MAX6675
+//#define HEATER_USES_MAX6675
 
 // Select one of these only to define how the bed temp is read.
 #define BED_USES_THERMISTOR
