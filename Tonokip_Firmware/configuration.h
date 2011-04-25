@@ -10,6 +10,7 @@
 
 //Acceleration settings
 float full_velocity_units = 10; // the units between minimum and G1 move feedrate
+float travel_move_full_velocity_units = 3; // used for travel moves
 float min_units_per_second = 35.0; // the minimum feedrate
 float min_constant_speed_units = 2; // the minimum units of an accelerated move that must be done at constant speed
                                     // Note that if the move is shorter than this value, acceleration won't be perfomed,
