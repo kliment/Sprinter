@@ -52,6 +52,7 @@ bool direction_x, direction_y, direction_z, direction_e;
 unsigned long previous_micros=0, previous_micros_x=0, previous_micros_y=0, previous_micros_z=0, previous_micros_e=0, previous_millis_heater, previous_millis_bed_heater;
 unsigned long x_steps_to_take, y_steps_to_take, z_steps_to_take, e_steps_to_take;
 unsigned long long_full_velocity_units = full_velocity_units * 100;
+unsigned long long_travel_move_full_velocity_units = travel_move_full_velocity_units * 100;
 unsigned long max_x_interval = 100000000.0 / (min_units_per_second * x_steps_per_unit);
 unsigned long max_y_interval = 100000000.0 / (min_units_per_second * y_steps_per_unit);
 unsigned long max_interval, interval;
@@ -825,7 +826,8 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
    error_x = delta_y / 2;
    previous_micros_y=micros()*100;
    interval = y_interval;
-   virtual_full_velocity_steps = long_full_velocity_units * y_steps_per_unit /100;
+   if(e_steps_to_take > 0) virtual_full_velocity_steps = long_full_velocity_units * y_steps_per_unit /100;
+   else virtual_full_velocity_steps = long_travel_move_full_velocity_units * y_steps_per_unit /100;
    full_velocity_steps = min(virtual_full_velocity_steps, (delta_y - y_min_constant_speed_steps) / 2);
    steps_remaining = delta_y;
    steps_to_take = delta_y;
@@ -835,7 +837,8 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
    error_y = delta_x / 2;
    previous_micros_x=micros()*100;
    interval = x_interval;
-   virtual_full_velocity_steps = long_full_velocity_units * x_steps_per_unit /100;
+   if(e_steps_to_take > 0) virtual_full_velocity_steps = long_full_velocity_units * x_steps_per_unit /100;
+   else virtual_full_velocity_steps = long_travel_move_full_velocity_units * x_steps_per_unit /100;
    full_velocity_steps = min(virtual_full_velocity_steps, (delta_x - x_min_constant_speed_steps) / 2);
    steps_remaining = delta_x;
    steps_to_take = delta_x;
