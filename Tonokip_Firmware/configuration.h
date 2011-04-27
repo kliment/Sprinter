@@ -26,6 +26,10 @@ float min_constant_speed_units = 0.6; // the minimum units of an accelerated mov
 #define PID_DGAIN 100 //100 is 1.0
 #endif
 
+//Experimental temperature smoothing - only uncomment this if your temp readings are noisy
+//#define SMOOTHING 1
+//#define SMOOTHFACTOR 16 //best to use a power of two here - determines how many values are averaged together by the smoothing algorithm
+
 // Select one of these only to define how the nozzle temp is read.
 #define HEATER_USES_THERMISTOR
 //#define HEATER_USES_AD595

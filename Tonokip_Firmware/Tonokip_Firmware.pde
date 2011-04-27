@@ -103,6 +103,10 @@ int error;
 int temp_iState_min = 100*-PID_INTEGRAL_DRIVE_MAX/PID_IGAIN;
 int temp_iState_max = 100*PID_INTEGRAL_DRIVE_MAX/PID_IGAIN;
 #endif
+#ifdef SMOOTHING
+uint32_t nma=SMOOTHFACTOR*analogRead(TEMP_0_PIN);
+#endif
+
 
         
 //Inactivity shutdown variables
@@ -653,9 +657,15 @@ inline void process_commands()
         }
         break;
       case 106: //M106 Fan On
-        digitalWrite(FAN_PIN, HIGH);
+        if (code_seen('S')) 
+            digitalWrite(FAN_PIN, HIGH);
+            analogWrite(FAN_PIN,constrain(code_value(),0,255));
+        else
+            digitalWrite(FAN_PIN, HIGH);
         break;
       case 107: //M107 Fan Off
+        analogWrite(FAN_PIN, 0);
+        
         digitalWrite(FAN_PIN, LOW);
         break;
       case 80: // M81 - ATX Power On
@@ -1049,6 +1059,8 @@ inline int read_max6675()
   return max6675_temp;
 }
 #endif
+
+
 inline void manage_heater()
 {
   #ifdef HEATER_USES_THERMISTOR
@@ -1061,7 +1073,10 @@ inline void manage_heater()
   #elif defined HEATER_USES_MAX6675
     current_raw = read_max6675();
   #endif
-  
+  #ifdef SMOOTHING
+  nma=(nma+current_raw)-(nma/SMOOTHFACTOR);
+  current_raw=nma/SMOOTHFACTOR;
+  #endif
   #if (TEMP_0_PIN > -1) || defined (HEATER_USES_MAX66675)
     #ifdef PIDTEMP
       error = target_raw - current_raw;
