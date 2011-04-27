@@ -658,9 +658,10 @@ inline void process_commands()
         }
         break;
       case 106: //M106 Fan On
-        if (code_seen('S')) 
+        if (code_seen('S')){
             digitalWrite(FAN_PIN, HIGH);
             analogWrite(FAN_PIN,constrain(code_value(),0,255));
+        }
         else
             digitalWrite(FAN_PIN, HIGH);
         break;
