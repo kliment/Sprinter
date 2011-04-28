@@ -873,9 +873,9 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
   unsigned long y_steps_accel=y_steps_remaining/y_numaccel;
   unsigned long numaccel=0;
   unsigned long accelsdone=0;
-  if (x_numaccel==y_numaccel){numaccel=x_numaccel};
-   else if (x_numaccel>y_numaccel){numaccel=x_numaccel};
-   else {numaccel=y_numaccel};
+  if (x_numaccel==y_numaccel){numaccel=x_numaccel;
+}   else if (x_numaccel>y_numaccel){numaccel=x_numaccel;
+}   else {numaccel=y_numaccel;};
     //move until no more steps remain 
   while(x_steps_remaining + y_steps_remaining + z_steps_remaining + e_steps_remaining > 0) {
     //If acceleration is enabled on this move and we are in the acceleration segment, calculate the current interval

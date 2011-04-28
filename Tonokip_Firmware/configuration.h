@@ -23,10 +23,10 @@ float min_constant_speed_units = 2; // the minimum units of an accelerated move 
 #define PIDTEMP 1
 #ifdef PIDTEMP
 #define PID_MAX 255 // limits current to nozzle
-#define PID_INTEGRAL_DRIVE_MAX 220
-#define PID_PGAIN 180 //100 is 1.0
-#define PID_IGAIN 2 //100 is 1.0
-#define PID_DGAIN 100 //100 is 1.0
+#define PID_INTEGRAL_DRIVE_MAX 255
+#define PID_PGAIN 500 //100 is 1.0
+#define PID_IGAIN 95 //100 is 1.0
+#define PID_DGAIN 60 //100 is 1.0
 #endif
 
 //Experimental temperature smoothing - only uncomment this if your temp readings are noisy
@@ -48,12 +48,11 @@ float min_constant_speed_units = 2; // the minimum units of an accelerated move 
 // units are in millimeters or whatever length unit you prefer: inches,football-fields,parsecs etc
 
 //Calibration variables
-float x_steps_per_unit = 80.376;
-float y_steps_per_unit = 80.376;
-float z_steps_per_unit = 3200/1.25;
-float e_steps_per_unit = 16;
+float x_steps_per_unit = 66.685; 
+float y_steps_per_unit = 66.685;
+float z_steps_per_unit = 1711.051;
+float e_steps_per_unit = 390.23965; //30.3 for SF39
 float max_feedrate = 200000; //mmm, acceleration!
-
 //float x_steps_per_unit = 10.047;
 //float y_steps_per_unit = 10.047;
 //float z_steps_per_unit = 833.398;
