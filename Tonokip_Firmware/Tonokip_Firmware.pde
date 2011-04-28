@@ -872,7 +872,7 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
   unsigned long x_steps_accel=x_steps_remaining/x_numaccel;
   unsigned long y_steps_accel=y_steps_remaining/y_numaccel;
   unsigned long numaccel=0;
-  unsigned long accelsdone=0;
+  unsigned long accelsdone=1;
   if (x_numaccel==y_numaccel){numaccel=x_numaccel;
 }   else if (x_numaccel>y_numaccel){numaccel=x_numaccel;
 }   else {numaccel=y_numaccel;};
@@ -883,8 +883,8 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
       if(steps_done == 0) {
         interval = max_interval;
       } else if (steps_done_x==x_steps_accel||steps_done_y==y_steps_accel){
-        accelsdone=numaccel;
-	interval = max_interval*accelsdone;
+        numaccel--;
+	interval = max_interval - ((max_interval - full_interval) *(numaccel-accelsdone));
 	numaccel--;
 	steps_done_x=0;
 	steps_done_y=0;
@@ -896,9 +896,10 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
       if(steps_remaining == 0) {
         interval = max_interval;
       } else if (steps_done_x==x_steps_accel||steps_done_y==y_steps_accel){
-        accelsdone++;
-	interval = max_interval*accelsdone;
-	steps_done_x=0;
+        numaccel--;
+	interval =max_interval - ((max_interval - full_interval) *(numaccel-accelsdone));
+	accelsdone++;
+        steps_done_x=0;
 	steps_done_y=0;
       } else {
         interval = max_interval - ((max_interval - full_interval) * steps_remaining / virtual_full_velocity_steps);
