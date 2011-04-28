@@ -869,8 +869,8 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
   if (y_time_interrvalldiff > 0  && acceleration_enabled) y_numaccel=y_time_interrvalldiff/max_y_interval;//calculate number of acceleration steps
   unsigned long steps_done_x=0;
   unsigned long steps_done_y=0;
-  unsigned long x_steps_accel=x_steps_remaining/x_numaccel;
-  unsigned long y_steps_accel=y_steps_remaining/y_numaccel;
+  unsigned long x_steps_accel=steps_to_take/x_numaccel;
+  unsigned long y_steps_accel=steps_to_take/y_numaccel;
   unsigned long numaccel=0;
   unsigned long accelsdone=1;
   if (x_numaccel==y_numaccel){numaccel=x_numaccel;
@@ -883,12 +883,12 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
       if(steps_done == 0) {
         interval = max_interval;
       } else if (steps_done_x==x_steps_accel||steps_done_y==y_steps_accel){
-        numaccel--;
-	interval = max_interval - ((max_interval - full_interval) *(numaccel-accelsdone));
-	numaccel--;
+        interval = max_interval - ((max_interval - full_interval) *(numaccel-accelsdone));
+	accelsdone++;
 	steps_done_x=0;
 	steps_done_y=0;
-      } else {
+      }
+      else {
         interval = max_interval - ((max_interval - full_interval) * steps_done / virtual_full_velocity_steps);
       }
     } else if (acceleration_enabled && steps_remaining < full_velocity_steps) {
@@ -896,8 +896,7 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
       if(steps_remaining == 0) {
         interval = max_interval;
       } else if (steps_done_x==x_steps_accel||steps_done_y==y_steps_accel){
-        numaccel--;
-	interval =max_interval - ((max_interval - full_interval) *(numaccel-accelsdone));
+        interval =max_interval - ((max_interval - full_interval) *(numaccel-accelsdone));
 	accelsdone++;
         steps_done_x=0;
 	steps_done_y=0;
