@@ -3,15 +3,15 @@
 
 // NO RS485/EXTRUDER CONTROLLER SUPPORT
 // PLEASE VERIFY PIN ASSIGNMENTS FOR YOUR CONFIGURATION!!!!!!!
-#define MOTHERBOARD 3 // ATMEGA168 = 0, SANGUINO = 1, MOTHERBOARD = 2, MEGA/RAMPS = 3, ATMEGA328 = 4, Gen6 = 5
+#define MOTHERBOARD 5 // ATMEGA168 = 0, SANGUINO = 1, MOTHERBOARD = 2, MEGA/RAMPS = 3, ATMEGA328 = 4, Gen6 = 5
 
 //Comment out to disable SD support
-#define SDSUPPORT 1
+//#define SDSUPPORT 1
 
 //Acceleration settings
-float full_velocity_units = 10; // the units between minimum and G1 move feedrate
-float travel_move_full_velocity_units = 10; // used for travel moves
-float min_units_per_second = 35.0; // the minimum feedrate
+float full_velocity_units = 3; // the units between minimum and G1 move feedrate
+float travel_move_full_velocity_units = 5; // used for travel moves
+float min_units_per_second = 15.0; // the minimum feedrate
 float min_constant_speed_units = 2; // the minimum units of an accelerated move that must be done at constant speed
                                     // Note that if the move is shorter than this value, acceleration won't be perfomed,
                                     // but will be done at the minimum between min_units_per_seconds and move feedrate speeds.
@@ -20,7 +20,7 @@ float min_constant_speed_units = 2; // the minimum units of an accelerated move 
 
 //PID settings:
 //Uncomment the following line to enable PID support. This is untested and could be disastrous. Be careful.
-//#define PIDTEMP 1
+#define PIDTEMP 1
 #ifdef PIDTEMP
 #define PID_MAX 255 // limits current to nozzle
 #define PID_INTEGRAL_DRIVE_MAX 220

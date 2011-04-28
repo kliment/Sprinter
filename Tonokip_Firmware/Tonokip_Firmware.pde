@@ -861,13 +861,33 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
   unsigned long steps_done = 0;
   unsigned int steps_acceleration_check = 1;
   accelerating = acceleration_enabled;
-  
-  //move until no more steps remain 
+  //calculate time difference per step and check limit for it
+  unsigned long x_time_interrvalldiff=full_x_interval-max_x_interval;
+  unsigned long y_time_interrvalldiff=full_y_interval-max_y_interval;
+  unsigned long x_numaccel = 0, y_numaccel = 0; //set number of acceleration steps to zero
+  if (x_time_interrvalldiff > 0  && acceleration_enabled) x_numaccel=x_time_interrvalldiff/max_x_interval;//calculate number of acceleration steps
+  if (y_time_interrvalldiff > 0  && acceleration_enabled) y_numaccel=y_time_interrvalldiff/max_y_interval;//calculate number of acceleration steps
+  unsigned long steps_done_x=0;
+  unsigned long steps_done_y=0;
+  unsigned long x_steps_accel=x_steps_remaining/x_numaccel;
+  unsigned long y_steps_accel=y_steps_remaining/y_numaccel;
+  unsigned long numaccel=0;
+  unsigned long accelsdone=0;
+  if (x_numaccel==y_numaccel){numaccel=x_numaccel};
+   else if (x_numaccel>y_numaccel){numaccel=x_numaccel};
+   else {numaccel=y_numaccel};
+    //move until no more steps remain 
   while(x_steps_remaining + y_steps_remaining + z_steps_remaining + e_steps_remaining > 0) {
     //If acceleration is enabled on this move and we are in the acceleration segment, calculate the current interval
     if (acceleration_enabled && steps_done < full_velocity_steps && steps_done / full_velocity_steps < 1 && (steps_done % steps_acceleration_check == 0)) {
       if(steps_done == 0) {
         interval = max_interval;
+      } else if (steps_done_x==x_steps_accel||steps_done_y==y_steps_accel){
+        accelsdone=numaccel;
+	interval = max_interval*accelsdone;
+	numaccel--;
+	steps_done_x=0;
+	steps_done_y=0;
       } else {
         interval = max_interval - ((max_interval - full_interval) * steps_done / virtual_full_velocity_steps);
       }
@@ -875,6 +895,11 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
       //Else, if acceleration is enabled on this move and we are in the deceleration segment, calculate the current interval
       if(steps_remaining == 0) {
         interval = max_interval;
+      } else if (steps_done_x==x_steps_accel||steps_done_y==y_steps_accel){
+        accelsdone++;
+	interval = max_interval*accelsdone;
+	steps_done_x=0;
+	steps_done_y=0;
       } else {
         interval = max_interval - ((max_interval - full_interval) * steps_remaining / virtual_full_velocity_steps);
       }
@@ -896,11 +921,11 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
         while(timediff >= interval && y_steps_remaining>0) {
           steps_done++;
           steps_remaining--;
-          y_steps_remaining--; timediff-=interval;
+          y_steps_remaining--;steps_done_y++; timediff-=interval;
           error_x = error_x - delta_x;
           do_y_step();
           if(error_x < 0) {
-            do_x_step(); x_steps_remaining--;
+            do_x_step(); x_steps_remaining--; steps_done_x++;
             error_x = error_x + delta_y;
           }
         }
@@ -909,11 +934,11 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
         while(timediff >= interval && x_steps_remaining>0) {
           steps_done++;
           steps_remaining--;
-          x_steps_remaining--; timediff-=interval;
+          x_steps_remaining--;steps_done_x++; timediff-=interval;
           error_y = error_y - delta_y;
           do_x_step();
           if(error_y < 0) { 
-            do_y_step(); y_steps_remaining--;
+            do_y_step(); y_steps_remaining--; steps_done_y++;
             error_y = error_y + delta_x;
           }
         }
