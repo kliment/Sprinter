@@ -862,8 +862,8 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
   unsigned int steps_acceleration_check = 1;
   accelerating = acceleration_enabled;
   //calculate time difference per step and check limit for it
-  unsigned long x_time_interrvalldiff=full_interval-max_x_interval;
-  unsigned long y_time_interrvalldiff=full_interval-max_y_interval;
+  unsigned long x_time_interrvalldiff=max_x_interval - interval;
+  unsigned long y_time_interrvalldiff=max_y_interval - interval;
   unsigned long x_numaccel = 0, y_numaccel = 0; //set number of acceleration steps to zero
   if (x_time_interrvalldiff > 0  && acceleration_enabled) x_numaccel=x_time_interrvalldiff/max_x_interval;//calculate number of acceleration steps
   if (y_time_interrvalldiff > 0  && acceleration_enabled) y_numaccel=y_time_interrvalldiff/max_y_interval;//calculate number of acceleration steps
@@ -872,7 +872,7 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
   unsigned long x_steps_accel=steps_to_take/x_numaccel;
   unsigned long y_steps_accel=steps_to_take/y_numaccel;
   unsigned long numaccel=0;
-  unsigned long accelsdone=1;
+  //unsigned long accelsdone=1;
   if (x_numaccel==y_numaccel){numaccel=x_numaccel;
 }   else if (x_numaccel>y_numaccel){numaccel=x_numaccel;
 }   else {numaccel=y_numaccel;};
@@ -883,26 +883,20 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
       if(steps_done == 0) {
         interval = max_interval;
       } else if (steps_done_x==x_steps_accel||steps_done_y==y_steps_accel){
-        interval = max_interval - ((max_interval - full_interval) *(numaccel-accelsdone));
-	accelsdone++;
+        interval = interval - ((max_interval - full_interval) /numaccel);
 	steps_done_x=0;
 	steps_done_y=0;
       }
-      else {
-        interval = max_interval - ((max_interval - full_interval) * steps_done / virtual_full_velocity_steps);
-      }
+      
     } else if (acceleration_enabled && steps_remaining < full_velocity_steps) {
       //Else, if acceleration is enabled on this move and we are in the deceleration segment, calculate the current interval
       if(steps_remaining == 0) {
         interval = max_interval;
       } else if (steps_done_x==x_steps_accel||steps_done_y==y_steps_accel){
-        interval =max_interval - ((max_interval - full_interval) *(numaccel-accelsdone));
-	accelsdone++;
-        steps_done_x=0;
+        interval =interval + ((max_interval - full_interval) /numaccel);
+	steps_done_x=0;
 	steps_done_y=0;
-      } else {
-        interval = max_interval - ((max_interval - full_interval) * steps_remaining / virtual_full_velocity_steps);
-      }
+      } 
       accelerating = true;
     } else if (steps_done - full_velocity_steps >= 1 || !acceleration_enabled){
       //Else, we are just use the full speed interval as current interval
