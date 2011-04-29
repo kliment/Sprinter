@@ -210,6 +210,7 @@ void setup()
   if(E_ENABLE_PIN > -1) pinMode(E_ENABLE_PIN,OUTPUT);
 
   if(HEATER_0_PIN > -1) pinMode(HEATER_0_PIN,OUTPUT);
+  if(HEATER_1_PIN > -1) pinMode(HEATER_1_PIN,OUTPUT);
   
 #ifdef HEATER_USES_MAX6675
   digitalWrite(SCK_PIN,0);

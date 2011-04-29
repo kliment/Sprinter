@@ -358,6 +358,49 @@
     #define RX_ENABLE_PIN	13
 
 
+/****************************************************************************************
+* Sanguinololu pin assignment
+*
+****************************************************************************************/
+#elif MOTHERBOARD == 6
+#ifndef __AVR_ATmega644P__
+#error Oops!  Make sure you have 'Sanguino' selected from the 'Tools -> Boards' menu.
+#endif
+
+#define X_STEP_PIN         15
+#define X_DIR_PIN          21
+#define X_ENABLE_PIN       -1
+#define X_MIN_PIN          18
+#define X_MAX_PIN           -2 //2
+
+#define Y_STEP_PIN         22
+#define Y_DIR_PIN          23
+#define Y_ENABLE_PIN       -1
+#define Y_MIN_PIN          19
+#define Y_MAX_PIN          -1 //17
+
+#define Z_STEP_PIN         3
+#define Z_DIR_PIN          2
+#define Z_ENABLE_PIN       -1
+#define Z_MIN_PIN          20
+#define Z_MAX_PIN          -1 //19
+
+#define E_STEP_PIN         1
+#define E_DIR_PIN          0
+#define E_ENABLE_PIN       -1
+
+#define LED_PIN            -1
+
+#define FAN_PIN            -1 // THIS LINE FOR V1.0
+
+#define PS_ON_PIN          -1
+#define KILL_PIN           -1
+
+#define HEATER_0_PIN       13 // THIS LINE FOR V1.0 (extruder)
+#define HEATER_1_PIN       14 // THIS LINE FOR V1.0 (bed)
+
+#define TEMP_0_PIN          7   // MUST USE ANALOG INPUT NUMBERING NOT DIGITAL OUTPUT NUMBERING!!!!!!!!! (pin 33 extruder)
+#define TEMP_1_PIN          6   // MUST USE ANALOG INPUT NUMBERING NOT DIGITAL OUTPUT NUMBERING!!!!!!!!! (pin 34 bed)
 
 #else
 
