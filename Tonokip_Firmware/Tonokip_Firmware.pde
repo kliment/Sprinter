@@ -914,6 +914,9 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
           #ifdef STEP_DELAY_RATIO
           if(timediff >= interval) delayMicroseconds(long_step_delay_ratio * interval / 10000);
           #endif
+          #ifdef STEP_DELAY_MICROS
+          if(timediff >= interval) delayMicroseconds(STEP_DELAY_MICROS);
+          #endif
         }
       } else if (steep_x) {
         timediff=micros() * 100 - previous_micros_x;
@@ -930,6 +933,9 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
           #ifdef STEP_DELAY_RATIO
           if(timediff >= interval) delayMicroseconds(long_step_delay_ratio * interval / 10000);
           #endif
+          #ifdef STEP_DELAY_MICROS
+          if(timediff >= interval) delayMicroseconds(STEP_DELAY_MICROS);
+          #endif
         }
       }
     }
@@ -945,6 +951,9 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
         timediff-=z_interval;
         #ifdef STEP_DELAY_RATIO
         if(timediff >= z_interval) delayMicroseconds(long_step_delay_ratio * z_interval / 10000);
+        #endif
+        #ifdef STEP_DELAY_MICROS
+        if(timediff >= z_interval) delayMicroseconds(STEP_DELAY_MICROS);
         #endif
       }
     }
@@ -965,6 +974,9 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
         timediff-=e_interval;
         #ifdef STEP_DELAY_RATIO
         if(timediff >= e_interval) delayMicroseconds(long_step_delay_ratio * e_interval / 10000);
+        #endif
+        #ifdef STEP_DELAY_MICROS
+        if(timediff >= e_interval) delayMicroseconds(STEP_DELAY_MICROS);
         #endif
       }
     }

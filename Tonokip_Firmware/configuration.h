@@ -8,8 +8,12 @@
 //Comment out to disable SD support
 #define SDSUPPORT 1
 
-//Step delay over interval ratio. If you are experiencing missing steps, try to uncomment the following line, but be aware this
-//may probably prevent the motors to reach the nominal speed
+//Min step delay in microseconds. If you are experiencing missing steps, try to raise the delay microseconds, but be aware this
+//may probably prevent the motors from reaching the nominal speed. If you enable this, make sure STEP_DELAY_RATIO is disabled.
+#define STEP_DELAY_MICROS 1;
+
+//Step delay over interval ratio. If you are still experiencing missing steps, try to uncomment the following line, but be aware this
+//may probably prevent the motors from reaching the nominal speed. If you enable this, make sure STEP_DELAY_MICROS is disabled.
 //#define STEP_DELAY_RATIO 0.05
 
 //Acceleration settings
