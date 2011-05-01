@@ -8,6 +8,10 @@
 //Comment out to disable SD support
 #define SDSUPPORT 1
 
+//Step delay over interval ratio. If you are experiencing missing steps, try to uncomment the following line, but be aware this
+//may probably prevent the motors to reach the nominal speed
+//#define STEP_DELAY_RATIO 0.05
+
 //Acceleration settings
 float full_velocity_units = 10; // the units between minimum and G1 move feedrate
 float travel_move_full_velocity_units = 10; // used for travel moves

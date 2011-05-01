@@ -69,6 +69,9 @@ long gcode_N, gcode_LastN;
 bool relative_mode = false;  //Determines Absolute or Relative Coordinates
 bool relative_mode_e = false;  //Determines Absolute or Relative E Codes while in Absolute Coordinates mode. E is always relative in Relative Coordinates mode.
 long timediff=0;
+#ifdef STEP_DELAY_RATIO
+long long_step_delay_ratio = STEP_DELAY_RATIO * 100;
+#endif
 
 
 // comm variables
@@ -908,6 +911,9 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
             do_x_step(); x_steps_remaining--;
             error_x = error_x + delta_y;
           }
+          #ifdef STEP_DELAY_RATIO
+          if(timediff >= interval) delayMicroseconds(long_step_delay_ratio * interval / 10000);
+          #endif
         }
       } else if (steep_x) {
         timediff=micros() * 100 - previous_micros_x;
@@ -921,6 +927,9 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
             do_y_step(); y_steps_remaining--;
             error_y = error_y + delta_x;
           }
+          #ifdef STEP_DELAY_RATIO
+          if(timediff >= interval) delayMicroseconds(long_step_delay_ratio * interval / 10000);
+          #endif
         }
       }
     }
@@ -930,7 +939,14 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
       if(Z_MIN_PIN > -1) if(!direction_z) if(digitalRead(Z_MIN_PIN) != ENDSTOPS_INVERTING) break;
       if(Z_MAX_PIN > -1) if(direction_z) if(digitalRead(Z_MAX_PIN) != ENDSTOPS_INVERTING) break;
       timediff=micros() * 100-previous_micros_z;
-      while(timediff >= z_interval && z_steps_remaining) { do_z_step(); z_steps_remaining--; timediff-=z_interval;}
+      while(timediff >= z_interval && z_steps_remaining) {
+        do_z_step();
+        z_steps_remaining--;
+        timediff-=z_interval;
+        #ifdef STEP_DELAY_RATIO
+        if(timediff >= z_interval) delayMicroseconds(long_step_delay_ratio * z_interval / 10000);
+        #endif
+      }
     }
 
     //If there are e steps remaining, check if e steps must be taken
@@ -943,7 +959,14 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
       if (final_e_steps_remaining > 0)  while(e_steps_remaining > final_e_steps_remaining) { do_e_step(); e_steps_remaining--;}
       else if (x_steps_to_take + y_steps_to_take > 0)  while(e_steps_remaining) { do_e_step(); e_steps_remaining--;}
       //Else, normally check if e steps must be taken
-      else while (timediff >= e_interval && e_steps_remaining) { do_e_step(); e_steps_remaining--; timediff-=e_interval;}
+      else while (timediff >= e_interval && e_steps_remaining) {
+        do_e_step();
+        e_steps_remaining--;
+        timediff-=e_interval;
+        #ifdef STEP_DELAY_RATIO
+        if(timediff >= e_interval) delayMicroseconds(long_step_delay_ratio * e_interval / 10000);
+        #endif
+      }
     }
     
     //If more that half second is passed since previous heating check, manage it
