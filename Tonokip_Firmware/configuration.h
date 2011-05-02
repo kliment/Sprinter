@@ -9,12 +9,12 @@
 #define SDSUPPORT 1
 
 //Min step delay in microseconds. If you are experiencing missing steps, try to raise the delay microseconds, but be aware this
-//may probably prevent the motors from reaching the nominal speed. If you enable this, make sure STEP_DELAY_RATIO is disabled.
-#define STEP_DELAY_MICROS 1;
+// If you enable this, make sure STEP_DELAY_RATIO is disabled.
+#define STEP_DELAY_MICROS 1
 
 //Step delay over interval ratio. If you are still experiencing missing steps, try to uncomment the following line, but be aware this
-//may probably prevent the motors from reaching the nominal speed. If you enable this, make sure STEP_DELAY_MICROS is disabled.
-//#define STEP_DELAY_RATIO 0.05
+//If you enable this, make sure STEP_DELAY_MICROS is disabled.
+//#define STEP_DELAY_RATIO 0.25
 
 //Acceleration settings
 float full_velocity_units = 10; // the units between minimum and G1 move feedrate
