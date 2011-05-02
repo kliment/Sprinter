@@ -111,8 +111,13 @@ int temp_iState_max = 100*PID_INTEGRAL_DRIVE_MAX/PID_IGAIN;
 #ifdef SMOOTHING
 uint32_t nma=SMOOTHFACTOR*analogRead(TEMP_0_PIN);
 #endif
-
-
+#ifdef WATCHPERIOD
+int watch_raw=-1000;
+unsigned long watchmillis=0;
+#endif
+#ifdef MINTEMP
+int minttemp=temp2analog(MINTEMP);
+#endif
         
 //Inactivity shutdown variables
 unsigned long previous_millis_cmd=0;
@@ -623,6 +628,14 @@ inline void process_commands()
 #endif
       case 104: // M104
         if (code_seen('S')) target_raw = temp2analog(code_value());
+        #ifdef WATCHPERIOD
+            if(target_raw>current_raw){
+                watchmillis=max(1,millis());
+                watch_raw=current_raw;
+            }else{
+                watchmillis=0;
+            }
+        #endif
         break;
       case 140: // M140 set bed temp
         if (code_seen('S')) target_bed_raw = temp2analogBed(code_value());
@@ -651,6 +664,14 @@ inline void process_commands()
         //break;
       case 109: // M109 - Wait for heater to reach target.
         if (code_seen('S')) target_raw = temp2analog(code_value());
+        #ifdef WATCHPERIOD
+            if(target_raw>current_raw){
+                watchmillis=max(1,millis());
+                watch_raw=current_raw;
+            }else{
+                watchmillis=0;
+            }
+        #endif
         previous_millis_heater = millis(); 
         while(current_raw < target_raw) {
           if( (millis()-previous_millis_heater) > 1000 ) //Print Temp Reading every 1 second while heating up.
@@ -1120,6 +1141,21 @@ inline void manage_heater()
   #ifdef SMOOTHING
   nma=(nma+current_raw)-(nma/SMOOTHFACTOR);
   current_raw=nma/SMOOTHFACTOR;
+  #endif
+  #ifdef WATCHPERIOD
+    if(watchmillis && millis()-watchmillis>WATCHPERIOD){
+        if(watch_raw+1>=current_raw){
+            target_raw=0;
+            digitalWrite(HEATER_0_PIN,LOW);
+            digitalWrite(LED_PIN,LOW);
+        }else{
+            watchmillis=0;
+        }
+    }
+  #endif
+  #ifdef MINTEMP
+    if(current_raw<=minttemp)
+        target_raw=0;
   #endif
   #if (TEMP_0_PIN > -1) || defined (HEATER_USES_MAX66675)
     #ifdef PIDTEMP

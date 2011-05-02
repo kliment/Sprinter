@@ -41,6 +41,13 @@ float min_constant_speed_units = 2; // the minimum units of an accelerated move 
 //#define SMOOTHING 1
 //#define SMOOTHFACTOR 16 //best to use a power of two here - determines how many values are averaged together by the smoothing algorithm
 
+//Experimental watchdog and minimal temp
+//The watchdog waits for the watchperiod in milliseconds whenever an M104 or M109 increases the target temperature
+//If the temperature has not increased at the end of that period, the target temperature is set to zero. It can be reset with another M104/M109
+//#define WATCHPERIOD 5000 //5 seconds
+//The minimal temperature defines the temperature below which the heater will not be enabled
+//#define MINTEMP 
+
 // Select one of these only to define how the nozzle temp is read.
 #define HEATER_USES_THERMISTOR
 //#define HEATER_USES_AD595
