@@ -26,6 +26,7 @@
 // M106 - Fan on
 // M107 - Fan off
 // M109 - Wait for current temp to reach target temp.
+// M114 - Display current position
 
 //Custom M Codes
 // M80  - Turn on Power Supply
@@ -732,6 +733,17 @@ inline void process_commands()
         break;
       case 115: // M115
         Serial.println("FIRMWARE_NAME:Sprinter FIRMWARE_URL:http%%3A/github.com/kliment/Sprinter/ PROTOCOL_VERSION:1.0 MACHINE_TYPE:Mendel EXTRUDER_COUNT:1");
+        break;
+
+      case 114: // M114
+	Serial.print("X:");
+        Serial.print(current_x);
+	Serial.print("Y:");
+        Serial.print(current_y);
+	Serial.print("Z:");
+        Serial.print(current_z);
+	Serial.print("E:");
+        Serial.println(current_e);
         break;
     }
     
