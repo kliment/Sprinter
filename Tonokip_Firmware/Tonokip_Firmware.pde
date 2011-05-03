@@ -54,11 +54,11 @@ void kill(byte debug);
 // G92 - Set current position to cordinates given
 
 //RepRap M Codes
-// M104 - Set target temp
+// M104 - Set extruder target temp
 // M105 - Read current temp
 // M106 - Fan on
 // M107 - Fan off
-// M109 - Wait for current temp to reach target temp.
+// M109 - Wait for extruder current temp to reach target temp.
 // M114 - Display current position
 
 //Custom M Codes
@@ -81,6 +81,8 @@ void kill(byte debug);
 // M86  - If Endstop is Not Activated then Abort Print. Specify X and/or Y
 // M92  - Set axis_steps_per_unit - same syntax as G92
 // M115	- Capabilities string
+// M140 - Set bed target temp
+// M190 - Wait for bed current temp to reach target temp.
 
 
 
@@ -698,7 +700,7 @@ inline void process_commands()
         #endif
         return;
         //break;
-      case 109: // M109 - Wait for heater to reach target.
+      case 109: // M109 - Wait for extruder heater to reach target.
         if (code_seen('S')) target_raw = temp2analog(code_value());
         #ifdef WATCHPERIOD
             if(target_raw>current_raw){
@@ -714,6 +716,19 @@ inline void process_commands()
           {
             Serial.print("T:");
             Serial.println( analog2temp(current_raw) ); 
+            previous_millis_heater = millis(); 
+          }
+          manage_heater();
+        }
+        break;
+      case 190: // M190 - Wait bed for heater to reach target.
+        if (code_seen('S')) target_bed_raw = temp2analog(code_value());
+        previous_millis_heater = millis(); 
+        while(current_bed_raw < target_bed_raw) {
+          if( (millis()-previous_millis_heater) > 1000 ) //Print Temp Reading every 1 second while heating up.
+          {
+            Serial.print("B:");
+            Serial.println( analog2temp(current_bed_raw) ); 
             previous_millis_heater = millis(); 
           }
           manage_heater();
