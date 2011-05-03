@@ -4,6 +4,7 @@
 #include "configuration.h"
 #include "pins.h"
 
+
 #ifdef SDSUPPORT
 #include "SdFat.h"
 #endif
@@ -52,13 +53,12 @@
 bool direction_x, direction_y, direction_z, direction_e;
 unsigned long previous_micros=0, previous_micros_x=0, previous_micros_y=0, previous_micros_z=0, previous_micros_e=0, previous_millis_heater, previous_millis_bed_heater;
 unsigned long x_steps_to_take, y_steps_to_take, z_steps_to_take, e_steps_to_take;
-unsigned long long_full_velocity_units = full_velocity_units * 100;
-unsigned long long_travel_move_full_velocity_units = travel_move_full_velocity_units * 100;
 unsigned long max_x_interval = 100000000.0 / (min_units_per_second * x_steps_per_unit);
 unsigned long max_y_interval = 100000000.0 / (min_units_per_second * y_steps_per_unit);
 unsigned long max_interval, interval;
-unsigned long x_min_constant_speed_steps = min_constant_speed_units * x_steps_per_unit,
-  y_min_constant_speed_steps = min_constant_speed_units * y_steps_per_unit, min_constant_speed_steps;
+unsigned long x_min_constant_speed_steps = min_constant_speed_units * x_steps_per_unit, y_min_constant_speed_steps = min_constant_speed_units * y_steps_per_unit, min_constant_speed_steps;
+
+
 boolean acceleration_enabled,accelerating;
 float destination_x =0.0, destination_y = 0.0, destination_z = 0.0, destination_e = 0.0;
 float current_x = 0.0, current_y = 0.0, current_z = 0.0, current_e = 0.0;
@@ -69,6 +69,9 @@ long gcode_N, gcode_LastN;
 bool relative_mode = false;  //Determines Absolute or Relative Coordinates
 bool relative_mode_e = false;  //Determines Absolute or Relative E Codes while in Absolute Coordinates mode. E is always relative in Relative Coordinates mode.
 long timediff=0;
+#ifdef STEP_DELAY_RATIO
+long long_step_delay_ratio = STEP_DELAY_RATIO * 100;
+#endif
 
 
 // comm variables
@@ -110,6 +113,13 @@ uint32_t nma=SMOOTHFACTOR*analogRead(TEMP_0_PIN);
 #endif
 
 
+#ifdef WATCHPERIOD
+int watch_raw=-1000;
+unsigned long watchmillis=0;
+#endif
+#ifdef MINTEMP
+int minttemp=temp2analog(MINTEMP);
+#endif
         
 //Inactivity shutdown variables
 unsigned long previous_millis_cmd=0;
@@ -210,6 +220,7 @@ void setup()
   if(E_ENABLE_PIN > -1) pinMode(E_ENABLE_PIN,OUTPUT);
 
   if(HEATER_0_PIN > -1) pinMode(HEATER_0_PIN,OUTPUT);
+
   if(HEATER_1_PIN > -1) pinMode(HEATER_1_PIN,OUTPUT);
   
 #ifdef HEATER_USES_MAX6675
@@ -435,6 +446,7 @@ inline void process_commands()
         e_steps_to_take = abs(ediff)*e_steps_per_unit;
         if(feedrate<10)
             feedrate=10;
+    
         /*//experimental feedrate calc
         if(abs(xdiff)>0.1 && abs(ydiff)>0.1)
             d=sqrt(xdiff*xdiff+ydiff*ydiff);
@@ -454,7 +466,7 @@ inline void process_commands()
         */
         #define X_TIME_FOR_MOVE ((float)x_steps_to_take / (x_steps_per_unit*feedrate/60000000))
         #define Y_TIME_FOR_MOVE ((float)y_steps_to_take / (y_steps_per_unit*feedrate/60000000))
-        #define Z_TIME_FOR_MOVE ((float)z_steps_to_take / (z_steps_per_unit*feedrate/60000000))
+        #define Z_TIME_FOR_MOVE ((float)z_steps_to_take / (z_steps_per_unit*(z_steps_per_unit/60)/60000000))
         #define E_TIME_FOR_MOVE ((float)e_steps_to_take / (e_steps_per_unit*feedrate/60000000))
         
         time_for_move = max(X_TIME_FOR_MOVE,Y_TIME_FOR_MOVE);
@@ -465,6 +477,7 @@ inline void process_commands()
         if(y_steps_to_take) y_interval = time_for_move/y_steps_to_take*100;
         if(z_steps_to_take) z_interval = time_for_move/z_steps_to_take*100;
         if(e_steps_to_take && (x_steps_to_take + y_steps_to_take <= 0)) e_interval = time_for_move/e_steps_to_take*100;
+
         
         //#define DEBUGGING false
 	#if 0        
@@ -620,6 +633,14 @@ inline void process_commands()
 #endif
       case 104: // M104
         if (code_seen('S')) target_raw = temp2analog(code_value());
+        #ifdef WATCHPERIOD
+            if(target_raw>current_raw){
+                watchmillis=max(1,millis());
+                watch_raw=current_raw;
+            }else{
+                watchmillis=0;
+            }
+        #endif
         break;
       case 140: // M140 set bed temp
         if (code_seen('S')) target_bed_raw = temp2analogBed(code_value());
@@ -648,6 +669,14 @@ inline void process_commands()
         //break;
       case 109: // M109 - Wait for heater to reach target.
         if (code_seen('S')) target_raw = temp2analog(code_value());
+        #ifdef WATCHPERIOD
+            if(target_raw>current_raw){
+                watchmillis=max(1,millis());
+                watch_raw=current_raw;
+            }else{
+                watchmillis=0;
+            }
+        #endif
         previous_millis_heater = millis(); 
         while(current_raw < target_raw) {
           if( (millis()-previous_millis_heater) > 1000 ) //Print Temp Reading every 1 second while heating up.
@@ -822,10 +851,20 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
   int error_x;
   int error_y;
   int error_z;
+
   unsigned long virtual_full_velocity_steps;
   unsigned long full_velocity_steps;
   unsigned long steps_remaining;
   unsigned long steps_to_take;
+
+float full_velocity_units = sqrt(sq(feedrate/60)-sq(min_units_per_second))/(2*acceleration); // Calculation of ramping distance for each feedrate.
+float travel_move_full_velocity_units = full_velocity_units*0.75;  // Can be calculated seperately or dependent
+
+unsigned long long_full_velocity_units = full_velocity_units * 100;
+unsigned long long_travel_move_full_velocity_units = travel_move_full_velocity_units * 100;
+
+
+
   
   //Do some Bresenham calculations depending on which axis will lead it.
   if(steep_y) {
@@ -908,6 +947,12 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
             do_x_step(); x_steps_remaining--;
             error_x = error_x + delta_y;
           }
+          #ifdef STEP_DELAY_RATIO
+          if(timediff >= interval) delayMicroseconds(long_step_delay_ratio * interval / 10000);
+          #endif
+          #ifdef STEP_DELAY_MICROS
+          if(timediff >= interval) delayMicroseconds(STEP_DELAY_MICROS);
+          #endif
         }
       } else if (steep_x) {
         timediff=micros() * 100 - previous_micros_x;
@@ -921,6 +966,12 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
             do_y_step(); y_steps_remaining--;
             error_y = error_y + delta_x;
           }
+          #ifdef STEP_DELAY_RATIO
+          if(timediff >= interval) delayMicroseconds(long_step_delay_ratio * interval / 10000);
+          #endif
+          #ifdef STEP_DELAY_MICROS
+          if(timediff >= interval) delayMicroseconds(STEP_DELAY_MICROS);
+          #endif
         }
       }
     }
@@ -930,7 +981,17 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
       if(Z_MIN_PIN > -1) if(!direction_z) if(digitalRead(Z_MIN_PIN) != ENDSTOPS_INVERTING) break;
       if(Z_MAX_PIN > -1) if(direction_z) if(digitalRead(Z_MAX_PIN) != ENDSTOPS_INVERTING) break;
       timediff=micros() * 100-previous_micros_z;
-      while(timediff >= z_interval && z_steps_remaining) { do_z_step(); z_steps_remaining--; timediff-=z_interval;}
+      while(timediff >= z_interval && z_steps_remaining) {
+        do_z_step();
+        z_steps_remaining--;
+        timediff-=z_interval;
+        #ifdef STEP_DELAY_RATIO
+        if(timediff >= z_interval) delayMicroseconds(long_step_delay_ratio * z_interval / 10000);
+        #endif
+        #ifdef STEP_DELAY_MICROS
+        if(timediff >= z_interval) delayMicroseconds(STEP_DELAY_MICROS);
+        #endif
+      }
     }
 
     //If there are e steps remaining, check if e steps must be taken
@@ -943,11 +1004,21 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
       if (final_e_steps_remaining > 0)  while(e_steps_remaining > final_e_steps_remaining) { do_e_step(); e_steps_remaining--;}
       else if (x_steps_to_take + y_steps_to_take > 0)  while(e_steps_remaining) { do_e_step(); e_steps_remaining--;}
       //Else, normally check if e steps must be taken
-      else while (timediff >= e_interval && e_steps_remaining) { do_e_step(); e_steps_remaining--; timediff-=e_interval;}
+      else while (timediff >= e_interval && e_steps_remaining) {
+        do_e_step();
+        e_steps_remaining--;
+        timediff-=e_interval;
+        #ifdef STEP_DELAY_RATIO
+        if(timediff >= e_interval) delayMicroseconds(long_step_delay_ratio * e_interval / 10000);
+        #endif
+        #ifdef STEP_DELAY_MICROS
+        if(timediff >= e_interval) delayMicroseconds(STEP_DELAY_MICROS);
+        #endif
+      }
     }
     
     //If more that half second is passed since previous heating check, manage it
-    if(!accelerating && (millis() - previous_millis_heater) >= 500 ) {
+    if(!accelerating && (millis() - previous_millis_heater) >= 25 ) {
       manage_heater();
       previous_millis_heater = millis();
       
@@ -976,6 +1047,7 @@ inline void do_x_step()
 {
   digitalWrite(X_STEP_PIN, HIGH);
   previous_micros_x += interval;
+
   //delayMicroseconds(3);
   digitalWrite(X_STEP_PIN, LOW);
 }
@@ -984,6 +1056,7 @@ inline void do_y_step()
 {
   digitalWrite(Y_STEP_PIN, HIGH);
   previous_micros_y += interval;
+
   //delayMicroseconds(3);
   digitalWrite(Y_STEP_PIN, LOW);
 }
@@ -992,6 +1065,7 @@ inline void do_z_step()
 {
   digitalWrite(Z_STEP_PIN, HIGH);
   previous_micros_z += z_interval;
+
   //delayMicroseconds(3);
   digitalWrite(Z_STEP_PIN, LOW);
 }
@@ -1000,6 +1074,7 @@ inline void do_e_step()
 {
   digitalWrite(E_STEP_PIN, HIGH);
   previous_micros_e += e_interval;
+
   //delayMicroseconds(3);
   digitalWrite(E_STEP_PIN, LOW);
 }
@@ -1085,6 +1160,21 @@ inline void manage_heater()
   #ifdef SMOOTHING
   nma=(nma+current_raw)-(nma/SMOOTHFACTOR);
   current_raw=nma/SMOOTHFACTOR;
+  #endif
+  #ifdef WATCHPERIOD
+    if(watchmillis && millis()-watchmillis>WATCHPERIOD){
+        if(watch_raw+1>=current_raw){
+            target_raw=0;
+            digitalWrite(HEATER_0_PIN,LOW);
+            digitalWrite(LED_PIN,LOW);
+        }else{
+            watchmillis=0;
+        }
+    }
+  #endif
+  #ifdef MINTEMP
+    if(current_raw<=minttemp)
+        target_raw=0;
   #endif
   #if (TEMP_0_PIN > -1) || defined (HEATER_USES_MAX66675)
     #ifdef PIDTEMP
@@ -1296,3 +1386,4 @@ inline void kill(byte debug)
 }
 
 inline void manage_inactivity(byte debug) { if( (millis()-previous_millis_cmd) >  max_inactive_time ) if(max_inactive_time) kill(debug); }
+
