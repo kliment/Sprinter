@@ -38,6 +38,8 @@ UPLOAD_RATE = 38400
 AVRDUDE_PROGRAMMER = stk500v1
 PORT = /dev/ttyUSB0
 MCU = atmega2560
+#For Sanguinololu
+#MCU = atmega644p 
 F_CPU = 16000000
 
 
@@ -92,8 +94,8 @@ LDFLAGS = -lm
 
 # Programming support using avrdude. Settings and variables.
 AVRDUDE_PORT = $(PORT)
-AVRDUDE_WRITE_FLASH = -U flash:w:applet/$(TARGET).hex
-AVRDUDE_FLAGS = -V -F -C $(INSTALL_DIR)/hardware/tools/avrdude.conf \
+AVRDUDE_WRITE_FLASH = -U flash:w:applet/$(TARGET).hex:i
+AVRDUDE_FLAGS = -D -C $(INSTALL_DIR)/hardware/tools/avrdude.conf \
 -p $(MCU) -P $(AVRDUDE_PORT) -c $(AVRDUDE_PROGRAMMER) \
 -b $(UPLOAD_RATE)
 
@@ -105,7 +107,7 @@ OBJDUMP = $(AVR_TOOLS_PATH)/avr-objdump
 AR  = $(AVR_TOOLS_PATH)/avr-ar
 SIZE = $(AVR_TOOLS_PATH)/avr-size
 NM = $(AVR_TOOLS_PATH)/avr-nm
-AVRDUDE = $(AVR_TOOLS_PATH)/avrdude
+AVRDUDE = $(INSTALL_DIR)/hardware/tools/avrdude
 REMOVE = rm -f
 MV = mv -f
 
