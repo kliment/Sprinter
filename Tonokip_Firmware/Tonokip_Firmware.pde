@@ -722,18 +722,25 @@ inline void process_commands()
         }
         break;
       case 190: // M190 - Wait bed for heater to reach target.
+      #if TEMP_1_PIN>-1
         if (code_seen('S')) target_bed_raw = temp2analog(code_value());
         previous_millis_heater = millis(); 
         while(current_bed_raw < target_bed_raw) {
           if( (millis()-previous_millis_heater) > 1000 ) //Print Temp Reading every 1 second while heating up.
           {
-            Serial.print("B:");
+            tt=analog2temp(current_raw);
+            Serial.print("T:");
+            Serial.println( tt );
+            Serial.print("ok T:");
+            Serial.print( tt ); 
+            Serial.print(" B:");
             Serial.println( analog2temp(current_bed_raw) ); 
             previous_millis_heater = millis(); 
           }
           manage_heater();
         }
-        break;
+      #endif
+      break;
       case 106: //M106 Fan On
         if (code_seen('S')){
             digitalWrite(FAN_PIN, HIGH);
