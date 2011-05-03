@@ -4,10 +4,41 @@
 #include "configuration.h"
 #include "pins.h"
 
-
 #ifdef SDSUPPORT
 #include "SdFat.h"
 #endif
+
+void get_command();
+void process_commands();
+
+void manage_inactivity(byte debug);
+
+void manage_heater();
+float temp2analog(int celsius);
+float temp2analogBed(int celsius);
+float analog2temp(int raw);
+float analog2tempBed(int raw);
+
+void FlushSerialRequestResend();
+void ClearToSend();
+
+void get_coordinates();
+void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remaining, unsigned long z_steps_remaining, unsigned long e_steps_remaining);
+void disable_x();
+void disable_y();
+void disable_z();
+void disable_e();
+void enable_x();
+void enable_y();
+void enable_z();
+void enable_e();
+void do_x_step();
+void do_y_step();
+void do_z_step();
+void do_e_step();
+
+void kill(byte debug);
+
 
 // look here for descriptions of gcodes: http://linuxcnc.org/handbook/gcode/g-code.html
 // http://objects.reprap.org/wiki/Mendel_User_Manual:_RepRapGCodes
@@ -22,11 +53,12 @@
 // G92 - Set current position to cordinates given
 
 //RepRap M Codes
-// M104 - Set target temp
+// M104 - Set extruder target temp
 // M105 - Read current temp
 // M106 - Fan on
 // M107 - Fan off
-// M109 - Wait for current temp to reach target temp.
+// M109 - Wait for extruder current temp to reach target temp.
+// M114 - Display current position
 
 //Custom M Codes
 // M80  - Turn on Power Supply
@@ -38,6 +70,8 @@
 // M25  - Pause SD print
 // M26  - Set SD position in bytes (M26 S12345)
 // M27  - Report SD print status
+// M28  - Start SD write (M28 filename.g)
+// M29  - Stop SD write
 // M81  - Turn off Power Supply
 // M82  - Set E codes absolute (default)
 // M83  - Set E codes relative while in Absolute Coordinates (G90) mode
@@ -46,6 +80,8 @@
 // M86  - If Endstop is Not Activated then Abort Print. Specify X and/or Y
 // M92  - Set axis_steps_per_unit - same syntax as G92
 // M115	- Capabilities string
+// M140 - Set bed target temp
+// M190 - Wait for bed current temp to reach target temp.
 
 
 
@@ -53,11 +89,13 @@
 bool direction_x, direction_y, direction_z, direction_e;
 unsigned long previous_micros=0, previous_micros_x=0, previous_micros_y=0, previous_micros_z=0, previous_micros_e=0, previous_millis_heater, previous_millis_bed_heater;
 unsigned long x_steps_to_take, y_steps_to_take, z_steps_to_take, e_steps_to_take;
+unsigned long long_full_velocity_units = full_velocity_units * 100;
+unsigned long long_travel_move_full_velocity_units = travel_move_full_velocity_units * 100;
 unsigned long max_x_interval = 100000000.0 / (min_units_per_second * x_steps_per_unit);
 unsigned long max_y_interval = 100000000.0 / (min_units_per_second * y_steps_per_unit);
 unsigned long max_interval, interval;
-unsigned long x_min_constant_speed_steps = min_constant_speed_units * x_steps_per_unit, y_min_constant_speed_steps = min_constant_speed_units * y_steps_per_unit, min_constant_speed_steps;
-
+unsigned long x_min_constant_speed_steps = min_constant_speed_units * x_steps_per_unit,
+y_min_constant_speed_steps = min_constant_speed_units * y_steps_per_unit, min_constant_speed_steps;
 
 boolean acceleration_enabled,accelerating;
 float destination_x =0.0, destination_y = 0.0, destination_z = 0.0, destination_e = 0.0;
@@ -111,8 +149,6 @@ int temp_iState_max = 100*PID_INTEGRAL_DRIVE_MAX/PID_IGAIN;
 #ifdef SMOOTHING
 uint32_t nma=SMOOTHFACTOR*analogRead(TEMP_0_PIN);
 #endif
-
-
 #ifdef WATCHPERIOD
 int watch_raw=-1000;
 unsigned long watchmillis=0;
@@ -220,7 +256,6 @@ void setup()
   if(E_ENABLE_PIN > -1) pinMode(E_ENABLE_PIN,OUTPUT);
 
   if(HEATER_0_PIN > -1) pinMode(HEATER_0_PIN,OUTPUT);
-
   if(HEATER_1_PIN > -1) pinMode(HEATER_1_PIN,OUTPUT);
   
 #ifdef HEATER_USES_MAX6675
@@ -446,7 +481,6 @@ inline void process_commands()
         e_steps_to_take = abs(ediff)*e_steps_per_unit;
         if(feedrate<10)
             feedrate=10;
-    
         /*//experimental feedrate calc
         if(abs(xdiff)>0.1 && abs(ydiff)>0.1)
             d=sqrt(xdiff*xdiff+ydiff*ydiff);
@@ -468,7 +502,7 @@ inline void process_commands()
         #define Y_TIME_FOR_MOVE ((float)y_steps_to_take / (y_steps_per_unit*feedrate/60000000))
         #define Z_TIME_FOR_MOVE ((float)z_steps_to_take / (z_steps_per_unit*(z_steps_per_unit/60)/60000000))
         #define E_TIME_FOR_MOVE ((float)e_steps_to_take / (e_steps_per_unit*feedrate/60000000))
-        
+
         time_for_move = max(X_TIME_FOR_MOVE,Y_TIME_FOR_MOVE);
         time_for_move = max(time_for_move,Z_TIME_FOR_MOVE);
         if(time_for_move <= 0) time_for_move = max(time_for_move,E_TIME_FOR_MOVE);
@@ -477,7 +511,6 @@ inline void process_commands()
         if(y_steps_to_take) y_interval = time_for_move/y_steps_to_take*100;
         if(z_steps_to_take) z_interval = time_for_move/z_steps_to_take*100;
         if(e_steps_to_take && (x_steps_to_take + y_steps_to_take <= 0)) e_interval = time_for_move/e_steps_to_take*100;
-
         
         //#define DEBUGGING false
 	#if 0        
@@ -667,7 +700,7 @@ inline void process_commands()
         #endif
         return;
         //break;
-      case 109: // M109 - Wait for heater to reach target.
+      case 109: // M109 - Wait for extruder heater to reach target.
         if (code_seen('S')) target_raw = temp2analog(code_value());
         #ifdef WATCHPERIOD
             if(target_raw>current_raw){
@@ -688,6 +721,26 @@ inline void process_commands()
           manage_heater();
         }
         break;
+      case 190: // M190 - Wait bed for heater to reach target.
+      #if TEMP_1_PIN>-1
+        if (code_seen('S')) target_bed_raw = temp2analog(code_value());
+        previous_millis_heater = millis(); 
+        while(current_bed_raw < target_bed_raw) {
+          if( (millis()-previous_millis_heater) > 1000 ) //Print Temp Reading every 1 second while heating up.
+          {
+            tt=analog2temp(current_raw);
+            Serial.print("T:");
+            Serial.println( tt );
+            Serial.print("ok T:");
+            Serial.print( tt ); 
+            Serial.print(" B:");
+            Serial.println( analog2temp(current_bed_raw) ); 
+            previous_millis_heater = millis(); 
+          }
+          manage_heater();
+        }
+      #endif
+      break;
       case 106: //M106 Fan On
         if (code_seen('S')){
             digitalWrite(FAN_PIN, HIGH);
@@ -736,8 +789,17 @@ inline void process_commands()
       case 115: // M115
         Serial.println("FIRMWARE_NAME:Sprinter FIRMWARE_URL:http%%3A/github.com/kliment/Sprinter/ PROTOCOL_VERSION:1.0 MACHINE_TYPE:Mendel EXTRUDER_COUNT:1");
         break;
-    }
-    
+		case 114: // M114
+	Serial.print("X:");
+        Serial.print(current_x);
+	Serial.print("Y:");
+        Serial.print(current_y);
+	Serial.print("Z:");
+        Serial.print(current_z);
+	Serial.print("E:");
+        Serial.println(current_e);
+        break;
+		}
   }
   else{
       Serial.println("Unknown command:");
@@ -851,20 +913,10 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
   int error_x;
   int error_y;
   int error_z;
-
   unsigned long virtual_full_velocity_steps;
   unsigned long full_velocity_steps;
   unsigned long steps_remaining;
   unsigned long steps_to_take;
-
-float full_velocity_units = sqrt(sq(feedrate/60)-sq(min_units_per_second))/(2*acceleration); // Calculation of ramping distance for each feedrate.
-float travel_move_full_velocity_units = full_velocity_units*0.75;  // Can be calculated seperately or dependent
-
-unsigned long long_full_velocity_units = full_velocity_units * 100;
-unsigned long long_travel_move_full_velocity_units = travel_move_full_velocity_units * 100;
-
-
-
   
   //Do some Bresenham calculations depending on which axis will lead it.
   if(steep_y) {
@@ -1386,4 +1438,5 @@ inline void kill(byte debug)
 }
 
 inline void manage_inactivity(byte debug) { if( (millis()-previous_millis_cmd) >  max_inactive_time ) if(max_inactive_time) kill(debug); }
+
 
