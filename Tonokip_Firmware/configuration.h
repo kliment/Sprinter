@@ -74,6 +74,7 @@ float y_steps_per_unit = 80.376;
 float z_steps_per_unit = 3200/1.25;
 float e_steps_per_unit = 16;
 float max_feedrate = 200000; //mmm, acceleration!
+float max_z_feedrate = 120;
 
 //float x_steps_per_unit = 10.047;
 //float y_steps_per_unit = 10.047;

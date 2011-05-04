@@ -104,7 +104,7 @@ unsigned long interval;
 float destination_x =0.0, destination_y = 0.0, destination_z = 0.0, destination_e = 0.0;
 float current_x = 0.0, current_y = 0.0, current_z = 0.0, current_e = 0.0;
 long x_interval, y_interval, z_interval, e_interval; // for speed delay
-float feedrate = 1500, next_feedrate;
+float feedrate = 1500, next_feedrate, z_feedrate;
 float time_for_move;
 long gcode_N, gcode_LastN;
 bool relative_mode = false;  //Determines Absolute or Relative Coordinates
@@ -503,7 +503,7 @@ inline void process_commands()
         */
         #define X_TIME_FOR_MOVE ((float)x_steps_to_take / (x_steps_per_unit*feedrate/60000000))
         #define Y_TIME_FOR_MOVE ((float)y_steps_to_take / (y_steps_per_unit*feedrate/60000000))
-        #define Z_TIME_FOR_MOVE ((float)z_steps_to_take / (z_steps_per_unit*feedrate/60000000))
+        #define Z_TIME_FOR_MOVE ((float)z_steps_to_take / (z_steps_per_unit*z_feedrate/60000000))
         #define E_TIME_FOR_MOVE ((float)e_steps_to_take / (e_steps_per_unit*feedrate/60000000))
         
         time_for_move = max(X_TIME_FOR_MOVE,Y_TIME_FOR_MOVE);
@@ -873,6 +873,9 @@ inline void get_coordinates()
   }
   
   if(feedrate > max_feedrate) feedrate = max_feedrate;
+
+  if(feedrate > max_z_feedrate) z_feedrate = max_z_feedrate;
+  else z_feedrate=feedrate;
 }
 
 void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remaining, unsigned long z_steps_remaining, unsigned long e_steps_remaining) // make linear move with preset speeds and destinations, see G0 and G1
