@@ -1040,7 +1040,7 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
         decelerating = true;
       }				
       long current_speed = (long) ((long) max_speed_steps_per_second - ((((long) steps_per_sqr_second) / 10000)
-          * (((micros() - start_move_micros) + interval) / 10000)));
+          * ((micros() - start_move_micros) / 100)));
       interval = 100000000 / current_speed;
       if (interval > max_interval)
 	interval = max_interval;
