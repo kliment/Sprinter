@@ -90,6 +90,16 @@ void kill(byte debug);
 bool direction_x, direction_y, direction_z, direction_e;
 unsigned long previous_micros=0, previous_micros_x=0, previous_micros_y=0, previous_micros_z=0, previous_micros_e=0, previous_millis_heater, previous_millis_bed_heater;
 unsigned long x_steps_to_take, y_steps_to_take, z_steps_to_take, e_steps_to_take;
+#ifdef RAMP_ACCELERATION
+unsigned long max_x_interval = 100000000.0 / (min_units_per_second * x_steps_per_unit);
+unsigned long max_y_interval = 100000000.0 / (min_units_per_second * y_steps_per_unit);
+unsigned long max_interval;
+unsigned long x_steps_per_sqr_second = max_acceleration_units_per_sq_second * x_steps_per_unit;
+unsigned long y_steps_per_sqr_second = max_acceleration_units_per_sq_second * y_steps_per_unit;
+unsigned long x_travel_steps_per_sqr_second = max_travel_acceleration_units_per_sq_second * x_steps_per_unit;
+unsigned long y_travel_steps_per_sqr_second = max_travel_acceleration_units_per_sq_second * y_steps_per_unit;
+unsigned long steps_per_sqr_second, plateau_steps;
+#endif
 #ifdef EXP_ACCELERATION
 unsigned long long_full_velocity_units = full_velocity_units * 100;
 unsigned long long_travel_move_full_velocity_units = travel_move_full_velocity_units * 100;
@@ -908,7 +918,6 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
   previous_millis_heater = millis();
   
   //Define variables that are needed for the Bresenham algorithm. Please note that  Z is not currently included in the Bresenham algorithm.
-  unsigned long start_move_micros = micros(); 
   unsigned int delta_x = x_steps_remaining;
   unsigned long x_interval_nanos;
   unsigned int delta_y = y_steps_remaining;
@@ -921,6 +930,10 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
   int error_x;
   int error_y;
   int error_z;
+  #ifdef RAMP_ACCELERATION
+  long max_speed_steps_per_second;
+  long min_speed_steps_per_second;
+  #endif
   #ifdef EXP_ACCELERATION
   unsigned long virtual_full_velocity_steps;
   unsigned long full_velocity_steps;
@@ -931,8 +944,16 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
   //Do some Bresenham calculations depending on which axis will lead it.
   if(steep_y) {
    error_x = delta_y / 2;
-   previous_micros_y=micros()*100;
    interval = y_interval;
+   #ifdef RAMP_ACCELERATION
+   max_interval = max_y_interval;
+   if(e_steps_to_take > 0) steps_per_sqr_second = y_steps_per_sqr_second;
+   else steps_per_sqr_second = y_travel_steps_per_sqr_second;
+   max_speed_steps_per_second = 100000000 / interval;
+   min_speed_steps_per_second = 100000000 / max_interval;
+   float plateau_time = (max_speed_steps_per_second - min_speed_steps_per_second) / (float) steps_per_sqr_second;
+   plateau_steps = (long) ((steps_per_sqr_second / 2.0 * plateau_time + min_speed_steps_per_second) * plateau_time);
+   #endif
    #ifdef EXP_ACCELERATION
    if(e_steps_to_take > 0) virtual_full_velocity_steps = long_full_velocity_units * y_steps_per_unit /100;
    else virtual_full_velocity_steps = long_travel_move_full_velocity_units * y_steps_per_unit /100;
@@ -944,8 +965,16 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
    steps_to_take = delta_y;
   } else if (steep_x) {
    error_y = delta_x / 2;
-   previous_micros_x=micros()*100;
    interval = x_interval;
+   #ifdef RAMP_ACCELERATION
+   max_interval = max_x_interval;
+   if(e_steps_to_take > 0) steps_per_sqr_second = x_steps_per_sqr_second;
+   else steps_per_sqr_second = x_travel_steps_per_sqr_second;
+   max_speed_steps_per_second = 100000000 / interval;
+   min_speed_steps_per_second = 100000000 / max_interval;
+   float plateau_time = (max_speed_steps_per_second - min_speed_steps_per_second) / (float) steps_per_sqr_second;
+   plateau_steps = (long) ((steps_per_sqr_second / 2.0 * plateau_time + min_speed_steps_per_second) * plateau_time);
+   #endif
    #ifdef EXP_ACCELERATION
    if(e_steps_to_take > 0) virtual_full_velocity_steps = long_full_velocity_units * x_steps_per_unit /100;
    else virtual_full_velocity_steps = long_travel_move_full_velocity_units * x_steps_per_unit /100;
@@ -956,9 +985,14 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
    steps_remaining = delta_x;
    steps_to_take = delta_x;
   }
-  previous_micros_z=micros()*100;
-  previous_micros_e=micros()*100;
   unsigned long steps_done = 0;
+  #ifdef RAMP_ACCELERATION
+  plateau_steps *= 1.01; // This is to compensate we use discrete intervals
+  acceleration_enabled = true;
+  long full_interval = interval;
+  if(interval > max_interval) acceleration_enabled = false;
+  boolean decelerating = false;
+  #endif
   #ifdef EXP_ACCELERATION
   acceleration_enabled = true;
   if(full_velocity_steps == 0) full_velocity_steps++;
@@ -974,9 +1008,48 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
   accelerating = acceleration_enabled;
   #endif
   
+  unsigned long start_move_micros = micros();
+  previous_micros_x=start_move_micros*100;
+  previous_micros_y=previous_micros_x;
+  previous_micros_z=previous_micros_x;
+  previous_micros_e=previous_micros_x;
   
   //move until no more steps remain 
   while(x_steps_remaining + y_steps_remaining + z_steps_remaining + e_steps_remaining > 0) {
+    #ifdef RAMP_ACCELERATION
+    //If acceleration is enabled on this move and we are in the acceleration segment, calculate the current interval
+    if (acceleration_enabled && steps_done == 0) {
+        interval = max_interval;
+    } else if (acceleration_enabled && steps_done <= plateau_steps) {
+        long current_speed = (long) ((((long) steps_per_sqr_second) / 10000)
+	    * ((micros() - start_move_micros)  / 100) + (long) min_speed_steps_per_second);
+	    interval = 100000000 / current_speed;
+      if (interval < full_interval) {
+        accelerating = false;
+      	interval = full_interval;
+      }
+      if (steps_done >= steps_to_take / 2) {
+	plateau_steps = steps_done;
+	max_speed_steps_per_second = 100000000 / interval;
+	accelerating = false;
+      }
+    } else if (acceleration_enabled && steps_remaining <= plateau_steps) { //(interval > minInterval * 100) {
+      if (!accelerating) {
+        start_move_micros = micros();
+        accelerating = true;
+        decelerating = true;
+      }				
+      long current_speed = (long) ((long) max_speed_steps_per_second - ((((long) steps_per_sqr_second) / 10000)
+          * (((micros() - start_move_micros) + interval) / 10000)));
+      interval = 100000000 / current_speed;
+      if (interval > max_interval)
+	interval = max_interval;
+    } else {
+      //Else, we are just use the full speed interval as current interval
+      interval = full_interval;
+      accelerating = false;
+    }
+    #endif
     #ifdef EXP_ACCELERATION
     //If acceleration is enabled on this move and we are in the acceleration segment, calculate the current interval
     if (acceleration_enabled && steps_done < full_velocity_steps && steps_done / full_velocity_steps < 1 && (steps_done % steps_acceleration_check == 0)) {
@@ -1018,6 +1091,9 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
             do_x_step(); x_steps_remaining--;
             error_x = error_x + delta_y;
           }
+          #ifdef RAMP_ACCELERATION
+          if (steps_remaining == plateau_steps || (steps_done >= steps_to_take / 2 && accelerating && !decelerating)) break;
+          #endif
           #ifdef STEP_DELAY_RATIO
           if(timediff >= interval) delayMicroseconds(long_step_delay_ratio * interval / 10000);
           #endif
@@ -1037,6 +1113,9 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
             do_y_step(); y_steps_remaining--;
             error_y = error_y + delta_x;
           }
+          #ifdef RAMP_ACCELERATION
+          if (steps_remaining == plateau_steps || (steps_done >= steps_to_take / 2 && accelerating && !decelerating)) break;
+          #endif
           #ifdef STEP_DELAY_RATIO
           if(timediff >= interval) delayMicroseconds(long_step_delay_ratio * interval / 10000);
           #endif
@@ -1046,6 +1125,9 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
         }
       }
     }
+    #ifdef RAMP_ACCELERATION
+    if (steps_to_take>0 && (steps_remaining == plateau_steps || (steps_done >= steps_to_take / 2 && accelerating && !decelerating))) continue;
+    #endif
 
     //If there are z steps remaining, check if z steps must be taken
     if(z_steps_remaining) {

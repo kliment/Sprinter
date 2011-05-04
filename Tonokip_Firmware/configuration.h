@@ -16,11 +16,18 @@
 //If you enable this, make sure STEP_DELAY_MICROS is disabled.
 //#define STEP_DELAY_RATIO 0.25
 
+//Comment this to disable ramp acceleration
+#define RAMP_ACCELERATION 1
 
-//Comment this to disable exponential acceleration
-#define EXP_ACCELERATION 1
+//Uncomment this to enable exponential acceleration
+//#define EXP_ACCELERATION 1
 
 //Acceleration settings
+#ifdef RAMP_ACCELERATION
+float min_units_per_second = 35.0; // the minimum feedrate
+long max_acceleration_units_per_sq_second = 750;
+long max_travel_acceleration_units_per_sq_second = 1500;
+#endif
 #ifdef EXP_ACCELERATION
 float full_velocity_units = 10; // the units between minimum and G1 move feedrate
 float travel_move_full_velocity_units = 10; // used for travel moves
