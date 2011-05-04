@@ -16,13 +16,19 @@
 //If you enable this, make sure STEP_DELAY_MICROS is disabled.
 //#define STEP_DELAY_RATIO 0.25
 
+
+//Comment this to disable exponential acceleration
+#define EXP_ACCELERATION 1
+
 //Acceleration settings
+#ifdef EXP_ACCELERATION
 float full_velocity_units = 10; // the units between minimum and G1 move feedrate
 float travel_move_full_velocity_units = 10; // used for travel moves
 float min_units_per_second = 35.0; // the minimum feedrate
 float min_constant_speed_units = 2; // the minimum units of an accelerated move that must be done at constant speed
                                     // Note that if the move is shorter than this value, acceleration won't be perfomed,
                                     // but will be done at the minimum between min_units_per_seconds and move feedrate speeds.
+#endif
 
 // AD595 THERMOCOUPLE SUPPORT UNTESTED... USE WITH CAUTION!!!!
 
