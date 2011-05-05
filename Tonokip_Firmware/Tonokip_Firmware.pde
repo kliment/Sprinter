@@ -84,6 +84,7 @@ void kill(byte debug);
 // M140 - Set bed target temp
 // M190 - Wait for bed current temp to reach target temp.
 
+// M851 - Set inactivity stepper disable timer per axis, with parameter X|Y|Z|E<seconds> or S<seconds> to disable all.  DOES NOT SHUT DOWN SYSTEM.
 
 
 //Stepper Movement Variables
@@ -172,7 +173,11 @@ int minttemp=temp2analog(MINTEMP);
         
 //Inactivity shutdown variables
 unsigned long previous_millis_cmd=0;
-unsigned long max_inactive_time = 0;
+unsigned long max_inactive_time = DEFAULT_MAX_INACTIVE_TIME;
+unsigned long stepper_x_disable_time = DEFAULT_STEPPER_DISABLE_TIME;
+unsigned long stepper_y_disable_time = DEFAULT_STEPPER_DISABLE_TIME;
+unsigned long stepper_z_disable_time = DEFAULT_STEPPER_DISABLE_TIME;
+unsigned long stepper_e_disable_time = DEFAULT_STEPPER_DISABLE_TIME;
 
 #ifdef SDSUPPORT
 Sd2Card card;
@@ -786,8 +791,14 @@ inline void process_commands()
         disable_e();
         break;
       case 85: // M85
-        code_seen('S');
-        max_inactive_time = code_value()*1000; 
+		if(code_seen('S')) max_inactive_time = code_value()*1000;
+        break;
+      case 851: // M851
+		if(code_seen('X')) stepper_x_disable_time = code_value()*1000;
+		if(code_seen('Y')) stepper_y_disable_time = code_value()*1000;
+		if(code_seen('Z')) stepper_z_disable_time = code_value()*1000;
+		if(code_seen('E')) stepper_e_disable_time = code_value()*1000;
+		if(code_seen('S')) stepper_x_disable_time = stepper_y_disable_time = stepper_z_disable_time = stepper_e_disable_time = code_value()*1000;
         break;
       case 86: // M86 If Endstop is Not Activated then Abort Print
         if(code_seen('X')) if( digitalRead(X_MIN_PIN) == ENDSTOPS_INVERTING ) kill(3);
@@ -1534,4 +1545,14 @@ inline void kill(byte debug)
   }
 }
 
-inline void manage_inactivity(byte debug) { if( (millis()-previous_millis_cmd) >  max_inactive_time ) if(max_inactive_time) kill(debug); }
+inline void manage_inactivity(byte debug)
+{
+  unsigned long millis_since_last_check = millis()-previous_millis_cmd;
+
+  if((max_inactive_time > 0) && (millis_since_last_check > max_inactive_time )) kill(debug);
+  if((stepper_x_disable_time > 0) && (millis_since_last_check > stepper_x_disable_time ))disable_x();
+  if((stepper_y_disable_time > 0) && (millis_since_last_check > stepper_y_disable_time ))disable_y();
+  if((stepper_z_disable_time > 0) && (millis_since_last_check > stepper_z_disable_time ))disable_z();
+  if((stepper_e_disable_time > 0) && (millis_since_last_check > stepper_e_disable_time ))disable_e();
+}
+

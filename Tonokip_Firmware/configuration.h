@@ -132,6 +132,9 @@ const int X_MAX_LENGTH = 220;
 const int Y_MAX_LENGTH = 220;
 const int Z_MAX_LENGTH = 100;
 
+#define DEFAULT_MAX_INACTIVE_TIME 120000 // 120 seconds
+#define DEFAULT_STEPPER_DISABLE_TIME 60000 // 60 seconds (default for all steppers)
+
 #define BAUDRATE 115200
 
 
