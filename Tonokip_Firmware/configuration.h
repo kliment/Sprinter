@@ -5,6 +5,10 @@
 // PLEASE VERIFY PIN ASSIGNMENTS FOR YOUR CONFIGURATION!!!!!!!
 #define MOTHERBOARD 3 // ATMEGA168 = 0, SANGUINO = 1, MOTHERBOARD = 2, MEGA/RAMPS = 3, ATMEGA328 = 4, Gen6 = 5, Sanguinololu = 6
 
+//Uncomment RAMPS version if you have version 1.0, otherwise 1.1 is assumed.
+//#define RAMPS_VER 1_0
+//#define RAMPS_VER 1_1
+
 //Comment out to disable SD support
 #define SDSUPPORT 1
 

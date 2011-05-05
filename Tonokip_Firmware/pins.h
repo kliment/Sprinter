@@ -79,7 +79,7 @@
 *       MISO (D 6) PB6  7|        |34  PA6 (AI 6 / D25)
 *        SCK (D 7) PB7  8|        |33  PA7 (AI 7 / D24)
 *                  RST  9|        |32  AREF
-*                  VCC 10|        |31  GND 
+*                  VCC 10|        |31  GND
 *                  GND 11|        |30  AVCC
 *                XTAL2 12|        |29  PC7 (D 23)
 *                XTAL1 13|        |28  PC6 (D 22)
@@ -232,15 +232,21 @@
 #define SDSS          53
 #define LED_PIN            13
 
-//#define FAN_PIN            11 // UNCOMMENT THIS LINE FOR V1.0
-#define FAN_PIN            9 // THIS LINE FOR V1.1
+#ifdef __RAMPS_VER_1_0__
+  #define HEATER_0_PIN       12   // FOR V1.0
+  #define HEATER_1_PIN       -1   // FOR V1.0
+  #define FAN_PIN            11   // FOR V1.0
+#endif
+
+// assume RAMPS Version 1.1 if nothing defined.
+// #ifdef __RAMPS_VER_1_1__
+  #define HEATER_0_PIN       10   // FOR V1.1
+  #define HEATER_1_PIN        8   // FOR V1.1
+  #define FAN_PIN             9   // FOR V1.1
+// #endif
 
 #define PS_ON_PIN          -1
 #define KILL_PIN           -1
-
-//#define HEATER_0_PIN        12  // UNCOMMENT THIS LINE FOR V1.0
-#define HEATER_0_PIN       10 // THIS LINE FOR V1.1
-#define HEATER_1_PIN       8 // THIS LINE FOR V1.1
 
 #define TEMP_0_PIN          2   // MUST USE ANALOG INPUT NUMBERING NOT DIGITAL OUTPUT NUMBERING!!!!!!!!!
 #define TEMP_1_PIN          1   // MUST USE ANALOG INPUT NUMBERING NOT DIGITAL OUTPUT NUMBERING!!!!!!!!!
