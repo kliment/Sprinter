@@ -269,8 +269,10 @@ void setup()
   if(E_ENABLE_PIN > -1) pinMode(E_ENABLE_PIN,OUTPUT);
 
   if(HEATER_0_PIN > -1) pinMode(HEATER_0_PIN,OUTPUT);
+  #ifdef HEATER_1_PIN
   if(HEATER_1_PIN > -1) pinMode(HEATER_1_PIN,OUTPUT);
-  
+  #endif
+
 #ifdef HEATER_USES_MAX6675
   digitalWrite(SCK_PIN,0);
   pinMode(SCK_PIN,OUTPUT);
@@ -1367,14 +1369,16 @@ inline void manage_heater()
   
 
   #if TEMP_1_PIN > -1
+  #ifdef HEATER_1_PIN
     if(current_bed_raw >= target_bed_raw)
     {
       digitalWrite(HEATER_1_PIN,LOW);
     }
-    else 
+    else
     {
       digitalWrite(HEATER_1_PIN,HIGH);
     }
+  #endif
   #endif
 }
 
@@ -1511,8 +1515,10 @@ float analog2tempBed(int raw) {
 inline void kill(byte debug)
 {
   if(HEATER_0_PIN > -1) digitalWrite(HEATER_0_PIN,LOW);
+  #ifdef HEATER_1_PIN  
   if(HEATER_1_PIN > -1) digitalWrite(HEATER_1_PIN,LOW);
-  
+  #endif
+
   disable_x();
   disable_y();
   disable_z();

@@ -206,11 +206,20 @@
  #endif
 #endif
 
+//#define __RAMPS_V10__  // for version 1.0
+#define __RAMPS_V11__  // for version 1.1+
+
+#ifdef __RAMPS_V10__
+ #ifdef __RAMPS_V11__
+   #error Oops! is it RAMPS Version 1.0 or RAMPS 1.1, be sure to set only one in pins.h
+ #endif
+#endif
+
 #define X_STEP_PIN         26
 #define X_DIR_PIN          28
 #define X_ENABLE_PIN       24
 #define X_MIN_PIN           3
-#define X_MAX_PIN           -2 //2
+#define X_MAX_PIN          -2 //2
 
 #define Y_STEP_PIN         38
 #define Y_DIR_PIN          40
@@ -228,19 +237,21 @@
 #define E_DIR_PIN          34
 #define E_ENABLE_PIN       30
 
-#define SDPOWER          48
-#define SDSS          53
+#define SDPOWER            48
+#define SDSS               53
 #define LED_PIN            13
 
-//#define FAN_PIN            11 // UNCOMMENT THIS LINE FOR V1.0
-#define FAN_PIN            9 // THIS LINE FOR V1.1
+#ifdef __RAMPS_V10__
+  #define HEATER_0_PIN       12   // FOR V1.0
+  #define FAN_PIN            11   // FOR V1.0
+#else //assume __RAMPS_V11__
+  #define HEATER_0_PIN       10   // FOR V1.1
+  #define HEATER_1_PIN        8   // FOR V1.1
+  #define FAN_PIN             9   // FOR V1.1
+#endif
 
 #define PS_ON_PIN          -1
 #define KILL_PIN           -1
-
-//#define HEATER_0_PIN        12  // UNCOMMENT THIS LINE FOR V1.0
-#define HEATER_0_PIN       10 // THIS LINE FOR V1.1
-#define HEATER_1_PIN       8 // THIS LINE FOR V1.1
 
 #define TEMP_0_PIN          2   // MUST USE ANALOG INPUT NUMBERING NOT DIGITAL OUTPUT NUMBERING!!!!!!!!!
 #define TEMP_1_PIN          1   // MUST USE ANALOG INPUT NUMBERING NOT DIGITAL OUTPUT NUMBERING!!!!!!!!!
