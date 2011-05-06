@@ -1367,14 +1367,16 @@ inline void manage_heater()
   
 
   #if TEMP_1_PIN > -1
+  #if HEATER_1_PIN > -1
     if(current_bed_raw >= target_bed_raw)
     {
       digitalWrite(HEATER_1_PIN,LOW);
     }
-    else 
+    else
     {
       digitalWrite(HEATER_1_PIN,HIGH);
     }
+  #endif
   #endif
 }
 
