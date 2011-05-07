@@ -76,7 +76,8 @@ void kill(byte debug);
 // M81  - Turn off Power Supply
 // M82  - Set E codes absolute (default)
 // M83  - Set E codes relative while in Absolute Coordinates (G90) mode
-// M84  - Disable steppers until next move
+// M84  - Disable steppers until next move, 
+//        or use S<seconds> to specify an inactivity timeout, after which the steppers will be disabled.  S0 to disable the timeout.
 // M85  - Set inactivity shutdown timer with parameter S<seconds>. To disable set zero (default)
 // M86  - If Endstop is Not Activated then Abort Print. Specify X and/or Y
 // M92  - Set axis_steps_per_unit - same syntax as G92
@@ -173,6 +174,7 @@ int minttemp=temp2analog(MINTEMP);
 //Inactivity shutdown variables
 unsigned long previous_millis_cmd=0;
 unsigned long max_inactive_time = 0;
+unsigned long stepper_inactive_time = 0;
 
 #ifdef SDSUPPORT
 Sd2Card card;
@@ -780,10 +782,8 @@ inline void process_commands()
         relative_mode_e = true;
         break;
       case 84:
-        disable_x();
-        disable_y();
-        disable_z();
-        disable_e();
+        if(code_seen('S')){ stepper_inactive_time = code_value()*1000; }
+        else{ disable_x(); disable_y(); disable_z(); disable_e(); }
         break;
       case 85: // M85
         code_seen('S');
@@ -1534,4 +1534,7 @@ inline void kill(byte debug)
   }
 }
 
-inline void manage_inactivity(byte debug) { if( (millis()-previous_millis_cmd) >  max_inactive_time ) if(max_inactive_time) kill(debug); }
+inline void manage_inactivity(byte debug) { 
+if( (millis()-previous_millis_cmd) >  max_inactive_time ) if(max_inactive_time) kill(debug); 
+if( (millis()-previous_millis_cmd) >  stepper_inactive_time ) if(stepper_inactive_time) { disable_x(); disable_y(); disable_z(); disable_e(); }
+}
