@@ -314,9 +314,9 @@ void loop()
     if(savetosd){
         if(strstr(cmdbuffer[bufindr],"M29")==NULL){
             write_command(cmdbuffer[bufindr]);
-            file.sync();
             Serial.println("ok");
         }else{
+            file.sync(); // maybe this call is not needed
             file.close();
             savetosd=false;
             Serial.println("Done saving file.");
