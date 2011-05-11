@@ -84,7 +84,7 @@ unsigned long interval;
 float destination_x =0.0, destination_y = 0.0, destination_z = 0.0, destination_e = 0.0;
 float current_x = 0.0, current_y = 0.0, current_z = 0.0, current_e = 0.0;
 long x_interval, y_interval, z_interval, e_interval; // for speed delay
-float feedrate = 1500, next_feedrate, z_feedrate;
+float feedrate = 1500, next_feedrate, z_feedrate, saved_feedrate;
 float time_for_move;
 long gcode_N, gcode_LastN;
 bool relative_mode = false;  //Determines Absolute or Relative Coordinates
@@ -462,6 +462,7 @@ inline void process_commands()
         while((millis() - previous_millis_heater) < codenum ) manage_heater(); //manage heater until time is up
         break;
       case 28: //G28 Home all Axis one at a time
+        saved_feedrate = feedrate;
         destination_x = 0;
         current_x = 0;
         destination_y = 0;
@@ -474,7 +475,7 @@ inline void process_commands()
 
         if(X_MIN_PIN > -1) {
           current_x = 0;
-          destination_x = -250;
+          destination_x = -1.5 * X_MAX_LENGTH;
           feedrate = min_units_per_second*60;
           prepare_move();
           
@@ -492,7 +493,7 @@ inline void process_commands()
         
         if(Y_MIN_PIN > -1) {
           current_y = 0;
-          destination_y = -250;
+          destination_y = -1.5 * Y_MAX_LENGTH;
           feedrate = min_units_per_second*60;
           prepare_move();
           
@@ -510,7 +511,7 @@ inline void process_commands()
         
         if(Z_MIN_PIN > -1) {
           current_z = 0;
-          destination_z = -250;
+          destination_z = -1.5 * Z_MAX_LENGTH;
           feedrate = max_z_feedrate/2;
           prepare_move();
           
@@ -525,7 +526,8 @@ inline void process_commands()
           destination_z = 0;
           feedrate = 0;
         }
-
+        
+        feedrate = saved_feedrate;
         previous_millis_cmd = millis();
         break;
       case 90: // G90
