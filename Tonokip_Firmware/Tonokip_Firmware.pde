@@ -264,15 +264,11 @@ void setup()
   initsd();
 
 #endif
- 
-  
 }
 
 
 void loop()
 {
-
-
   if(buflen<3)
 	get_command();
   
@@ -453,78 +449,7 @@ inline void process_commands()
       case 0: // G0 -> G1
       case 1: // G1
         get_coordinates(); // For X Y Z E F
-        xdiff=(destination_x - current_x);
-        ydiff=(destination_y - current_y);
-        zdiff=(destination_z - current_z);
-        ediff=(destination_e - current_e);
-        x_steps_to_take = abs(xdiff)*x_steps_per_unit;
-        y_steps_to_take = abs(ydiff)*y_steps_per_unit;
-        z_steps_to_take = abs(zdiff)*z_steps_per_unit;
-        e_steps_to_take = abs(ediff)*e_steps_per_unit;
-        if(feedrate<10)
-            feedrate=10;
-        /*
-        //experimental feedrate calc
-        if(abs(xdiff)>0.1 && abs(ydiff)>0.1)
-            d=sqrt(xdiff*xdiff+ydiff*ydiff);
-        else if(abs(xdiff)>0.1)
-            d=abs(xdiff);
-        else if(abs(ydiff)>0.1)
-            d=abs(ydiff);
-        else if(abs(zdiff)>0.05)
-            d=abs(zdiff);
-        else if(abs(ediff)>0.1)
-            d=abs(ediff);
-        else d=1; //extremely slow move, should be okay for moves under 0.1mm
-        time_for_move=(xdiff/(feedrate/60000000));
-        //time=60000000*dist/feedrate
-        //int feedz=(60000000*zdiff)/time_for_move;
-        //if(feedz>maxfeed)
-        */
-        #define X_TIME_FOR_MOVE ((float)x_steps_to_take / (x_steps_per_unit*feedrate/60000000))
-        #define Y_TIME_FOR_MOVE ((float)y_steps_to_take / (y_steps_per_unit*feedrate/60000000))
-        #define Z_TIME_FOR_MOVE ((float)z_steps_to_take / (z_steps_per_unit*z_feedrate/60000000))
-        #define E_TIME_FOR_MOVE ((float)e_steps_to_take / (e_steps_per_unit*feedrate/60000000))
-        
-        time_for_move = max(X_TIME_FOR_MOVE,Y_TIME_FOR_MOVE);
-        time_for_move = max(time_for_move,Z_TIME_FOR_MOVE);
-        if(time_for_move <= 0) time_for_move = max(time_for_move,E_TIME_FOR_MOVE);
-
-        if(x_steps_to_take) x_interval = time_for_move/x_steps_to_take*100;
-        if(y_steps_to_take) y_interval = time_for_move/y_steps_to_take*100;
-        if(z_steps_to_take) z_interval = time_for_move/z_steps_to_take*100;
-        if(e_steps_to_take && (x_steps_to_take + y_steps_to_take <= 0)) e_interval = time_for_move/e_steps_to_take*100;
-        
-        //#define DEBUGGING false
-	#if 0        
-	if(0) {
-          Serial.print("destination_x: "); Serial.println(destination_x); 
-          Serial.print("current_x: "); Serial.println(current_x); 
-          Serial.print("x_steps_to_take: "); Serial.println(x_steps_to_take); 
-          Serial.print("X_TIME_FOR_MVE: "); Serial.println(X_TIME_FOR_MOVE); 
-          Serial.print("x_interval: "); Serial.println(x_interval); 
-          Serial.println("");
-          Serial.print("destination_y: "); Serial.println(destination_y); 
-          Serial.print("current_y: "); Serial.println(current_y); 
-          Serial.print("y_steps_to_take: "); Serial.println(y_steps_to_take); 
-          Serial.print("Y_TIME_FOR_MVE: "); Serial.println(Y_TIME_FOR_MOVE); 
-          Serial.print("y_interval: "); Serial.println(y_interval); 
-          Serial.println("");
-          Serial.print("destination_z: "); Serial.println(destination_z); 
-          Serial.print("current_z: "); Serial.println(current_z); 
-          Serial.print("z_steps_to_take: "); Serial.println(z_steps_to_take); 
-          Serial.print("Z_TIME_FOR_MVE: "); Serial.println(Z_TIME_FOR_MOVE); 
-          Serial.print("z_interval: "); Serial.println(z_interval); 
-          Serial.println("");
-          Serial.print("destination_e: "); Serial.println(destination_e); 
-          Serial.print("current_e: "); Serial.println(current_e); 
-          Serial.print("e_steps_to_take: "); Serial.println(e_steps_to_take); 
-          Serial.print("E_TIME_FOR_MVE: "); Serial.println(E_TIME_FOR_MOVE); 
-          Serial.print("e_interval: "); Serial.println(e_interval); 
-          Serial.println("");
-        }
-        #endif
-        linear_move(x_steps_to_take, y_steps_to_take, z_steps_to_take, e_steps_to_take); // make the move
+        prepare_move();
         previous_millis_cmd = millis();
         //ClearToSend();
         return;
@@ -535,6 +460,73 @@ inline void process_commands()
         if(code_seen('S')) codenum = code_value()*1000; // seconds to wait
         previous_millis_heater = millis();  // keep track of when we started waiting
         while((millis() - previous_millis_heater) < codenum ) manage_heater(); //manage heater until time is up
+        break;
+      case 28: //G28 Home all Axis one at a time
+        destination_x = 0;
+        current_x = 0;
+        destination_y = 0;
+        current_y = 0;
+        destination_z = 0;
+        current_z = 0;
+        destination_e = 0;
+        current_e = 0;
+        feedrate = 0;
+
+        if(X_MIN_PIN > -1) {
+          current_x = 0;
+          destination_x = -250;
+          feedrate = min_units_per_second*60;
+          prepare_move();
+          
+          current_x = 0;
+          destination_x = 1;
+          prepare_move();
+          
+          destination_x = -10;
+          prepare_move();
+          
+          current_x = 0;
+          destination_x = 0;
+          feedrate = 0;
+        }
+        
+        if(Y_MIN_PIN > -1) {
+          current_y = 0;
+          destination_y = -250;
+          feedrate = min_units_per_second*60;
+          prepare_move();
+          
+          current_y = 0;
+          destination_y = 1;
+          prepare_move();
+          
+          destination_y = -10;
+          prepare_move();
+          
+          current_y = 0;
+          destination_y = 0;
+          feedrate = 0;
+        }
+        
+        if(Z_MIN_PIN > -1) {
+          current_z = 0;
+          destination_z = -250;
+          feedrate = max_z_feedrate/2;
+          prepare_move();
+          
+          current_z = 0;
+          destination_z = 1;
+          prepare_move();
+          
+          destination_z = -10;
+          prepare_move();
+          
+          current_z = 0;
+          destination_z = 0;
+          feedrate = 0;
+        }
+
+        previous_millis_cmd = millis();
         break;
       case 90: // G90
         relative_mode = false;
@@ -836,7 +828,10 @@ inline void get_coordinates()
     next_feedrate = code_value();
     if(next_feedrate > 0.0) feedrate = next_feedrate;
   }
-  
+}
+
+void prepare_move()
+{
   //Find direction
   if(destination_x >= current_x) direction_x=1;
   else direction_x=0;
@@ -864,6 +859,80 @@ inline void get_coordinates()
 
   if(feedrate > max_z_feedrate) z_feedrate = max_z_feedrate;
   else z_feedrate=feedrate;
+  
+  xdiff=(destination_x - current_x);
+  ydiff=(destination_y - current_y);
+  zdiff=(destination_z - current_z);
+  ediff=(destination_e - current_e);
+  x_steps_to_take = abs(xdiff)*x_steps_per_unit;
+  y_steps_to_take = abs(ydiff)*y_steps_per_unit;
+  z_steps_to_take = abs(zdiff)*z_steps_per_unit;
+  e_steps_to_take = abs(ediff)*e_steps_per_unit;
+  if(feedrate<10)
+      feedrate=10;
+  /*
+  //experimental feedrate calc
+  if(abs(xdiff)>0.1 && abs(ydiff)>0.1)
+      d=sqrt(xdiff*xdiff+ydiff*ydiff);
+  else if(abs(xdiff)>0.1)
+      d=abs(xdiff);
+  else if(abs(ydiff)>0.1)
+      d=abs(ydiff);
+  else if(abs(zdiff)>0.05)
+      d=abs(zdiff);
+  else if(abs(ediff)>0.1)
+      d=abs(ediff);
+  else d=1; //extremely slow move, should be okay for moves under 0.1mm
+  time_for_move=(xdiff/(feedrate/60000000));
+  //time=60000000*dist/feedrate
+  //int feedz=(60000000*zdiff)/time_for_move;
+  //if(feedz>maxfeed)
+  */
+  #define X_TIME_FOR_MOVE ((float)x_steps_to_take / (x_steps_per_unit*feedrate/60000000))
+  #define Y_TIME_FOR_MOVE ((float)y_steps_to_take / (y_steps_per_unit*feedrate/60000000))
+  #define Z_TIME_FOR_MOVE ((float)z_steps_to_take / (z_steps_per_unit*z_feedrate/60000000))
+  #define E_TIME_FOR_MOVE ((float)e_steps_to_take / (e_steps_per_unit*feedrate/60000000))
+  
+  time_for_move = max(X_TIME_FOR_MOVE,Y_TIME_FOR_MOVE);
+  time_for_move = max(time_for_move,Z_TIME_FOR_MOVE);
+  if(time_for_move <= 0) time_for_move = max(time_for_move,E_TIME_FOR_MOVE);
+
+  if(x_steps_to_take) x_interval = time_for_move/x_steps_to_take*100;
+  if(y_steps_to_take) y_interval = time_for_move/y_steps_to_take*100;
+  if(z_steps_to_take) z_interval = time_for_move/z_steps_to_take*100;
+  if(e_steps_to_take && (x_steps_to_take + y_steps_to_take <= 0)) e_interval = time_for_move/e_steps_to_take*100;
+  
+  //#define DEBUGGING false
+  #if 0        
+  if(0) {
+    Serial.print("destination_x: "); Serial.println(destination_x); 
+    Serial.print("current_x: "); Serial.println(current_x); 
+    Serial.print("x_steps_to_take: "); Serial.println(x_steps_to_take); 
+    Serial.print("X_TIME_FOR_MVE: "); Serial.println(X_TIME_FOR_MOVE); 
+    Serial.print("x_interval: "); Serial.println(x_interval); 
+    Serial.println("");
+    Serial.print("destination_y: "); Serial.println(destination_y); 
+    Serial.print("current_y: "); Serial.println(current_y); 
+    Serial.print("y_steps_to_take: "); Serial.println(y_steps_to_take); 
+    Serial.print("Y_TIME_FOR_MVE: "); Serial.println(Y_TIME_FOR_MOVE); 
+    Serial.print("y_interval: "); Serial.println(y_interval); 
+    Serial.println("");
+    Serial.print("destination_z: "); Serial.println(destination_z); 
+    Serial.print("current_z: "); Serial.println(current_z); 
+    Serial.print("z_steps_to_take: "); Serial.println(z_steps_to_take); 
+    Serial.print("Z_TIME_FOR_MVE: "); Serial.println(Z_TIME_FOR_MOVE); 
+    Serial.print("z_interval: "); Serial.println(z_interval); 
+    Serial.println("");
+    Serial.print("destination_e: "); Serial.println(destination_e); 
+    Serial.print("current_e: "); Serial.println(current_e); 
+    Serial.print("e_steps_to_take: "); Serial.println(e_steps_to_take); 
+    Serial.print("E_TIME_FOR_MVE: "); Serial.println(E_TIME_FOR_MOVE); 
+    Serial.print("e_interval: "); Serial.println(e_interval); 
+    Serial.println("");
+  }
+  #endif
+  
+  linear_move(x_steps_to_take, y_steps_to_take, z_steps_to_take, e_steps_to_take); // make the move
 }
 
 void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remaining, unsigned long z_steps_remaining, unsigned long e_steps_remaining) // make linear move with preset speeds and destinations, see G0 and G1
