@@ -496,7 +496,8 @@ inline void process_commands()
         e_steps_to_take = abs(ediff)*e_steps_per_unit;
         if(feedrate<10)
             feedrate=10;
-        /*//experimental feedrate calc
+        /*
+        //experimental feedrate calc
         if(abs(xdiff)>0.1 && abs(ydiff)>0.1)
             d=sqrt(xdiff*xdiff+ydiff*ydiff);
         else if(abs(xdiff)>0.1)
