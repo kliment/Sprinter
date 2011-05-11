@@ -84,7 +84,8 @@ void kill(byte debug);
 // M115	- Capabilities string
 // M140 - Set bed target temp
 // M190 - Wait for bed current temp to reach target temp.
-
+// M201 - Set max acceleration in units/s^2 for print moves (M201 X1000 Y1000)
+// M202 - Set max acceleration in units/s^2 for travel moves (M202 X1000 Y1000)
 
 
 //Stepper Movement Variables
@@ -314,9 +315,9 @@ void loop()
     if(savetosd){
         if(strstr(cmdbuffer[bufindr],"M29")==NULL){
             write_command(cmdbuffer[bufindr]);
-            file.sync();
             Serial.println("ok");
         }else{
+            file.sync(); // maybe this call is not needed
             file.close();
             savetosd=false;
             Serial.println("Done saving file.");
@@ -814,6 +815,16 @@ inline void process_commands()
 	Serial.print("E:");
         Serial.println(current_e);
         break;
+      #ifdef RAMP_ACCELERATION
+      case 201: // M201
+        if(code_seen('X')) x_steps_per_sqr_second = code_value() * x_steps_per_unit;
+        if(code_seen('Y')) x_steps_per_sqr_second = code_value() * y_steps_per_unit;
+        break;
+      case 202: // M202
+        if(code_seen('X')) x_travel_steps_per_sqr_second = code_value() * x_steps_per_unit;
+        if(code_seen('Y')) x_travel_steps_per_sqr_second = code_value() * y_steps_per_unit;
+        break;
+      #endif
     }
     
   }
