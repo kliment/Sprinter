@@ -29,4 +29,3 @@ short temptable[NUMTEMPS][2] = {
 
 
 #endif
-
