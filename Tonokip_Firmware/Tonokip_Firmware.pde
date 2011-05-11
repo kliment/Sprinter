@@ -354,7 +354,7 @@ inline void get_command()
     if(gcode_N != gcode_LastN+1 && (strstr(cmdbuffer[bufindw], "M110") == NULL) ) {
       Serial.print("Serial Error: Line Number is not Last Line Number+1, Last Line:");
       Serial.println(gcode_LastN);
-      Serial.println(gcode_N);
+      //Serial.println(gcode_N);
       FlushSerialRequestResend();
       serial_count = 0;
       return;
