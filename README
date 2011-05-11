@@ -20,3 +20,46 @@ Then add a line pointing to your second thermistor table, for example:
 Finally, make sure that the nozzle thermistor table, inside ThermistorTable.h in this case, is defined as "temptable" and that the bed thermistor table is defined as "bedtemptable", and that the number of temps is defined as NUMTEMPS for the heater and BNUMTEMPS for the bed.
 
 There are examples of all these configurations in the configuration.h file. Please look at them before you change anything.
+
+
+Use below code as a startup script for Skeinforge 40 and above..:
+From line G1 Z0.5 F100  it is just a priming routine that I use.. You can delete it if you want to.  If you use set SF multiply to 100/100(cooridinates)  and 1/1 (multiplication)
+
+G90
+G21
+G28 F3600.0
+G92 X0 Y0 E0
+G1 F100	
+G1 Z-250.0
+G92 Z0
+G1 Z1.0 F
+G1 F20
+G1 Z-10.0
+G92 Z0
+G1 F2400
+G1 Y-250.0
+G92 Y0
+G1 Y1.0 F
+G1 F1400
+G1 Y-10.0
+G92 Y0
+G1 F2400
+G1 X-250.0
+G92 X0
+G1 X1.0 F
+G1 F1400
+G1 X-10.0
+G92 X0
+G92 E0 
+G1 Z0.5 F100
+G1 X15 E0.7 F1400
+G92 E0 
+G1 Y15 E0.7
+G92 E0
+G1 X0 Y0 E1
+G92 E0
+G1 Y15 E0.7
+G92 E0
+G1 X15 Y15 E0.7
+G92 E0
+
