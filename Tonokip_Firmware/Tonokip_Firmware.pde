@@ -1,45 +1,13 @@
 // Tonokip RepRap firmware rewrite based off of Hydra-mmm firmware.
 // Licence: GPL
 
+#include "Tonokip_Firmware.h"
 #include "configuration.h"
 #include "pins.h"
 
 #ifdef SDSUPPORT
 #include "SdFat.h"
 #endif
-
-void get_command();
-void process_commands();
-
-void manage_inactivity(byte debug);
-
-void manage_heater();
-float temp2analog(int celsius);
-float temp2analogBed(int celsius);
-float analog2temp(int raw);
-float analog2tempBed(int raw);
-
-void FlushSerialRequestResend();
-void ClearToSend();
-
-void get_coordinates();
-void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remaining, unsigned long z_steps_remaining, unsigned long e_steps_remaining);
-void disable_x();
-void disable_y();
-void disable_z();
-void disable_e();
-void enable_x();
-void enable_y();
-void enable_z();
-void enable_e();
-void do_x_step();
-void do_y_step();
-void do_z_step();
-void do_e_step();
-
-void kill(byte debug);
-
-
 
 // look here for descriptions of gcodes: http://linuxcnc.org/handbook/gcode/g-code.html
 // http://objects.reprap.org/wiki/Mendel_User_Manual:_RepRapGCodes
@@ -497,7 +465,8 @@ inline void process_commands()
         e_steps_to_take = abs(ediff)*e_steps_per_unit;
         if(feedrate<10)
             feedrate=10;
-        /*//experimental feedrate calc
+        /*
+        //experimental feedrate calc
         if(abs(xdiff)>0.1 && abs(ydiff)>0.1)
             d=sqrt(xdiff*xdiff+ydiff*ydiff);
         else if(abs(xdiff)>0.1)
