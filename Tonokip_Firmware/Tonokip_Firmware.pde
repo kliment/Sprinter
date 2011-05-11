@@ -1,45 +1,13 @@
 // Tonokip RepRap firmware rewrite based off of Hydra-mmm firmware.
 // Licence: GPL
 
+#include "Tonokip_Firmware.h"
 #include "configuration.h"
 #include "pins.h"
 
 #ifdef SDSUPPORT
 #include "SdFat.h"
 #endif
-
-void get_command();
-void process_commands();
-
-void manage_inactivity(byte debug);
-
-void manage_heater();
-float temp2analog(int celsius);
-float temp2analogBed(int celsius);
-float analog2temp(int raw);
-float analog2tempBed(int raw);
-
-void FlushSerialRequestResend();
-void ClearToSend();
-
-void get_coordinates();
-void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remaining, unsigned long z_steps_remaining, unsigned long e_steps_remaining);
-void disable_x();
-void disable_y();
-void disable_z();
-void disable_e();
-void enable_x();
-void enable_y();
-void enable_z();
-void enable_e();
-void do_x_step();
-void do_y_step();
-void do_z_step();
-void do_e_step();
-
-void kill(byte debug);
-
-
 
 // look here for descriptions of gcodes: http://linuxcnc.org/handbook/gcode/g-code.html
 // http://objects.reprap.org/wiki/Mendel_User_Manual:_RepRapGCodes
@@ -84,7 +52,8 @@ void kill(byte debug);
 // M115	- Capabilities string
 // M140 - Set bed target temp
 // M190 - Wait for bed current temp to reach target temp.
-
+// M201 - Set max acceleration in units/s^2 for print moves (M201 X1000 Y1000)
+// M202 - Set max acceleration in units/s^2 for travel moves (M202 X1000 Y1000)
 
 
 //Stepper Movement Variables
@@ -92,23 +61,23 @@ bool direction_x, direction_y, direction_z, direction_e;
 unsigned long previous_micros=0, previous_micros_x=0, previous_micros_y=0, previous_micros_z=0, previous_micros_e=0, previous_millis_heater, previous_millis_bed_heater;
 unsigned long x_steps_to_take, y_steps_to_take, z_steps_to_take, e_steps_to_take;
 #ifdef RAMP_ACCELERATION
-unsigned long max_x_interval = 100000000.0 / (min_units_per_second * x_steps_per_unit);
-unsigned long max_y_interval = 100000000.0 / (min_units_per_second * y_steps_per_unit);
-unsigned long max_interval;
-unsigned long x_steps_per_sqr_second = max_acceleration_units_per_sq_second * x_steps_per_unit;
-unsigned long y_steps_per_sqr_second = max_acceleration_units_per_sq_second * y_steps_per_unit;
-unsigned long x_travel_steps_per_sqr_second = max_travel_acceleration_units_per_sq_second * x_steps_per_unit;
-unsigned long y_travel_steps_per_sqr_second = max_travel_acceleration_units_per_sq_second * y_steps_per_unit;
-unsigned long steps_per_sqr_second, plateau_steps;
+  unsigned long max_x_interval = 100000000.0 / (min_units_per_second * x_steps_per_unit);
+  unsigned long max_y_interval = 100000000.0 / (min_units_per_second * y_steps_per_unit);
+  unsigned long max_interval;
+  unsigned long x_steps_per_sqr_second = max_acceleration_units_per_sq_second * x_steps_per_unit;
+  unsigned long y_steps_per_sqr_second = max_acceleration_units_per_sq_second * y_steps_per_unit;
+  unsigned long x_travel_steps_per_sqr_second = max_travel_acceleration_units_per_sq_second * x_steps_per_unit;
+  unsigned long y_travel_steps_per_sqr_second = max_travel_acceleration_units_per_sq_second * y_steps_per_unit;
+  unsigned long steps_per_sqr_second, plateau_steps;
 #endif
 #ifdef EXP_ACCELERATION
-unsigned long long_full_velocity_units = full_velocity_units * 100;
-unsigned long long_travel_move_full_velocity_units = travel_move_full_velocity_units * 100;
-unsigned long max_x_interval = 100000000.0 / (min_units_per_second * x_steps_per_unit);
-unsigned long max_y_interval = 100000000.0 / (min_units_per_second * y_steps_per_unit);
-unsigned long max_interval;
-unsigned long x_min_constant_speed_steps = min_constant_speed_units * x_steps_per_unit,
-  y_min_constant_speed_steps = min_constant_speed_units * y_steps_per_unit, min_constant_speed_steps;
+  unsigned long long_full_velocity_units = full_velocity_units * 100;
+  unsigned long long_travel_move_full_velocity_units = travel_move_full_velocity_units * 100;
+  unsigned long max_x_interval = 100000000.0 / (min_units_per_second * x_steps_per_unit);
+  unsigned long max_y_interval = 100000000.0 / (min_units_per_second * y_steps_per_unit);
+  unsigned long max_interval;
+  unsigned long x_min_constant_speed_steps = min_constant_speed_units * x_steps_per_unit,
+    y_min_constant_speed_steps = min_constant_speed_units * y_steps_per_unit, min_constant_speed_steps;
 #endif
 boolean acceleration_enabled=false ,accelerating=false;
 unsigned long interval;
@@ -122,7 +91,7 @@ bool relative_mode = false;  //Determines Absolute or Relative Coordinates
 bool relative_mode_e = false;  //Determines Absolute or Relative E Codes while in Absolute Coordinates mode. E is always relative in Relative Coordinates mode.
 long timediff=0;
 #ifdef STEP_DELAY_RATIO
-long long_step_delay_ratio = STEP_DELAY_RATIO * 100;
+  long long_step_delay_ratio = STEP_DELAY_RATIO * 100;
 #endif
 
 
@@ -150,25 +119,25 @@ int target_bed_raw = 0;
 int current_bed_raw=0;
 float tt=0,bt=0;
 #ifdef PIDTEMP
-int temp_iState=0;
-int temp_dState=0;
-int pTerm;
-int iTerm;
-int dTerm;
-    //int output;
-int error;
-int temp_iState_min = 100*-PID_INTEGRAL_DRIVE_MAX/PID_IGAIN;
-int temp_iState_max = 100*PID_INTEGRAL_DRIVE_MAX/PID_IGAIN;
+  int temp_iState=0;
+  int temp_dState=0;
+  int pTerm;
+  int iTerm;
+  int dTerm;
+      //int output;
+  int error;
+  int temp_iState_min = 100*-PID_INTEGRAL_DRIVE_MAX/PID_IGAIN;
+  int temp_iState_max = 100*PID_INTEGRAL_DRIVE_MAX/PID_IGAIN;
 #endif
 #ifdef SMOOTHING
-uint32_t nma=SMOOTHFACTOR*analogRead(TEMP_0_PIN);
+  uint32_t nma=SMOOTHFACTOR*analogRead(TEMP_0_PIN);
 #endif
 #ifdef WATCHPERIOD
-int watch_raw=-1000;
-unsigned long watchmillis=0;
+  int watch_raw=-1000;
+  unsigned long watchmillis=0;
 #endif
 #ifdef MINTEMP
-int minttemp=temp2analog(MINTEMP);
+  int minttemp=temp2analog(MINTEMP);
 #endif
         
 //Inactivity shutdown variables
@@ -177,56 +146,54 @@ unsigned long max_inactive_time = 0;
 unsigned long stepper_inactive_time = 0;
 
 #ifdef SDSUPPORT
-Sd2Card card;
-SdVolume volume;
-SdFile root;
-SdFile file;
-uint32_t filesize=0;
-uint32_t sdpos=0;
-bool sdmode=false;
-bool sdactive=false;
-bool savetosd=false;
-int16_t n;
-
-void initsd(){
-sdactive=false;
-#if SDSS>-1
-if(root.isOpen())
-    root.close();
-if (!card.init(SPI_FULL_SPEED,SDSS)){
-    if (!card.init(SPI_HALF_SPEED,SDSS))
-      Serial.println("SD init fail");
-}
-else if (!volume.init(&card))
-      Serial.println("volume.init failed");
-else if (!root.openRoot(&volume)) 
-      Serial.println("openRoot failed");
-else 
-        sdactive=true;
-#endif
-}
-
-inline void write_command(char *buf){
-    char* begin=buf;
-    char* npos=0;
-    char* end=buf+strlen(buf)-1;
-    
-    file.writeError = false;
-    if((npos=strchr(buf, 'N')) != NULL){
-        begin = strchr(npos,' ')+1;
-        end =strchr(npos, '*')-1;
+  Sd2Card card;
+  SdVolume volume;
+  SdFile root;
+  SdFile file;
+  uint32_t filesize=0;
+  uint32_t sdpos=0;
+  bool sdmode=false;
+  bool sdactive=false;
+  bool savetosd=false;
+  int16_t n;
+  
+  void initsd(){
+  sdactive=false;
+  #if SDSS>-1
+    if(root.isOpen())
+        root.close();
+    if (!card.init(SPI_FULL_SPEED,SDSS)){
+        if (!card.init(SPI_HALF_SPEED,SDSS))
+          Serial.println("SD init fail");
     }
-    end[1]='\r';
-    end[2]='\n';
-    end[3]='\0';
-    //Serial.println(begin);
-    file.write(begin);
-    if (file.writeError){
-        Serial.println("error writing to file");
-    }
-}
-
-
+    else if (!volume.init(&card))
+          Serial.println("volume.init failed");
+    else if (!root.openRoot(&volume)) 
+          Serial.println("openRoot failed");
+    else 
+            sdactive=true;
+  #endif
+  }
+  
+  inline void write_command(char *buf){
+      char* begin=buf;
+      char* npos=0;
+      char* end=buf+strlen(buf)-1;
+      
+      file.writeError = false;
+      if((npos=strchr(buf, 'N')) != NULL){
+          begin = strchr(npos,' ')+1;
+          end =strchr(npos, '*')-1;
+      }
+      end[1]='\r';
+      end[2]='\n';
+      end[3]='\0';
+      //Serial.println(begin);
+      file.write(begin);
+      if (file.writeError){
+          Serial.println("error writing to file");
+      }
+  }
 #endif
 
 
@@ -257,12 +224,12 @@ void setup()
   
   //endstop pullups
   #ifdef ENDSTOPPULLUPS
-  if(X_MIN_PIN > -1) { pinMode(X_MIN_PIN,INPUT); digitalWrite(X_MIN_PIN,HIGH);}
-  if(Y_MIN_PIN > -1) { pinMode(Y_MIN_PIN,INPUT); digitalWrite(Y_MIN_PIN,HIGH);}
-  if(Z_MIN_PIN > -1) { pinMode(Z_MIN_PIN,INPUT); digitalWrite(Z_MIN_PIN,HIGH);}
-  if(X_MAX_PIN > -1) { pinMode(X_MAX_PIN,INPUT); digitalWrite(X_MAX_PIN,HIGH);}
-  if(Y_MAX_PIN > -1) { pinMode(Y_MAX_PIN,INPUT); digitalWrite(Y_MAX_PIN,HIGH);}
-  if(Z_MAX_PIN > -1) { pinMode(Z_MAX_PIN,INPUT); digitalWrite(Z_MAX_PIN,HIGH);}
+    if(X_MIN_PIN > -1) { pinMode(X_MIN_PIN,INPUT); digitalWrite(X_MIN_PIN,HIGH);}
+    if(Y_MIN_PIN > -1) { pinMode(Y_MIN_PIN,INPUT); digitalWrite(Y_MIN_PIN,HIGH);}
+    if(Z_MIN_PIN > -1) { pinMode(Z_MIN_PIN,INPUT); digitalWrite(Z_MIN_PIN,HIGH);}
+    if(X_MAX_PIN > -1) { pinMode(X_MAX_PIN,INPUT); digitalWrite(X_MAX_PIN,HIGH);}
+    if(Y_MAX_PIN > -1) { pinMode(Y_MAX_PIN,INPUT); digitalWrite(Y_MAX_PIN,HIGH);}
+    if(Z_MAX_PIN > -1) { pinMode(Z_MAX_PIN,INPUT); digitalWrite(Z_MAX_PIN,HIGH);}
   #endif
   //Initialize Enable Pins
   if(X_ENABLE_PIN > -1) pinMode(X_ENABLE_PIN,OUTPUT);
@@ -289,12 +256,12 @@ void setup()
  
 #ifdef SDSUPPORT
 
-//power to SD reader
-#if SDPOWER > -1
-pinMode(SDPOWER,OUTPUT); 
-digitalWrite(SDPOWER,HIGH);
-#endif
-initsd();
+  //power to SD reader
+  #if SDPOWER > -1
+    pinMode(SDPOWER,OUTPUT); 
+    digitalWrite(SDPOWER,HIGH);
+  #endif
+  initsd();
 
 #endif
  
@@ -314,9 +281,9 @@ void loop()
     if(savetosd){
         if(strstr(cmdbuffer[bufindr],"M29")==NULL){
             write_command(cmdbuffer[bufindr]);
-            file.sync();
             Serial.println("ok");
         }else{
+            file.sync(); // maybe this call is not needed
             file.close();
             savetosd=false;
             Serial.println("Done saving file.");
@@ -496,7 +463,8 @@ inline void process_commands()
         e_steps_to_take = abs(ediff)*e_steps_per_unit;
         if(feedrate<10)
             feedrate=10;
-        /*//experimental feedrate calc
+        /*
+        //experimental feedrate calc
         if(abs(xdiff)>0.1 && abs(ydiff)>0.1)
             d=sqrt(xdiff*xdiff+ydiff*ydiff);
         else if(abs(xdiff)>0.1)
@@ -813,6 +781,16 @@ inline void process_commands()
 	Serial.print("E:");
         Serial.println(current_e);
         break;
+      #ifdef RAMP_ACCELERATION
+      case 201: // M201
+        if(code_seen('X')) x_steps_per_sqr_second = code_value() * x_steps_per_unit;
+        if(code_seen('Y')) x_steps_per_sqr_second = code_value() * y_steps_per_unit;
+        break;
+      case 202: // M202
+        if(code_seen('X')) x_travel_steps_per_sqr_second = code_value() * x_steps_per_unit;
+        if(code_seen('Y')) x_travel_steps_per_sqr_second = code_value() * y_steps_per_unit;
+        break;
+      #endif
     }
     
   }
