@@ -9,27 +9,48 @@
 //#define SDSUPPORT 1
 
 //Min step delay in microseconds. If you are experiencing missing steps, try to raise the delay microseconds, but be aware this
-//may probably prevent the motors from reaching the nominal speed. If you enable this, make sure STEP_DELAY_RATIO is disabled.
+//Enabled for Gen6.  Leave at default 1
 
 #define STEP_DELAY_MICROS 1
 
 //Step delay over interval ratio. If you are still experiencing missing steps, try to uncomment the following line, but be aware this
-//may probably prevent the motors from reaching the nominal speed. If you enable this, make sure STEP_DELAY_MICROS is disabled.
+//Enabled for Gen6.  leave at default 0.25  . Speeds above 120mm/s are drastically slowed down when this is enabled...  
 #define STEP_DELAY_RATIO 0.25
 
+//Comment this to disable ramp acceleration.  
+//Ramp Accleration gives you smoother movements and a more quiet machine.  
+#define RAMP_ACCELERATION 1  // different maximum feedrates do not require different settings.
+
+//Uncomment this to enable exponential acceleration.  Very hard acceleartion alogarithm.
+//#define EXP_ACCELERATION 1  // works good if you have dialed in your settings and you are not changing your feedrates.  
+//different maximum feedrates require different settings..  Otherwise inefficient or too fast.
+
+
 //Acceleration settings
-float full_velocity_units = 3.5; // the units between minimum and G1 move feedrate
-float travel_move_full_velocity_units = 3.5; // used for travel moves
-float min_units_per_second = 35.0; // the minimum feedrate
-float min_constant_speed_units = 0; // the minimum units of an accelerated move that must be done at constant speed
+#ifdef RAMP_ACCELERATION
+float min_units_per_second = 30.0; // the minimum feedrate, this should be about the speed you are printing your perimeters at.
+long max_acceleration_units_per_sq_second = 1000; // Max acceleration in mm/s^2 for printing moves. Higher means faster acceleration. 
+long max_travel_acceleration_units_per_sq_second = 1000; // Max acceleration in mm/s^2 for travel moves. Higher means faster acceleration. 
+#endif
+#ifdef EXP_ACCELERATION
+float full_velocity_units = 5; // the units between minimum and G1 move feedrate  
+// rule of thumb: full_velocity_units=  sqrt(desired maximum feedrate - min_units_per_second)
+float travel_move_full_velocity_units = 10; // used for travel moves.  Use same formula for this..
+
+float min_units_per_second = 35.0; // the minimum feedrate.  Chhose it as about 70% of your fastest "safe" printing speed.
+float min_constant_speed_units = 2; // the minimum units of an accelerated move that must be done at constant speed
                                     // Note that if the move is shorter than this value, acceleration won't be perfomed,
                                     // but will be done at the minimum between min_units_per_seconds and move feedrate speeds.
+#endif
+
+
+
 
 
 // AD595 THERMOCOUPLE SUPPORT UNTESTED... USE WITH CAUTION!!!!
 
 //PID settings:
-//Uncomment the following line to enable PID support. This is untested and could be disastrous. Be careful.
+//These settings work very nice with the Mendel parts hotend. (6 Ohm aluminium block)  Leave PID enabled.
 #define PIDTEMP 1
 #ifdef PIDTEMP
 #define PID_MAX 255 // limits current to nozzle
@@ -39,7 +60,7 @@ float min_constant_speed_units = 0; // the minimum units of an accelerated move 
 #define PID_DGAIN 60 //100 is 1.0
 #endif
 
-//Experimental temperature smoothing - only uncomment this if your temp readings are noisy
+//Experimental temperature smoothing - only uncomment this if your temp readings are noisy.  Absolutely Necessary for Gen6
 #define SMOOTHING 1
 #define SMOOTHFACTOR 16 //best to use a power of two here - determines how many values are averaged together by the smoothing algorithm
 
@@ -47,8 +68,8 @@ float min_constant_speed_units = 0; // the minimum units of an accelerated move 
 //The watchdog waits for the watchperiod in milliseconds whenever an M104 or M109 increases the target temperature
 //If the temperature has not increased at the end of that period, the target temperature is set to zero. It can be reset with another M104/M109
 //#define WATCHPERIOD 5000 //5 seconds
-//The minimal temperature defines the temperature below which the heater will not be enabled
-//#define MINTEMP 130
+//The minimal temperature defines the temperature below which the heater will not be enabled.  Setting it under roomtemperature works as failsafe if the circuit breaks.
+//#define MINTEMP 10
 
 // Select one of these only to define how the nozzle temp is read.
 #define HEATER_USES_THERMISTOR
@@ -65,12 +86,13 @@ float min_constant_speed_units = 0; // the minimum units of an accelerated move 
 // new_axis_steps_per_mm = previous_axis_steps_per_mm * (test_distance_instructed/test_distance_traveled)
 // units are in millimeters or whatever length unit you prefer: inches,football-fields,parsecs etc
 
-//Calibration variables
-float x_steps_per_unit = 40.075; 
-float y_steps_per_unit = 40.100;
-float z_steps_per_unit = 3394.697;
-float e_steps_per_unit = 442.3027; //30.3 for SF39   390
-float max_feedrate = 200000; //mmm, acceleration!
+//Calibration variables..  Settings are the default mendel-parts FiveD values.  Feel free to calibrate and correct.
+float x_steps_per_unit = 40; 
+float y_steps_per_unit = 40;
+float z_steps_per_unit = 3333.592;
+float e_steps_per_unit = 442.3027; // my settings for Skeinforge 40 and higher.
+float max_feedrate = 200000;  // The feedrate the FW will set as upper limit.  Anything higher will be valued down to this. (mm/min)
+float max_z_feedrate = 80; // with this limit in skeinforge can be disabled. (mm/min)
 
 
 
@@ -87,12 +109,12 @@ const bool Z_ENABLE_ON = 0;
 const bool E_ENABLE_ON = 0;
 
 //Disables axis when it's not being used.
-const bool DISABLE_X = false;
+const bool DISABLE_X = false;  
 const bool DISABLE_Y = false;
-const bool DISABLE_Z = true;
+const bool DISABLE_Z = true;  //the only one that is used so infrequently that it is worth disabling. 
 const bool DISABLE_E = false;
 
-const bool INVERT_X_DIR = false;
+const bool INVERT_X_DIR = false;// set to true if you are using x axis belt teeth turned to the outside. 
 const bool INVERT_Y_DIR = true;
 const bool INVERT_Z_DIR = false;
 const bool INVERT_E_DIR = false;
@@ -116,19 +138,16 @@ const bool INVERT_E_DIR = false;
 
 //Endstop Settings
 #define ENDSTOPPULLUPS 1
-const bool ENDSTOPS_INVERTING = true;
+const bool ENDSTOPS_INVERTING = true;  // set to false if using optos from before DEC15, 2010
 const bool min_software_endstops = false; //If true, axis won't move to coordinates less than zero.
 const bool max_software_endstops = true;  //If true, axis won't move to coordinates greater than the defined lengths below.
 const int X_MAX_LENGTH = 200;
 const int Y_MAX_LENGTH = 200;
 const int Z_MAX_LENGTH = 100;
 
-
-
-#define BAUDRATE 57600
+#define BAUDRATE 57600  // Do not forget to change the setting in Repsnapper.  
 
 
 
 
 #endif
-
