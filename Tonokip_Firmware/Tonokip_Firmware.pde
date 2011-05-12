@@ -832,7 +832,7 @@ inline void get_coordinates()
   }
 }
 
-void prepare_move()
+inline void prepare_move()
 {
   //Find direction
   if(destination_x >= current_x) direction_x=1;
