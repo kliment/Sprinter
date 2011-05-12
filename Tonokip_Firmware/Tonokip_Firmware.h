@@ -17,6 +17,7 @@ void FlushSerialRequestResend();
 void ClearToSend();
 
 void get_coordinates();
+void prepare_move();
 void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remaining, unsigned long z_steps_remaining, unsigned long e_steps_remaining);
 void disable_x();
 void disable_y();
