@@ -65,7 +65,6 @@ float min_constant_speed_units = 2; // the minimum units of an accelerated move 
 //When temperature exceeds max temp, your bot will halt.
 //This feature exists to protect your hotend from overheating accidentally, but *NOT* from thermistor short/failure!
 //You should use MINTEMP for thermistor short/failure protection.
-//Can be customized using M143
 //#define MAXTEMP 275
 
 // Select one of these only to define how the nozzle temp is read.

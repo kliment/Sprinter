@@ -52,7 +52,6 @@
 // M92  - Set axis_steps_per_unit - same syntax as G92
 // M115	- Capabilities string
 // M140 - Set bed target temp
-// M143 - Set maximum hot-end temperature
 // M190 - Wait for bed current temp to reach target temp.
 // M201 - Set max acceleration in units/s^2 for print moves (M201 X1000 Y1000)
 // M202 - Set max acceleration in units/s^2 for travel moves (M202 X1000 Y1000)
@@ -659,9 +658,6 @@ inline void process_commands()
         break;
       case 140: // M140 set bed temp
         if (code_seen('S')) target_bed_raw = temp2analogBed(code_value());
-        break;
-      case 143: // M143 set maximum hotend temperature
-	if (code_seen('S')) maxttemp = temp2analog(code_value());
         break;
       case 105: // M105
         #if (TEMP_0_PIN>-1) || defined (HEATER_USES_MAX6675)
