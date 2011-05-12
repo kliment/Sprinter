@@ -83,6 +83,7 @@ void kill(byte debug);
 // M92  - Set axis_steps_per_unit - same syntax as G92
 // M115	- Capabilities string
 // M140 - Set bed target temp
+// M143 - Set maximum hot-end temperature
 // M190 - Wait for bed current temp to reach target temp.
 
 
@@ -169,6 +170,9 @@ unsigned long watchmillis=0;
 #endif
 #ifdef MINTEMP
 int minttemp=temp2analog(MINTEMP);
+#endif
+#ifdef MAXTEMP
+int maxttemp=temp2analog(MAXTEMP);
 #endif
         
 //Inactivity shutdown variables
@@ -692,6 +696,9 @@ inline void process_commands()
         break;
       case 140: // M140 set bed temp
         if (code_seen('S')) target_bed_raw = temp2analogBed(code_value());
+        break;
+      case 143: // M143 set maximum hotend temperature
+	if (code_seen('S')) maxttemp = temp2analog(code_value());
         break;
       case 105: // M105
         #if (TEMP_0_PIN>-1) || defined (HEATER_USES_MAX6675)
@@ -1325,6 +1332,12 @@ inline void manage_heater()
     if(current_raw<=minttemp)
         target_raw=0;
   #endif
+  #ifdef MAXTEMP
+    if(current_raw>maxttemp) {
+        // We are too hot. Emergency brake to protect hotend
+        kill(5);
+    }
+  #endif
   #if (TEMP_0_PIN > -1) || defined (HEATER_USES_MAX66675)
     #ifdef PIDTEMP
       error = target_raw - current_raw;
@@ -1528,6 +1541,7 @@ inline void kill(byte debug)
       case 2: Serial.print("Linear Move Abort, Last Line: "); break;
       case 3: Serial.print("Homing X Min Stop Fail, Last Line: "); break;
       case 4: Serial.print("Homing Y Min Stop Fail, Last Line: "); break;
+      case 5: Serial.print("Hot-end overheat protection, Last Line: "); break;
     } 
     Serial.println(gcode_LastN);
     delay(5000); // 5 Second delay

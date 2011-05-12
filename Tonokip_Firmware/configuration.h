@@ -61,6 +61,13 @@ float min_constant_speed_units = 2; // the minimum units of an accelerated move 
 //The minimal temperature defines the temperature below which the heater will not be enabled
 //#define MINTEMP 
 
+//Experimental max temp
+//When temperature exceeds max temp, your bot will halt.
+//This feature exists to protect your hotend from overheating accidentally, but *NOT* from thermistor short/failure!
+//You should use MINTEMP for thermistor short/failure protection.
+//Can be customized using M143
+//#define MAXTEMP 275
+
 // Select one of these only to define how the nozzle temp is read.
 #define HEATER_USES_THERMISTOR
 //#define HEATER_USES_AD595
