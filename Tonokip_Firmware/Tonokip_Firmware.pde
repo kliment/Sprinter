@@ -163,7 +163,7 @@ unsigned long stepper_inactive_time = 0;
     if(root.isOpen())
         root.close();
     if (!card.init(SPI_FULL_SPEED,SDSS)){
-        if (!card.init(SPI_HALF_SPEED,SDSS))
+        //if (!card.init(SPI_HALF_SPEED,SDSS))
           Serial.println("SD init fail");
     }
     else if (!volume.init(&card))
@@ -283,7 +283,7 @@ void loop()
             write_command(cmdbuffer[bufindr]);
             Serial.println("ok");
         }else{
-            file.sync(); // maybe this call is not needed
+            file.sync();
             file.close();
             savetosd=false;
             Serial.println("Done saving file.");
@@ -1148,8 +1148,8 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
       }
     }
     
-    //If more that half second is passed since previous heating check, manage it
-    if(!accelerating && (millis() - previous_millis_heater) >= 500 ) {
+    //If more that 50ms have passed since previous heating check, adjust temp
+    if(!accelerating && (millis() - previous_millis_heater) >= 50 ) {
       manage_heater();
       previous_millis_heater = millis();
       
