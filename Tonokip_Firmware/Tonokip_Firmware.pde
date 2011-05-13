@@ -782,11 +782,11 @@ inline void process_commands()
       #ifdef RAMP_ACCELERATION
       case 201: // M201
         if(code_seen('X')) x_steps_per_sqr_second = code_value() * x_steps_per_unit;
-        if(code_seen('Y')) x_steps_per_sqr_second = code_value() * y_steps_per_unit;
+        if(code_seen('Y')) y_steps_per_sqr_second = code_value() * y_steps_per_unit;
         break;
       case 202: // M202
         if(code_seen('X')) x_travel_steps_per_sqr_second = code_value() * x_steps_per_unit;
-        if(code_seen('Y')) x_travel_steps_per_sqr_second = code_value() * y_steps_per_unit;
+        if(code_seen('Y')) y_travel_steps_per_sqr_second = code_value() * y_steps_per_unit;
         break;
       #endif
     }
