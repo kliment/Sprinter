@@ -766,7 +766,18 @@ inline void process_commands()
         if(code_seen('E')) e_steps_per_unit = code_value();
         break;
       case 115: // M115
-        Serial.println("FIRMWARE_NAME:Sprinter FIRMWARE_URL:http%%3A/github.com/kliment/Sprinter/ PROTOCOL_VERSION:1.0 MACHINE_TYPE:Mendel EXTRUDER_COUNT:1");
+        Serial.println("FIRMWARE_NAME:Sprinter FIRMWARE_URL:http%%3A/github.com/kliment/Sprinter/ PROTOCOL_VERSION:1.0 MACHINE_TYPE:Mendel EXTRUDER_COUNT:1\");
+        Serial.print("X-X_STEPS_PER_UNIT:"); Serial.print(x_steps_per_unit); Serial.println("\\");
+        Serial.print("X-Y_STEPS_PER_UNIT:"); Serial.print(y_steps_per_unit); Serial.println("\\");
+        Serial.print("X-Z_STEPS_PER_UNIT:"); Serial.print(z_steps_per_unit); Serial.println("\\");
+        Serial.print("X-E_STEPS_PER_UNIT:"); Serial.print(e_steps_per_unit); Serial.println("\\");
+        Serial.print("X-MAX_XY_FEEDRATE:"); Serial.print(max_feedrate); Serial.println("\\");
+        Serial.print("X-MAX_Z_FEEDRATE: "); Serial.print(max_z_feedrate);  Serial.println("\\");
+        Serial.print("X-INVERT_X_DIR:"); Serial.print(INVERT_X_DIR); Serial.println("\\");
+        Serial.print("X-INVERT_Y_DIR:"); Serial.print(INVERT_Y_DIR); Serial.println("\\");
+        Serial.print("X-INVERT_Z_DIR:"); Serial.print(INVERT_Z_DIR); Serial.println("\\");
+        Serial.print("X-INVERT_E_DIR:"); Serial.print(INVERT_E_DIR); 
+        Serial.println();
         break;
 
       case 114: // M114
