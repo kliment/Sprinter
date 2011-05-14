@@ -97,7 +97,7 @@ long timediff = 0;
 
 
 // comm variables
-#define MAX_CMD_SIZE 256
+#define MAX_CMD_SIZE 96
 #define BUFSIZE 8
 char cmdbuffer[BUFSIZE][MAX_CMD_SIZE];
 bool fromsd[BUFSIZE];
@@ -1069,6 +1069,13 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
   
   //move until no more steps remain 
   while(x_steps_remaining + y_steps_remaining + z_steps_remaining + e_steps_remaining > 0) {
+    //If more that 50ms have passed since previous heating check, adjust temp
+    if((millis() - previous_millis_heater) >= 50 ) {
+      manage_heater();
+      previous_millis_heater = millis();
+      
+      manage_inactivity(2);
+    }
     #ifdef RAMP_ACCELERATION
     //If acceleration is enabled on this move and we are in the acceleration segment, calculate the current interval
     if (acceleration_enabled && steps_done == 0) {
@@ -1179,7 +1186,10 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
       }
     }
     #ifdef RAMP_ACCELERATION
-    if (steps_to_take > 0 && (steps_remaining == plateau_steps || (steps_done >= steps_to_take / 2 && accelerating && !decelerating))) continue;
+    if(x_steps_remaining==0 && 
+        y_steps_remaining==0 &&
+        steps_to_take > 0 && 
+        (steps_remaining == plateau_steps || (steps_done >= steps_to_take / 2 && accelerating && !decelerating))) continue;
     #endif
 
     //If there are z steps remaining, check if z steps must be taken
@@ -1202,7 +1212,7 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
 
     //If there are e steps remaining, check if e steps must be taken
     if(e_steps_remaining){
-      if (x_steps_to_take + y_steps_to_take <= 0) timediff = micros() * 100-previous_micros_e;
+      if (x_steps_to_take + y_steps_to_take <= 0) timediff = micros()*100 - previous_micros_e;
       unsigned int final_e_steps_remaining = 0;
       if (steep_x && x_steps_to_take > 0) final_e_steps_remaining = e_steps_to_take * x_steps_remaining / x_steps_to_take;
       else if (steep_y && y_steps_to_take > 0) final_e_steps_remaining = e_steps_to_take * y_steps_remaining / y_steps_to_take;
@@ -1221,14 +1231,6 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
         if(timediff >= e_interval) delayMicroseconds(STEP_DELAY_MICROS);
         #endif
       }
-    }
-    
-    //If more that 50ms have passed since previous heating check, adjust temp
-    if(!accelerating && (millis() - previous_millis_heater) >= 50 ) {
-      manage_heater();
-      previous_millis_heater = millis();
-      
-      manage_inactivity(2);
     }
   }
   
