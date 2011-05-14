@@ -14,7 +14,7 @@
 
 //Implemented Codes
 //-------------------
-// G0 -> G1
+// G0  -> G1
 // G1  - Coordinated Movement X Y Z E
 // G4  - Dwell S<seconds> or P<milliseconds>
 // G28 - Home all Axis
@@ -59,7 +59,7 @@
 
 //Stepper Movement Variables
 bool direction_x, direction_y, direction_z, direction_e;
-unsigned long previous_micros=0, previous_micros_x=0, previous_micros_y=0, previous_micros_z=0, previous_micros_e=0, previous_millis_heater, previous_millis_bed_heater;
+unsigned long previous_micros = 0, previous_micros_x = 0, previous_micros_y = 0, previous_micros_z = 0, previous_micros_e = 0, previous_millis_heater, previous_millis_bed_heater;
 unsigned long x_steps_to_take, y_steps_to_take, z_steps_to_take, e_steps_to_take;
 #ifdef RAMP_ACCELERATION
   unsigned long max_x_interval = 100000000.0 / (min_units_per_second * x_steps_per_unit);
@@ -80,9 +80,9 @@ unsigned long x_steps_to_take, y_steps_to_take, z_steps_to_take, e_steps_to_take
   unsigned long x_min_constant_speed_steps = min_constant_speed_units * x_steps_per_unit,
     y_min_constant_speed_steps = min_constant_speed_units * y_steps_per_unit, min_constant_speed_steps;
 #endif
-boolean acceleration_enabled=false ,accelerating=false;
+boolean acceleration_enabled = false, accelerating = false;
 unsigned long interval;
-float destination_x =0.0, destination_y = 0.0, destination_z = 0.0, destination_e = 0.0;
+float destination_x = 0.0, destination_y = 0.0, destination_z = 0.0, destination_e = 0.0;
 float current_x = 0.0, current_y = 0.0, current_z = 0.0, current_e = 0.0;
 long x_interval, y_interval, z_interval, e_interval; // for speed delay
 float feedrate = 1500, next_feedrate, z_feedrate, saved_feedrate;
@@ -90,7 +90,7 @@ float time_for_move;
 long gcode_N, gcode_LastN;
 bool relative_mode = false;  //Determines Absolute or Relative Coordinates
 bool relative_mode_e = false;  //Determines Absolute or Relative E Codes while in Absolute Coordinates mode. E is always relative in Relative Coordinates mode.
-long timediff=0;
+long timediff = 0;
 #ifdef STEP_DELAY_RATIO
   long long_step_delay_ratio = STEP_DELAY_RATIO * 100;
 #endif
@@ -101,10 +101,10 @@ long timediff=0;
 #define BUFSIZE 8
 char cmdbuffer[BUFSIZE][MAX_CMD_SIZE];
 bool fromsd[BUFSIZE];
-int bufindr=0;
-int bufindw=0;
-int buflen=0;
-int i=0;
+int bufindr = 0;
+int bufindw = 0;
+int buflen = 0;
+int i = 0;
 char serial_char;
 int serial_count = 0;
 boolean comment_mode = false;
@@ -115,37 +115,37 @@ char *strchr_pointer; // just a pointer to find chars in the cmd string like X, 
 // degree increments (i.e. 100=25 deg). 
 
 int target_raw = 0;
-int current_raw =0;
+int current_raw = 0;
 int target_bed_raw = 0;
-int current_bed_raw=0;
-float tt=0,bt=0;
+int current_bed_raw = 0;
+float tt = 0, bt = 0;
 #ifdef PIDTEMP
-  int temp_iState=0;
-  int temp_dState=0;
+  int temp_iState = 0;
+  int temp_dState = 0;
   int pTerm;
   int iTerm;
   int dTerm;
       //int output;
   int error;
-  int temp_iState_min = 100*-PID_INTEGRAL_DRIVE_MAX/PID_IGAIN;
-  int temp_iState_max = 100*PID_INTEGRAL_DRIVE_MAX/PID_IGAIN;
+  int temp_iState_min = 100 * -PID_INTEGRAL_DRIVE_MAX / PID_IGAIN;
+  int temp_iState_max = 100 * PID_INTEGRAL_DRIVE_MAX / PID_IGAIN;
 #endif
 #ifdef SMOOTHING
-  uint32_t nma=SMOOTHFACTOR*analogRead(TEMP_0_PIN);
+  uint32_t nma = SMOOTHFACTOR * analogRead(TEMP_0_PIN);
 #endif
 #ifdef WATCHPERIOD
-  int watch_raw=-1000;
-  unsigned long watchmillis=0;
+  int watch_raw = -1000;
+  unsigned long watchmillis = 0;
 #endif
 #ifdef MINTEMP
-  int minttemp=temp2analog(MINTEMP);
+  int minttemp = temp2analog(MINTEMP);
 #endif
 #ifdef MAXTEMP
-int maxttemp=temp2analog(MAXTEMP);
+int maxttemp = temp2analog(MAXTEMP);
 #endif
         
 //Inactivity shutdown variables
-unsigned long previous_millis_cmd=0;
+unsigned long previous_millis_cmd = 0;
 unsigned long max_inactive_time = 0;
 unsigned long stepper_inactive_time = 0;
 
@@ -154,16 +154,16 @@ unsigned long stepper_inactive_time = 0;
   SdVolume volume;
   SdFile root;
   SdFile file;
-  uint32_t filesize=0;
-  uint32_t sdpos=0;
-  bool sdmode=false;
-  bool sdactive=false;
-  bool savetosd=false;
+  uint32_t filesize = 0;
+  uint32_t sdpos = 0;
+  bool sdmode = false;
+  bool sdactive = false;
+  bool savetosd = false;
   int16_t n;
   
   void initsd(){
-  sdactive=false;
-  #if SDSS>-1
+  sdactive = false;
+  #if SDSS >- 1
     if(root.isOpen())
         root.close();
     if (!card.init(SPI_FULL_SPEED,SDSS)){
@@ -175,23 +175,23 @@ unsigned long stepper_inactive_time = 0;
     else if (!root.openRoot(&volume)) 
           Serial.println("openRoot failed");
     else 
-            sdactive=true;
+            sdactive = true;
   #endif
   }
   
   inline void write_command(char *buf){
-      char* begin=buf;
-      char* npos=0;
-      char* end=buf+strlen(buf)-1;
+      char* begin = buf;
+      char* npos = 0;
+      char* end = buf + strlen(buf) - 1;
       
       file.writeError = false;
-      if((npos=strchr(buf, 'N')) != NULL){
-          begin = strchr(npos,' ')+1;
-          end =strchr(npos, '*')-1;
+      if((npos = strchr(buf, 'N')) != NULL){
+          begin = strchr(npos, ' ') + 1;
+          end = strchr(npos, '*') - 1;
       }
-      end[1]='\r';
-      end[2]='\n';
-      end[3]='\0';
+      end[1] = '\r';
+      end[2] = '\n';
+      end[3] = '\0';
       //Serial.println(begin);
       file.write(begin);
       if (file.writeError){
@@ -205,8 +205,8 @@ void setup()
 { 
   Serial.begin(BAUDRATE);
   Serial.println("start");
-  for(int i=0;i<BUFSIZE;i++){
-      fromsd[i]=false;
+  for(int i = 0; i < BUFSIZE; i++){
+      fromsd[i] = false;
   }
   //Initialize Step Pins
   if(X_STEP_PIN > -1) pinMode(X_STEP_PIN,OUTPUT);
@@ -279,13 +279,13 @@ void loop()
   if(buflen){
 #ifdef SDSUPPORT
     if(savetosd){
-        if(strstr(cmdbuffer[bufindr],"M29")==NULL){
+        if(strstr(cmdbuffer[bufindr],"M29") == NULL){
             write_command(cmdbuffer[bufindr]);
             Serial.println("ok");
         }else{
             file.sync();
             file.close();
-            savetosd=false;
+            savetosd = false;
             Serial.println("Done saving file.");
         }
     }else{
@@ -294,8 +294,8 @@ void loop()
 #else
     process_commands();
 #endif
-    buflen=(buflen-1);
-    bufindr=(bufindr+1)%BUFSIZE;
+    buflen = (buflen-1);
+    bufindr = (bufindr + 1)%BUFSIZE;
     }
   
   manage_heater();
@@ -306,14 +306,14 @@ void loop()
 
 inline void get_command() 
 { 
-  while( Serial.available() > 0  && buflen<BUFSIZE) {
-    serial_char=Serial.read();
+  while( Serial.available() > 0  && buflen < BUFSIZE) {
+    serial_char = Serial.read();
     if(serial_char == '\n' || serial_char == '\r' || serial_char == ':' || serial_count >= (MAX_CMD_SIZE - 1) ) 
     {
       if(!serial_count) return; //if empty line
       cmdbuffer[bufindw][serial_count] = 0; //terminate string
       if(!comment_mode){
-    fromsd[bufindw]=false;
+    fromsd[bufindw] = false;
   if(strstr(cmdbuffer[bufindw], "N") != NULL)
   {
     strchr_pointer = strchr(cmdbuffer[bufindw], 'N');
@@ -330,7 +330,7 @@ inline void get_command()
     if(strstr(cmdbuffer[bufindw], "*") != NULL)
     {
       byte checksum = 0;
-      byte count=0;
+      byte count = 0;
       while(cmdbuffer[bufindw][count] != '*') checksum = checksum^cmdbuffer[bufindw][count++];
       strchr_pointer = strchr(cmdbuffer[bufindw], '*');
   
@@ -338,7 +338,7 @@ inline void get_command()
         Serial.print("Error: checksum mismatch, Last Line:");
         Serial.println(gcode_LastN);
         FlushSerialRequestResend();
-        serial_count=0;
+        serial_count = 0;
         return;
       }
       //if no errors, continue parsing
@@ -348,7 +348,7 @@ inline void get_command()
       Serial.print("Error: No Checksum with line number, Last Line:");
       Serial.println(gcode_LastN);
       FlushSerialRequestResend();
-      serial_count=0;
+      serial_count = 0;
       return;
     }
     
@@ -361,7 +361,7 @@ inline void get_command()
     {
       Serial.print("Error: No Line Number with checksum, Last Line:");
       Serial.println(gcode_LastN);
-      serial_count=0;
+      serial_count = 0;
       return;
     }
   }
@@ -381,8 +381,8 @@ inline void get_command()
 		}
 
 	}
-        bufindw=(bufindw+1)%BUFSIZE;
-        buflen+=1;
+        bufindw = (bufindw + 1)%BUFSIZE;
+        buflen += 1;
         
       }
       comment_mode = false; //for new command
@@ -398,22 +398,22 @@ inline void get_command()
 if(!sdmode || serial_count!=0){
     return;
 }
-  while( filesize > sdpos  && buflen<BUFSIZE) {
-    n=file.read();
-    serial_char=(char)n;
-    if(serial_char == '\n' || serial_char == '\r' || serial_char == ':' || serial_count >= (MAX_CMD_SIZE - 1) || n==-1) 
+  while( filesize > sdpos  && buflen < BUFSIZE) {
+    n = file.read();
+    serial_char = (char)n;
+    if(serial_char == '\n' || serial_char == '\r' || serial_char == ':' || serial_count >= (MAX_CMD_SIZE - 1) || n == -1) 
     {
-        sdpos=file.curPosition();
-        if(sdpos>=filesize){
-            sdmode=false;
+        sdpos = file.curPosition();
+        if(sdpos >= filesize){
+            sdmode = false;
             Serial.println("Done printing file");
         }
       if(!serial_count) return; //if empty line
       cmdbuffer[bufindw][serial_count] = 0; //terminate string
       if(!comment_mode){
-        fromsd[bufindw]=true;
-        buflen+=1;
-        bufindw=(bufindw+1)%BUFSIZE;
+        fromsd[bufindw] = true;
+        buflen += 1;
+        bufindw = (bufindw + 1)%BUFSIZE;
       }
       comment_mode = false; //for new command
       serial_count = 0; //clear buffer
@@ -439,13 +439,13 @@ inline bool code_seen(char code)
   return (strchr_pointer != NULL);  //Return True if a character was found
 }
  //experimental feedrate calc
-float d=0;
-float xdiff=0,ydiff=0,zdiff=0,ediff=0;
+float d = 0;
+float xdiff = 0, ydiff = 0, zdiff = 0, ediff = 0;
 
 inline void process_commands()
 {
   unsigned long codenum; //throw away variable
-  char *starpos=NULL;
+  char *starpos = NULL;
   if(code_seen('G'))
   {
     switch((int)code_value())
@@ -461,7 +461,7 @@ inline void process_commands()
       case 4: // G4 dwell
         codenum = 0;
         if(code_seen('P')) codenum = code_value(); // milliseconds to wait
-        if(code_seen('S')) codenum = code_value()*1000; // seconds to wait
+        if(code_seen('S')) codenum = code_value() * 1000; // seconds to wait
         previous_millis_heater = millis();  // keep track of when we started waiting
         while((millis() - previous_millis_heater) < codenum ) manage_heater(); //manage heater until time is up
         break;
@@ -480,7 +480,7 @@ inline void process_commands()
         if(X_MIN_PIN > -1) {
           current_x = 0;
           destination_x = -1.5 * X_MAX_LENGTH;
-          feedrate = min_units_per_second*60;
+          feedrate = min_units_per_second * 60;
           prepare_move();
           
           current_x = 0;
@@ -498,7 +498,7 @@ inline void process_commands()
         if(Y_MIN_PIN > -1) {
           current_y = 0;
           destination_y = -1.5 * Y_MAX_LENGTH;
-          feedrate = min_units_per_second*60;
+          feedrate = min_units_per_second * 60;
           prepare_move();
           
           current_y = 0;
@@ -563,27 +563,27 @@ inline void process_commands()
         Serial.println("End file list");
         break;
       case 21: // M21 - init SD card
-        sdmode=false;
+        sdmode = false;
         initsd();
         break;
       case 22: //M22 - release SD card
-        sdmode=false;
-        sdactive=false;
+        sdmode = false;
+        sdactive = false;
         break;
       case 23: //M23 - Select file
         if(sdactive){
-            sdmode=false;
+            sdmode = false;
             file.close();
-            starpos=(strchr(strchr_pointer+4,'*'));
+            starpos = (strchr(strchr_pointer + 4,'*'));
             if(starpos!=NULL)
                 *(starpos-1)='\0';
-            if (file.open(&root, strchr_pointer+4, O_READ)) {
+            if (file.open(&root, strchr_pointer + 4, O_READ)) {
                 Serial.print("File opened:");
-                Serial.print(strchr_pointer+4);
+                Serial.print(strchr_pointer + 4);
                 Serial.print(" Size:");
                 Serial.println(file.fileSize());
-                sdpos=0;
-                filesize=file.fileSize();
+                sdpos = 0;
+                filesize = file.fileSize();
                 Serial.println("File selected");
             }
             else{
@@ -593,17 +593,17 @@ inline void process_commands()
         break;
       case 24: //M24 - Start SD print
         if(sdactive){
-            sdmode=true;
+            sdmode = true;
         }
         break;
       case 25: //M25 - Pause SD print
         if(sdmode){
-            sdmode=false;
+            sdmode = false;
         }
         break;
       case 26: //M26 - Set SD index
         if(sdactive && code_seen('S')){
-            sdpos=code_value_long();
+            sdpos = code_value_long();
             file.seekSet(sdpos);
         }
         break;
@@ -619,40 +619,40 @@ inline void process_commands()
         break;
             case 28: //M28 - Start SD write
         if(sdactive){
-          char* npos=0;
+          char* npos = 0;
             file.close();
-            sdmode=false;
-            starpos=(strchr(strchr_pointer+4,'*'));
-            if(starpos!=NULL){
-              npos=strchr(cmdbuffer[bufindr], 'N');
-              strchr_pointer = strchr(npos,' ')+1;
-              *(starpos-1)='\0';
+            sdmode = false;
+            starpos = (strchr(strchr_pointer + 4,'*'));
+            if(starpos != NULL){
+              npos = strchr(cmdbuffer[bufindr], 'N');
+              strchr_pointer = strchr(npos,' ') + 1;
+              *(starpos-1) = '\0';
             }
       if (!file.open(&root, strchr_pointer+4, O_CREAT | O_APPEND | O_WRITE | O_TRUNC))
             {
             Serial.print("open failed, File: ");
-            Serial.print(strchr_pointer+4);
+            Serial.print(strchr_pointer + 4);
             Serial.print(".");
             }else{
             savetosd = true;
             Serial.print("Writing to file: ");
-            Serial.println(strchr_pointer+4);
+            Serial.println(strchr_pointer + 4);
             }
         }
         break;
       case 29: //M29 - Stop SD write
         //processed in write to file routine above
-        //savetosd=false;
+        //savetosd = false;
         break;
 #endif
       case 104: // M104
         if (code_seen('S')) target_raw = temp2analog(code_value());
         #ifdef WATCHPERIOD
-            if(target_raw>current_raw){
-                watchmillis=max(1,millis());
-                watch_raw=current_raw;
+            if(target_raw > current_raw){
+                watchmillis = max(1,millis());
+                watch_raw = current_raw;
             }else{
-                watchmillis=0;
+                watchmillis = 0;
             }
         #endif
         break;
@@ -660,16 +660,16 @@ inline void process_commands()
         if (code_seen('S')) target_bed_raw = temp2analogBed(code_value());
         break;
       case 105: // M105
-        #if (TEMP_0_PIN>-1) || defined (HEATER_USES_MAX6675)
-          tt=analog2temp(current_raw);
+        #if (TEMP_0_PIN > -1) || defined (HEATER_USES_MAX6675)
+          tt = analog2temp(current_raw);
         #endif
-        #if TEMP_1_PIN>-1
-          bt=analog2tempBed(current_bed_raw);
+        #if TEMP_1_PIN > -1
+          bt = analog2tempBed(current_bed_raw);
         #endif
-        #if (TEMP_0_PIN>-1) || defined (HEATER_USES_MAX6675)
+        #if (TEMP_0_PIN > -1) || defined (HEATER_USES_MAX6675)
           Serial.print("T:");
           Serial.println(tt); 
-          #if TEMP_1_PIN>-1
+          #if TEMP_1_PIN > -1
         
             Serial.print("ok T:");
             Serial.print(tt); 
@@ -685,15 +685,15 @@ inline void process_commands()
         if (code_seen('S')) target_raw = temp2analog(code_value());
         #ifdef WATCHPERIOD
             if(target_raw>current_raw){
-                watchmillis=max(1,millis());
-                watch_raw=current_raw;
+                watchmillis = max(1,millis());
+                watch_raw = current_raw;
             }else{
-                watchmillis=0;
+                watchmillis = 0;
             }
         #endif
         previous_millis_heater = millis(); 
         while(current_raw < target_raw) {
-          if( (millis()-previous_millis_heater) > 1000 ) //Print Temp Reading every 1 second while heating up.
+          if( (millis() - previous_millis_heater) > 1000 ) //Print Temp Reading every 1 second while heating up.
           {
             Serial.print("T:");
             Serial.println( analog2temp(current_raw) ); 
@@ -703,7 +703,7 @@ inline void process_commands()
         }
         break;
       case 190: // M190 - Wait bed for heater to reach target.
-      #if TEMP_1_PIN>-1
+      #if TEMP_1_PIN > -1
         if (code_seen('S')) target_bed_raw = temp2analog(code_value());
         previous_millis_heater = millis(); 
         while(current_bed_raw < target_bed_raw) {
@@ -725,7 +725,7 @@ inline void process_commands()
       case 106: //M106 Fan On
         if (code_seen('S')){
             digitalWrite(FAN_PIN, HIGH);
-            analogWrite(FAN_PIN,constrain(code_value(),0,255));
+            analogWrite(FAN_PIN, constrain(code_value(),0,255) );
         }
         else
             digitalWrite(FAN_PIN, HIGH);
@@ -748,12 +748,12 @@ inline void process_commands()
         relative_mode_e = true;
         break;
       case 84:
-        if(code_seen('S')){ stepper_inactive_time = code_value()*1000; }
+        if(code_seen('S')){ stepper_inactive_time = code_value() * 1000; }
         else{ disable_x(); disable_y(); disable_z(); disable_e(); }
         break;
       case 85: // M85
         code_seen('S');
-        max_inactive_time = code_value()*1000; 
+        max_inactive_time = code_value() * 1000; 
         break;
       case 86: // M86 If Endstop is Not Activated then Abort Print
         if(code_seen('X')) if( digitalRead(X_MIN_PIN) == ENDSTOPS_INVERTING ) kill(3);
@@ -806,7 +806,7 @@ inline void FlushSerialRequestResend()
   //char cmdbuffer[bufindr][100]="Resend:";
   Serial.flush();
   Serial.print("Resend:");
-  Serial.println(gcode_LastN+1);
+  Serial.println(gcode_LastN + 1);
   ClearToSend();
 }
 
@@ -839,14 +839,14 @@ inline void get_coordinates()
 inline void prepare_move()
 {
   //Find direction
-  if(destination_x >= current_x) direction_x=1;
-  else direction_x=0;
-  if(destination_y >= current_y) direction_y=1;
-  else direction_y=0;
-  if(destination_z >= current_z) direction_z=1;
-  else direction_z=0;
-  if(destination_e >= current_e) direction_e=1;
-  else direction_e=0;
+  if(destination_x >= current_x) direction_x = 1;
+  else direction_x = 0;
+  if(destination_y >= current_y) direction_y = 1;
+  else direction_y = 0;
+  if(destination_z >= current_z) direction_z = 1;
+  else direction_z = 0;
+  if(destination_e >= current_e) direction_e = 1;
+  else direction_e = 0;
   
   
   if (min_software_endstops) {
@@ -864,49 +864,49 @@ inline void prepare_move()
   if(feedrate > max_feedrate) feedrate = max_feedrate;
 
   if(feedrate > max_z_feedrate) z_feedrate = max_z_feedrate;
-  else z_feedrate=feedrate;
+  else z_feedrate = feedrate;
   
-  xdiff=(destination_x - current_x);
-  ydiff=(destination_y - current_y);
-  zdiff=(destination_z - current_z);
-  ediff=(destination_e - current_e);
-  x_steps_to_take = abs(xdiff)*x_steps_per_unit;
-  y_steps_to_take = abs(ydiff)*y_steps_per_unit;
-  z_steps_to_take = abs(zdiff)*z_steps_per_unit;
-  e_steps_to_take = abs(ediff)*e_steps_per_unit;
-  if(feedrate<10)
-      feedrate=10;
+  xdiff = (destination_x - current_x);
+  ydiff = (destination_y - current_y);
+  zdiff = (destination_z - current_z);
+  ediff = (destination_e - current_e);
+  x_steps_to_take = abs(xdiff) * x_steps_per_unit;
+  y_steps_to_take = abs(ydiff) * y_steps_per_unit;
+  z_steps_to_take = abs(zdiff) * z_steps_per_unit;
+  e_steps_to_take = abs(ediff) * e_steps_per_unit;
+  if(feedrate < 10)
+      feedrate = 10;
   /*
   //experimental feedrate calc
-  if(abs(xdiff)>0.1 && abs(ydiff)>0.1)
-      d=sqrt(xdiff*xdiff+ydiff*ydiff);
-  else if(abs(xdiff)>0.1)
-      d=abs(xdiff);
-  else if(abs(ydiff)>0.1)
-      d=abs(ydiff);
-  else if(abs(zdiff)>0.05)
-      d=abs(zdiff);
-  else if(abs(ediff)>0.1)
-      d=abs(ediff);
-  else d=1; //extremely slow move, should be okay for moves under 0.1mm
-  time_for_move=(xdiff/(feedrate/60000000));
-  //time=60000000*dist/feedrate
-  //int feedz=(60000000*zdiff)/time_for_move;
-  //if(feedz>maxfeed)
+  if(abs(xdiff) > 0.1 && abs(ydiff) > 0.1)
+      d = sqrt(xdiff * xdiff + ydiff * ydiff);
+  else if(abs(xdiff) > 0.1)
+      d = abs(xdiff);
+  else if(abs(ydiff) > 0.1)
+      d = abs(ydiff);
+  else if(abs(zdiff) > 0.05)
+      d = abs(zdiff);
+  else if(abs(ediff) > 0.1)
+      d = abs(ediff);
+  else d = 1; //extremely slow move, should be okay for moves under 0.1mm
+  time_for_move = (xdiff / (feedrate / 60000000) );
+  //time = 60000000 * dist / feedrate
+  //int feedz = (60000000 * zdiff) / time_for_move;
+  //if(feedz > maxfeed)
   */
   #define X_TIME_FOR_MOVE ((float)x_steps_to_take / (x_steps_per_unit*feedrate/60000000))
   #define Y_TIME_FOR_MOVE ((float)y_steps_to_take / (y_steps_per_unit*feedrate/60000000))
   #define Z_TIME_FOR_MOVE ((float)z_steps_to_take / (z_steps_per_unit*z_feedrate/60000000))
   #define E_TIME_FOR_MOVE ((float)e_steps_to_take / (e_steps_per_unit*feedrate/60000000))
   
-  time_for_move = max(X_TIME_FOR_MOVE,Y_TIME_FOR_MOVE);
-  time_for_move = max(time_for_move,Z_TIME_FOR_MOVE);
-  if(time_for_move <= 0) time_for_move = max(time_for_move,E_TIME_FOR_MOVE);
+  time_for_move = max(X_TIME_FOR_MOVE, Y_TIME_FOR_MOVE);
+  time_for_move = max(time_for_move, Z_TIME_FOR_MOVE);
+  if(time_for_move <= 0) time_for_move = max(time_for_move, E_TIME_FOR_MOVE);
 
-  if(x_steps_to_take) x_interval = time_for_move/x_steps_to_take*100;
-  if(y_steps_to_take) y_interval = time_for_move/y_steps_to_take*100;
-  if(z_steps_to_take) z_interval = time_for_move/z_steps_to_take*100;
-  if(e_steps_to_take && (x_steps_to_take + y_steps_to_take <= 0)) e_interval = time_for_move/e_steps_to_take*100;
+  if(x_steps_to_take) x_interval = time_for_move / x_steps_to_take * 100;
+  if(y_steps_to_take) y_interval = time_for_move / y_steps_to_take * 100;
+  if(z_steps_to_take) z_interval = time_for_move / z_steps_to_take * 100;
+  if(e_steps_to_take && (x_steps_to_take + y_steps_to_take <= 0) ) e_interval = time_for_move / e_steps_to_take * 100;
   
   //#define DEBUGGING false
   #if 0        
@@ -964,8 +964,8 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
   //Only enable axis that are moving. If the axis doesn't need to move then it can stay disabled depending on configuration.
   if(x_steps_remaining) enable_x();
   if(y_steps_remaining) enable_y();
-  if(z_steps_remaining) { enable_z(); do_z_step(); z_steps_remaining--;}
-  if(e_steps_remaining) {enable_e(); do_e_step(); e_steps_remaining--;}
+  if(z_steps_remaining) { enable_z(); do_z_step(); z_steps_remaining--; }
+  if(e_steps_remaining) { enable_e(); do_e_step(); e_steps_remaining--; }
 
   
   previous_millis_heater = millis();
@@ -1062,10 +1062,10 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
   #endif
   
   unsigned long start_move_micros = micros();
-  previous_micros_x=start_move_micros*100;
-  previous_micros_y=previous_micros_x;
-  previous_micros_z=previous_micros_x;
-  previous_micros_e=previous_micros_x;
+  previous_micros_x = start_move_micros*100;
+  previous_micros_y = previous_micros_x;
+  previous_micros_z = previous_micros_x;
+  previous_micros_e = previous_micros_x;
   
   //move until no more steps remain 
   while(x_steps_remaining + y_steps_remaining + z_steps_remaining + e_steps_remaining > 0) {
@@ -1134,10 +1134,10 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
       if(Y_MAX_PIN > -1) if(direction_y) if(digitalRead(Y_MAX_PIN) != ENDSTOPS_INVERTING) break;
       if(steep_y) {
         timediff = micros() * 100 - previous_micros_y;
-        while(timediff >= interval && y_steps_remaining>0) {
+        while(timediff >= interval && y_steps_remaining > 0) {
           steps_done++;
           steps_remaining--;
-          y_steps_remaining--; timediff-=interval;
+          y_steps_remaining--; timediff -= interval;
           error_x = error_x - delta_x;
           do_y_step();
           if(error_x < 0) {
@@ -1159,7 +1159,7 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
         while(timediff >= interval && x_steps_remaining>0) {
           steps_done++;
           steps_remaining--;
-          x_steps_remaining--; timediff-=interval;
+          x_steps_remaining--; timediff -= interval;
           error_y = error_y - delta_y;
           do_x_step();
           if(error_y < 0) { 
@@ -1179,18 +1179,18 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
       }
     }
     #ifdef RAMP_ACCELERATION
-    if (steps_to_take>0 && (steps_remaining == plateau_steps || (steps_done >= steps_to_take / 2 && accelerating && !decelerating))) continue;
+    if (steps_to_take > 0 && (steps_remaining == plateau_steps || (steps_done >= steps_to_take / 2 && accelerating && !decelerating))) continue;
     #endif
 
     //If there are z steps remaining, check if z steps must be taken
     if(z_steps_remaining) {
       if(Z_MIN_PIN > -1) if(!direction_z) if(digitalRead(Z_MIN_PIN) != ENDSTOPS_INVERTING) break;
       if(Z_MAX_PIN > -1) if(direction_z) if(digitalRead(Z_MAX_PIN) != ENDSTOPS_INVERTING) break;
-      timediff=micros() * 100-previous_micros_z;
+      timediff = micros() * 100-previous_micros_z;
       while(timediff >= z_interval && z_steps_remaining) {
         do_z_step();
         z_steps_remaining--;
-        timediff-=z_interval;
+        timediff -= z_interval;
         #ifdef STEP_DELAY_RATIO
         if(timediff >= z_interval) delayMicroseconds(long_step_delay_ratio * z_interval / 10000);
         #endif
@@ -1202,7 +1202,7 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
 
     //If there are e steps remaining, check if e steps must be taken
     if(e_steps_remaining){
-      if (x_steps_to_take + y_steps_to_take <= 0) timediff=micros() * 100-previous_micros_e;
+      if (x_steps_to_take + y_steps_to_take <= 0) timediff = micros() * 100-previous_micros_e;
       unsigned int final_e_steps_remaining = 0;
       if (steep_x && x_steps_to_take > 0) final_e_steps_remaining = e_steps_to_take * x_steps_remaining / x_steps_to_take;
       else if (steep_y && y_steps_to_take > 0) final_e_steps_remaining = e_steps_to_take * y_steps_remaining / y_steps_to_take;
@@ -1213,7 +1213,7 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
       else while (timediff >= e_interval && e_steps_remaining) {
         do_e_step();
         e_steps_remaining--;
-        timediff-=e_interval;
+        timediff -= e_interval;
         #ifdef STEP_DELAY_RATIO
         if(timediff >= e_interval) delayMicroseconds(long_step_delay_ratio * e_interval / 10000);
         #endif
@@ -1238,14 +1238,14 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
   if(DISABLE_E) disable_e();
   
   // Update current position partly based on direction, we probably can combine this with the direction code above...
-  if (destination_x > current_x) current_x = current_x + x_steps_to_take/x_steps_per_unit;
-  else current_x = current_x - x_steps_to_take/x_steps_per_unit;
-  if (destination_y > current_y) current_y = current_y + y_steps_to_take/y_steps_per_unit;
-  else current_y = current_y - y_steps_to_take/y_steps_per_unit;
-  if (destination_z > current_z) current_z = current_z + z_steps_to_take/z_steps_per_unit;
-  else current_z = current_z - z_steps_to_take/z_steps_per_unit;
-  if (destination_e > current_e) current_e = current_e + e_steps_to_take/e_steps_per_unit;
-  else current_e = current_e - e_steps_to_take/e_steps_per_unit;
+  if (destination_x > current_x) current_x = current_x + x_steps_to_take / x_steps_per_unit;
+  else current_x = current_x - x_steps_to_take / x_steps_per_unit;
+  if (destination_y > current_y) current_y = current_y + y_steps_to_take / y_steps_per_unit;
+  else current_y = current_y - y_steps_to_take / y_steps_per_unit;
+  if (destination_z > current_z) current_z = current_z + z_steps_to_take / z_steps_per_unit;
+  else current_z = current_z - z_steps_to_take / z_steps_per_unit;
+  if (destination_e > current_e) current_e = current_e + e_steps_to_take / e_steps_per_unit;
+  else current_e = current_e - e_steps_to_take / e_steps_per_unit;
 }
 
 
@@ -1360,26 +1360,26 @@ inline void manage_heater()
     current_raw = read_max6675();
   #endif
   #ifdef SMOOTHING
-  nma=(nma+current_raw)-(nma/SMOOTHFACTOR);
-  current_raw=nma/SMOOTHFACTOR;
+  nma = (nma + current_raw) - (nma / SMOOTHFACTOR);
+  current_raw = nma / SMOOTHFACTOR;
   #endif
   #ifdef WATCHPERIOD
-    if(watchmillis && millis()-watchmillis>WATCHPERIOD){
-        if(watch_raw+1>=current_raw){
-            target_raw=0;
+    if(watchmillis && millis() - watchmillis > WATCHPERIOD){
+        if(watch_raw + 1 >= current_raw){
+            target_raw = 0;
             digitalWrite(HEATER_0_PIN,LOW);
             digitalWrite(LED_PIN,LOW);
         }else{
-            watchmillis=0;
+            watchmillis = 0;
         }
     }
   #endif
   #ifdef MINTEMP
-    if(current_raw<=minttemp)
-        target_raw=0;
+    if(current_raw <= minttemp)
+        target_raw = 0;
   #endif
   #ifdef MAXTEMP
-    if(current_raw>maxttemp) {
+    if(current_raw > maxttemp) {
         // We are too hot. Emergency brake to protect hotend
         kill(5);
     }
@@ -1387,11 +1387,11 @@ inline void manage_heater()
   #if (TEMP_0_PIN > -1) || defined (HEATER_USES_MAX66675)
     #ifdef PIDTEMP
       error = target_raw - current_raw;
-      pTerm = (PID_PGAIN * error)/100;
+      pTerm = (PID_PGAIN * error) / 100;
       temp_iState += error;
       temp_iState = constrain(temp_iState, temp_iState_min, temp_iState_max);
-      iTerm = (PID_IGAIN * temp_iState) /100;
-      dTerm = (PID_DGAIN * (current_raw - temp_dState))/100;
+      iTerm = (PID_IGAIN * temp_iState) / 100;
+      dTerm = (PID_DGAIN * (current_raw - temp_dState)) / 100;
       temp_dState = current_raw;
       analogWrite(HEATER_0_PIN, constrain(pTerm + iTerm - dTerm, 0, PID_MAX));
     #else
@@ -1408,7 +1408,7 @@ inline void manage_heater()
     #endif
   #endif
   
-  if(millis()-previous_millis_bed_heater<5000)
+  if(millis() - previous_millis_bed_heater < 5000)
     return;
   previous_millis_bed_heater = millis();
 
@@ -1464,7 +1464,7 @@ float temp2analog(int celsius) {
 
     return 1023 - raw;
   #elif defined HEATER_USES_AD595
-    return celsius * (1024.0/(5.0 * 100.0));
+    return celsius * (1024.0 / (5.0 * 100.0) );
   #elif defined HEATER_USES_MAX6675
     return celsius * 4.0;
   #endif
@@ -1498,7 +1498,7 @@ float temp2analogBed(int celsius) {
 
     return 1023 - raw;
   #elif defined BED_USES_AD595
-    return celsius * (1024.0/(5.0 * 100.0));
+    return celsius * (1024.0 / (5.0 * 100.0) );
   #endif
 }
 
@@ -1563,7 +1563,7 @@ float analog2tempBed(int raw) {
     return celsius;
     
   #elif defined BED_USES_AD595
-    return raw * ((5.0*100.0)/1024.0);
+    return raw * ((5.0 * 100.0) / 1024.0);
   #endif
 }
 
