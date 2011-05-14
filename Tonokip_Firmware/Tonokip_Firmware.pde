@@ -1186,8 +1186,7 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
       }
     }
     #ifdef RAMP_ACCELERATION
-    if(x_steps_remaining>0 && 
-        y_steps_remaining>0 &&
+    if((x_steps_remaining>0 || y_steps_remaining>0) &&
         steps_to_take > 0 && 
         (steps_remaining == plateau_steps || (steps_done >= steps_to_take / 2 && accelerating && !decelerating))) continue;
     #endif
