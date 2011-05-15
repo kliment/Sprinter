@@ -4,7 +4,7 @@
 //thermistor table for mendel-parts thermistor
 
 #define NUMTEMPS 20
-short temptable[NUMTEMPS][2] = {
+const short temptable[NUMTEMPS][2] = {
    {1, 827},
    {54, 253},
    {107, 207},

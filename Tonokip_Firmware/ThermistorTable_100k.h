@@ -15,7 +15,7 @@
 // max adc: 1023
 
 #define NUMTEMPS 61
-short temptable[NUMTEMPS][2] = {
+const short temptable[NUMTEMPS][2] = {
 {	23	,	300	},
 {	25	,	295	},
 {	27	,	290	},
