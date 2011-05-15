@@ -225,7 +225,7 @@ void setup()
   if(Y_ENABLE_PIN > -1) if(!Y_ENABLE_ON) digitalWrite(Y_ENABLE_PIN,HIGH);
   if(Z_ENABLE_PIN > -1) if(!Z_ENABLE_ON) digitalWrite(Z_ENABLE_PIN,HIGH);
   if(E_ENABLE_PIN > -1) if(!E_ENABLE_ON) digitalWrite(E_ENABLE_PIN,HIGH);
-  
+
   //endstop pullups
   #ifdef ENDSTOPPULLUPS
     if(X_MIN_PIN > -1) { pinMode(X_MIN_PIN,INPUT); digitalWrite(X_MIN_PIN,HIGH);}
@@ -446,6 +446,7 @@ inline void process_commands()
 {
   unsigned long codenum; //throw away variable
   char *starpos = NULL;
+
   if(code_seen('G'))
   {
     switch((int)code_value())
@@ -477,17 +478,17 @@ inline void process_commands()
         current_e = 0;
         feedrate = 0;
 
-        if(X_MIN_PIN > -1) {
+        if(X_MIN_PIN > -1 || X_MAX_PIN > -1) {
           current_x = 0;
-          destination_x = -1.5 * X_MAX_LENGTH;
+          destination_x = 1.5 * X_MAX_LENGTH * X_HOME_DIR;
           feedrate = min_units_per_second * 60;
           prepare_move();
           
           current_x = 0;
-          destination_x = 1;
+          destination_x = -1 * X_HOME_DIR;
           prepare_move();
           
-          destination_x = -10;
+          destination_x = 10 * X_HOME_DIR;
           prepare_move();
           
           current_x = 0;
@@ -495,17 +496,17 @@ inline void process_commands()
           feedrate = 0;
         }
         
-        if(Y_MIN_PIN > -1) {
+        if(Y_MIN_PIN > -1 || Y_MAX_PIN > -1) {
           current_y = 0;
-          destination_y = -1.5 * Y_MAX_LENGTH;
+          destination_y = 1.5 * Y_MAX_LENGTH * Y_HOME_DIR;
           feedrate = min_units_per_second * 60;
           prepare_move();
           
           current_y = 0;
-          destination_y = 1;
+          destination_y = -1 * Y_HOME_DIR;
           prepare_move();
           
-          destination_y = -10;
+          destination_y = 10 * Y_HOME_DIR;
           prepare_move();
           
           current_y = 0;
@@ -513,17 +514,17 @@ inline void process_commands()
           feedrate = 0;
         }
         
-        if(Z_MIN_PIN > -1) {
+        if(Z_MIN_PIN > -1 || Z_MAX_PIN > -1) {
           current_z = 0;
-          destination_z = -1.5 * Z_MAX_LENGTH;
+          destination_z = 1.5 * Z_MAX_LENGTH * Z_HOME_DIR;
           feedrate = max_z_feedrate/2;
           prepare_move();
           
           current_z = 0;
-          destination_z = 1;
+          destination_z = -1 * Z_HOME_DIR;
           prepare_move();
           
-          destination_z = -10;
+          destination_z = 10 * Z_HOME_DIR;
           prepare_move();
           
           current_z = 0;
@@ -768,7 +769,6 @@ inline void process_commands()
       case 115: // M115
         Serial.println("FIRMWARE_NAME:Sprinter FIRMWARE_URL:http%%3A/github.com/kliment/Sprinter/ PROTOCOL_VERSION:1.0 MACHINE_TYPE:Mendel EXTRUDER_COUNT:1");
         break;
-
       case 114: // M114
 	Serial.print("X:");
         Serial.print(current_x);

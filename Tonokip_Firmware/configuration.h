@@ -112,6 +112,12 @@ const bool INVERT_Y_DIR = false;
 const bool INVERT_Z_DIR = true;
 const bool INVERT_E_DIR = false;
 
+// Sets direction of endstops when homing; 1=MAX, -1=MIN
+const int X_HOME_DIR = -1;
+const int Y_HOME_DIR = -1;
+const int Z_HOME_DIR = -1;
+
+
 //Thermistor settings:
 
 //Uncomment for 100k thermistor
