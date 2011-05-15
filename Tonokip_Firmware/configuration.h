@@ -145,6 +145,7 @@ const bool ENDSTOPS_INVERTING = true;
 #define Z_MAX_LENGTH 110
 #define E_MAX_LENGTH 99999999
 
+#define USE_BRESENHAM
 #define NUM_AXIS 4
 #define MINIMUM_FEEDRATE 10
 

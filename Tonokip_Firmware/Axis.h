@@ -17,11 +17,6 @@ class Axis
 
 	bool relative;
 	
-#ifdef EXP_ACCELERATION
-	unsigned long max_interval;
-	unsigned long steps_per_sqr_second;
-	unsigned long travel_steps_per_sqr_second;
-#endif
 	bool acceleration_enabled;
 	bool accelerating;
 
@@ -46,7 +41,6 @@ class Axis
 	void set_target(float target);
 	void debug();
 
-  private:
 	unsigned long steps_to_take;
 	unsigned long steps_remaining;
 	unsigned long steps_done;

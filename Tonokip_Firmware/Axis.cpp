@@ -16,11 +16,6 @@ Axis::Axis(int step_pin, int dir_pin, int enable_pin, int min_pin, int max_pin, 
 	this->dir_inverted   = dir_inverted;
 	this->max_length = max_length;
 
-#ifdef EXP_ACCELERATION
-	max_interval = 0;
-	steps_per_sqr_second = 0;
-	travel_steps_per_sqr_second = 0;
-#endif
 	acceleration_enabled = false;
 	accelerating = false;
 
@@ -57,8 +52,29 @@ void Axis::disable()
 	if(enable_pin > -1) digitalWrite(enable_pin, enable_inverted);
 }
 
-inline void Axis::do_step()
+void Axis::do_step()
 {
+	if(direction)
+	{
+		if(max_pin > -1 && digitalRead(max_pin) != ENDSTOPS_INVERTING) 
+		{
+			steps_remaining = 0;
+			return;
+		}
+		current += 1 / steps_per_unit;
+	}
+	else
+	{
+		if(min_pin > -1 && digitalRead(min_pin) != ENDSTOPS_INVERTING) 
+		{
+			steps_remaining = 0;
+			return;
+		}
+		current -= 1 / steps_per_unit;
+	}
+	steps_remaining--;
+	steps_done++;
+
 	digitalWrite(step_pin, HIGH);
 	digitalWrite(step_pin, LOW);
 }
@@ -96,15 +112,6 @@ void Axis::precomputemove()
 
 bool Axis::move(unsigned long micros_now)
 {
-	if(direction)
-	{
-		if(max_pin > -1 && digitalRead(max_pin) != ENDSTOPS_INVERTING) steps_remaining = 0;
-	}
-	else
-	{
-		if(min_pin > -1 && digitalRead(min_pin) != ENDSTOPS_INVERTING) steps_remaining = 0;
-	}
-
 	if(steps_remaining <= 0)
 		return false;
 
@@ -120,13 +127,7 @@ bool Axis::move(unsigned long micros_now)
 	//Serial.print("SD:"); Serial.println(steps_done,DEC);
 
 	lastinterval = intervalspassed;
-	steps_remaining--;
-	steps_done++;
 	do_step();
-	if(direction)
-		current += 1 / steps_per_unit;
-	else
-		current -= 1 / steps_per_unit;
 }
 
 bool Axis::is_moving()
