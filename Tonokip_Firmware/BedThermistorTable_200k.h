@@ -15,7 +15,7 @@
 // max adc: 1023
 
 #define BNUMTEMPS 20
-short bedtemptable[BNUMTEMPS][2] = {
+const short bedtemptable[BNUMTEMPS][2] = {
    {1, 848},
    {54, 275},
    {107, 228},

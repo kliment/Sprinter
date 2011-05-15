@@ -297,11 +297,14 @@ void loop()
     buflen = (buflen-1);
     bufindr = (bufindr + 1)%BUFSIZE;
     }
-  
-  manage_heater();
-  
-  manage_inactivity(1); //shutdown if not receiving any new commands
-}
+  //check heater every n milliseconds
+  if((millis() - previous_millis_heater) >= HEATER_CHECK_INTERVAL ) {
+      manage_heater();
+      previous_millis_heater = millis();
+      
+      manage_inactivity(1);
+    }
+  }
 
 
 inline void get_command() 
@@ -462,8 +465,13 @@ inline void process_commands()
         codenum = 0;
         if(code_seen('P')) codenum = code_value(); // milliseconds to wait
         if(code_seen('S')) codenum = code_value() * 1000; // seconds to wait
-        previous_millis_heater = millis();  // keep track of when we started waiting
-        while((millis() - previous_millis_heater) < codenum ) manage_heater(); //manage heater until time is up
+        codenum += millis();  // keep track of when we started waiting
+        while(millis()  < codenum ){
+             if((millis() - previous_millis_heater) >= HEATER_CHECK_INTERVAL ) {
+                manage_heater();
+                previous_millis_heater = millis();
+            }
+        }
         break;
       case 28: //G28 Home all Axis one at a time
         saved_feedrate = feedrate;
@@ -691,23 +699,26 @@ inline void process_commands()
                 watchmillis = 0;
             }
         #endif
-        previous_millis_heater = millis(); 
+        codenum = millis(); 
         while(current_raw < target_raw) {
-          if( (millis() - previous_millis_heater) > 1000 ) //Print Temp Reading every 1 second while heating up.
+          if( (millis() - codenum) > 1000 ) //Print Temp Reading every 1 second while heating up.
           {
             Serial.print("T:");
             Serial.println( analog2temp(current_raw) ); 
-            previous_millis_heater = millis(); 
+            codenum = millis(); 
           }
-          manage_heater();
+          if((millis() - previous_millis_heater) >= HEATER_CHECK_INTERVAL ) {
+            manage_heater();
+            previous_millis_heater = millis();
+          }
         }
         break;
       case 190: // M190 - Wait bed for heater to reach target.
       #if TEMP_1_PIN > -1
         if (code_seen('S')) target_bed_raw = temp2analog(code_value());
-        previous_millis_heater = millis(); 
+        codenum = millis(); 
         while(current_bed_raw < target_bed_raw) {
-          if( (millis()-previous_millis_heater) > 1000 ) //Print Temp Reading every 1 second while heating up.
+          if( (millis()-codenum) > 1000 ) //Print Temp Reading every 1 second while heating up.
           {
             tt=analog2temp(current_raw);
             Serial.print("T:");
@@ -716,9 +727,12 @@ inline void process_commands()
             Serial.print( tt ); 
             Serial.print(" B:");
             Serial.println( analog2temp(current_bed_raw) ); 
-            previous_millis_heater = millis(); 
+            codenum = millis(); 
           }
-          manage_heater();
+          if((millis() - previous_millis_heater) >= HEATER_CHECK_INTERVAL ) {
+            manage_heater();
+            previous_millis_heater = millis();
+          }
         }
       #endif
       break;
@@ -1069,8 +1083,8 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
   
   //move until no more steps remain 
   while(x_steps_remaining + y_steps_remaining + z_steps_remaining + e_steps_remaining > 0) {
-    //If more that 50ms have passed since previous heating check, adjust temp
-    if((millis() - previous_millis_heater) >= 50 ) {
+    //If more that HEATER_CHECK_INTERVAL ms have passed since previous heating check, adjust temp
+    if((millis() - previous_millis_heater) >= HEATER_CHECK_INTERVAL ) {
       manage_heater();
       previous_millis_heater = millis();
       

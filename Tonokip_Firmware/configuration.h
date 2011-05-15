@@ -50,6 +50,9 @@ float min_constant_speed_units = 2; // the minimum units of an accelerated move 
 #define PID_DGAIN 100 //100 is 1.0
 #endif
 
+//How often should the heater check for new temp readings, in milliseconds
+#define HEATER_CHECK_INTERVAL 50
+
 //Experimental temperature smoothing - only uncomment this if your temp readings are noisy
 //#define SMOOTHING 1
 //#define SMOOTHFACTOR 16 //best to use a power of two here - determines how many values are averaged together by the smoothing algorithm
