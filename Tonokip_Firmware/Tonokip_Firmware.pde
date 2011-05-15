@@ -1339,94 +1339,94 @@ inline int read_max6675()
 
 inline void manage_heater()
 {
-  if((millis() - previous_millis_heater) >= HEATER_CHECK_INTERVAL ) {
-    previous_millis_heater = millis();
-    #ifdef HEATER_USES_THERMISTOR
-      current_raw = analogRead(TEMP_0_PIN); 
-      // When using thermistor, when the heater is colder than targer temp, we get a higher analog reading than target, 
-      // this switches it up so that the reading appears lower than target for the control logic.
-      current_raw = 1023 - current_raw;
-    #elif defined HEATER_USES_AD595
-      current_raw = analogRead(TEMP_0_PIN);    
-    #elif defined HEATER_USES_MAX6675
-      current_raw = read_max6675();
-    #endif
-    #ifdef SMOOTHING
-    nma = (nma + current_raw) - (nma / SMOOTHFACTOR);
-    current_raw = nma / SMOOTHFACTOR;
-    #endif
-    #ifdef WATCHPERIOD
-      if(watchmillis && millis() - watchmillis > WATCHPERIOD){
-          if(watch_raw + 1 >= current_raw){
-              target_raw = 0;
-              digitalWrite(HEATER_0_PIN,LOW);
-              digitalWrite(LED_PIN,LOW);
-          }else{
-              watchmillis = 0;
-          }
-      }
-    #endif
-    #ifdef MINTEMP
-      if(current_raw <= minttemp)
-          target_raw = 0;
-    #endif
-    #ifdef MAXTEMP
-      if(current_raw >= maxttemp) {
-          target_raw = 0;
-      }
-    #endif
-    #if (TEMP_0_PIN > -1) || defined (HEATER_USES_MAX66675)
-      #ifdef PIDTEMP
-        error = target_raw - current_raw;
-        pTerm = (PID_PGAIN * error) / 100;
-        temp_iState += error;
-        temp_iState = constrain(temp_iState, temp_iState_min, temp_iState_max);
-        iTerm = (PID_IGAIN * temp_iState) / 100;
-        dTerm = (PID_DGAIN * (current_raw - temp_dState)) / 100;
-        temp_dState = current_raw;
-        analogWrite(HEATER_0_PIN, constrain(pTerm + iTerm - dTerm, 0, PID_MAX));
-      #else
-        if(current_raw >= target_raw)
-        {
-          digitalWrite(HEATER_0_PIN,LOW);
-          digitalWrite(LED_PIN,LOW);
+  if((millis() - previous_millis_heater) < HEATER_CHECK_INTERVAL )
+    return;
+  previous_millis_heater = millis();
+  #ifdef HEATER_USES_THERMISTOR
+    current_raw = analogRead(TEMP_0_PIN); 
+    // When using thermistor, when the heater is colder than targer temp, we get a higher analog reading than target, 
+    // this switches it up so that the reading appears lower than target for the control logic.
+    current_raw = 1023 - current_raw;
+  #elif defined HEATER_USES_AD595
+    current_raw = analogRead(TEMP_0_PIN);    
+  #elif defined HEATER_USES_MAX6675
+    current_raw = read_max6675();
+  #endif
+  #ifdef SMOOTHING
+  nma = (nma + current_raw) - (nma / SMOOTHFACTOR);
+  current_raw = nma / SMOOTHFACTOR;
+  #endif
+  #ifdef WATCHPERIOD
+    if(watchmillis && millis() - watchmillis > WATCHPERIOD){
+        if(watch_raw + 1 >= current_raw){
+            target_raw = 0;
+            digitalWrite(HEATER_0_PIN,LOW);
+            digitalWrite(LED_PIN,LOW);
+        }else{
+            watchmillis = 0;
         }
-        else 
-        {
-          digitalWrite(HEATER_0_PIN,HIGH);
-          digitalWrite(LED_PIN,HIGH);
-        }
-      #endif
-    #endif
-    
-    if(millis() - previous_millis_bed_heater < 5000)
-      return;
-    previous_millis_bed_heater = millis();
-  
-    #ifdef BED_USES_THERMISTOR
-  
-      current_bed_raw = analogRead(TEMP_1_PIN);                  
-  
-      // If using thermistor, when the heater is colder than targer temp, we get a higher analog reading than target, 
-      // this switches it up so that the reading appears lower than target for the control logic.
-      current_bed_raw = 1023 - current_bed_raw;
-    #elif defined BED_USES_AD595
-      current_bed_raw = analogRead(TEMP_1_PIN);                  
-  
-    #endif
-    
-  
-    #if TEMP_1_PIN > -1
-      if(current_bed_raw >= target_bed_raw)
+    }
+  #endif
+  #ifdef MINTEMP
+    if(current_raw <= minttemp)
+        target_raw = 0;
+  #endif
+  #ifdef MAXTEMP
+    if(current_raw >= maxttemp) {
+        target_raw = 0;
+    }
+  #endif
+  #if (TEMP_0_PIN > -1) || defined (HEATER_USES_MAX66675)
+    #ifdef PIDTEMP
+      error = target_raw - current_raw;
+      pTerm = (PID_PGAIN * error) / 100;
+      temp_iState += error;
+      temp_iState = constrain(temp_iState, temp_iState_min, temp_iState_max);
+      iTerm = (PID_IGAIN * temp_iState) / 100;
+      dTerm = (PID_DGAIN * (current_raw - temp_dState)) / 100;
+      temp_dState = current_raw;
+      analogWrite(HEATER_0_PIN, constrain(pTerm + iTerm - dTerm, 0, PID_MAX));
+    #else
+      if(current_raw >= target_raw)
       {
-        digitalWrite(HEATER_1_PIN,LOW);
+        digitalWrite(HEATER_0_PIN,LOW);
+        digitalWrite(LED_PIN,LOW);
       }
       else 
       {
-        digitalWrite(HEATER_1_PIN,HIGH);
+        digitalWrite(HEATER_0_PIN,HIGH);
+        digitalWrite(LED_PIN,HIGH);
       }
     #endif
-  }
+  #endif
+    
+  if(millis() - previous_millis_bed_heater < 5000)
+    return;
+  previous_millis_bed_heater = millis();
+  
+  #ifdef BED_USES_THERMISTOR
+  
+    current_bed_raw = analogRead(TEMP_1_PIN);                  
+  
+    // If using thermistor, when the heater is colder than targer temp, we get a higher analog reading than target, 
+    // this switches it up so that the reading appears lower than target for the control logic.
+    current_bed_raw = 1023 - current_bed_raw;
+  #elif defined BED_USES_AD595
+    current_bed_raw = analogRead(TEMP_1_PIN);                  
+
+  #endif
+  
+  
+  #if TEMP_1_PIN > -1
+    if(current_bed_raw >= target_bed_raw)
+    {
+      digitalWrite(HEATER_1_PIN,LOW);
+    }
+    else 
+    {
+      digitalWrite(HEATER_1_PIN,HIGH);
+    }
+  #endif
 }
 
 // Takes hot end temperature value as input and returns corresponding raw value. 
