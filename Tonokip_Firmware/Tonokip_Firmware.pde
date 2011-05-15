@@ -478,7 +478,8 @@ inline void process_commands()
         current_e = 0;
         feedrate = 0;
 
-        if(X_MIN_PIN > -1 || X_MAX_PIN > -1) {
+    
+        if((X_MIN_PIN > -1 && X_HOME_DIR==-1) || (X_MAX_PIN > -1 && X_HOME_DIR==1)) {
           current_x = 0;
           destination_x = 1.5 * X_MAX_LENGTH * X_HOME_DIR;
           feedrate = min_units_per_second * 60;
@@ -496,7 +497,7 @@ inline void process_commands()
           feedrate = 0;
         }
         
-        if(Y_MIN_PIN > -1 || Y_MAX_PIN > -1) {
+        if((Y_MIN_PIN > -1 && Y_HOME_DIR==-1) || (Y_MAX_PIN > -1 && Y_HOME_DIR==1)) {
           current_y = 0;
           destination_y = 1.5 * Y_MAX_LENGTH * Y_HOME_DIR;
           feedrate = min_units_per_second * 60;
@@ -514,7 +515,7 @@ inline void process_commands()
           feedrate = 0;
         }
         
-        if(Z_MIN_PIN > -1 || Z_MAX_PIN > -1) {
+        if((Z_MIN_PIN > -1 && Z_HOME_DIR==-1) || (Z_MAX_PIN > -1 && Z_HOME_DIR==1)) {
           current_z = 0;
           destination_z = 1.5 * Z_MAX_LENGTH * Z_HOME_DIR;
           feedrate = max_z_feedrate/2;
@@ -1400,7 +1401,7 @@ inline void manage_heater()
     #endif
   #endif
     
-  if(millis() - previous_millis_bed_heater < 5000)
+  if(millis() - previous_millis_bed_heater < BED_CHECK_INTERVAL)
     return;
   previous_millis_bed_heater = millis();
   
