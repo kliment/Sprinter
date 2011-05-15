@@ -297,12 +297,8 @@ void loop()
     bufindr = (bufindr + 1)%BUFSIZE;
     }
   //check heater every n milliseconds
-  if((millis() - previous_millis_heater) >= HEATER_CHECK_INTERVAL ) {
       manage_heater();
-      previous_millis_heater = millis();
-      
       manage_inactivity(1);
-    }
   }
 
 
@@ -467,10 +463,7 @@ inline void process_commands()
         if(code_seen('S')) codenum = code_value() * 1000; // seconds to wait
         codenum += millis();  // keep track of when we started waiting
         while(millis()  < codenum ){
-             if((millis() - previous_millis_heater) >= HEATER_CHECK_INTERVAL ) {
-                manage_heater();
-                previous_millis_heater = millis();
-            }
+          manage_heater();
         }
         break;
       case 28: //G28 Home all Axis one at a time
@@ -707,10 +700,7 @@ inline void process_commands()
             Serial.println( analog2temp(current_raw) ); 
             codenum = millis(); 
           }
-          if((millis() - previous_millis_heater) >= HEATER_CHECK_INTERVAL ) {
-            manage_heater();
-            previous_millis_heater = millis();
-          }
+          manage_heater();
         }
         break;
       case 190: // M190 - Wait bed for heater to reach target.
@@ -729,10 +719,7 @@ inline void process_commands()
             Serial.println( analog2temp(current_bed_raw) ); 
             codenum = millis(); 
           }
-          if((millis() - previous_millis_heater) >= HEATER_CHECK_INTERVAL ) {
             manage_heater();
-            previous_millis_heater = millis();
-          }
         }
       #endif
       break;
@@ -976,10 +963,7 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
   if(z_steps_remaining) { enable_z(); do_z_step(); z_steps_remaining--; }
   if(e_steps_remaining) { enable_e(); do_e_step(); e_steps_remaining--; }
 
-  
-  previous_millis_heater = millis();
-  
-  //Define variables that are needed for the Bresenham algorithm. Please note that  Z is not currently included in the Bresenham algorithm.
+    //Define variables that are needed for the Bresenham algorithm. Please note that  Z is not currently included in the Bresenham algorithm.
   unsigned int delta_x = x_steps_remaining;
   unsigned long x_interval_nanos;
   unsigned int delta_y = y_steps_remaining;
@@ -1079,12 +1063,8 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
   //move until no more steps remain 
   while(x_steps_remaining + y_steps_remaining + z_steps_remaining + e_steps_remaining > 0) {
     //If more that HEATER_CHECK_INTERVAL ms have passed since previous heating check, adjust temp
-    if((millis() - previous_millis_heater) >= HEATER_CHECK_INTERVAL ) {
-      manage_heater();
-      previous_millis_heater = millis();
-      
-      manage_inactivity(2);
-    }
+    manage_heater();
+    manage_inactivity(2);
     #ifdef RAMP_ACCELERATION
     //If acceleration is enabled on this move and we are in the acceleration segment, calculate the current interval
     if (acceleration_enabled && steps_done == 0) {
@@ -1359,6 +1339,9 @@ inline int read_max6675()
 
 inline void manage_heater()
 {
+  if((millis() - previous_millis_heater) < HEATER_CHECK_INTERVAL )
+    return;
+  previous_millis_heater = millis();
   #ifdef HEATER_USES_THERMISTOR
     current_raw = analogRead(TEMP_0_PIN); 
     // When using thermistor, when the heater is colder than targer temp, we get a higher analog reading than target, 
@@ -1416,15 +1399,15 @@ inline void manage_heater()
       }
     #endif
   #endif
-  
+    
   if(millis() - previous_millis_bed_heater < 5000)
     return;
   previous_millis_bed_heater = millis();
-
+  
   #ifdef BED_USES_THERMISTOR
-
+  
     current_bed_raw = analogRead(TEMP_1_PIN);                  
-
+  
     // If using thermistor, when the heater is colder than targer temp, we get a higher analog reading than target, 
     // this switches it up so that the reading appears lower than target for the control logic.
     current_bed_raw = 1023 - current_bed_raw;
@@ -1433,7 +1416,7 @@ inline void manage_heater()
 
   #endif
   
-
+  
   #if TEMP_1_PIN > -1
     if(current_bed_raw >= target_bed_raw)
     {
