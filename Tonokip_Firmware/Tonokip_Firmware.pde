@@ -48,7 +48,6 @@
 // M84  - Disable steppers until next move, 
 //        or use S<seconds> to specify an inactivity timeout, after which the steppers will be disabled.  S0 to disable the timeout.
 // M85  - Set inactivity shutdown timer with parameter S<seconds>. To disable set zero (default)
-// M86  - If Endstop is Not Activated then Abort Print. Specify X and/or Y
 // M92  - Set axis_steps_per_unit - same syntax as G92
 // M115	- Capabilities string
 // M140 - Set bed target temp
@@ -769,10 +768,6 @@ inline void process_commands()
         code_seen('S');
         max_inactive_time = code_value() * 1000; 
         break;
-      case 86: // M86 If Endstop is Not Activated then Abort Print
-        if(code_seen('X')) if( digitalRead(X_MIN_PIN) == ENDSTOPS_INVERTING ) kill(3);
-        if(code_seen('Y')) if( digitalRead(Y_MIN_PIN) == ENDSTOPS_INVERTING ) kill(4);
-        break;
       case 92: // M92
         if(code_seen('X')) x_steps_per_unit = code_value();
         if(code_seen('Y')) y_steps_per_unit = code_value();
@@ -1394,9 +1389,8 @@ inline void manage_heater()
         target_raw = 0;
   #endif
   #ifdef MAXTEMP
-    if(current_raw > maxttemp) {
-        // We are too hot. Emergency brake to protect hotend
-        kill(5);
+    if(current_raw >= maxttemp) {
+        target_raw = 0;
     }
   #endif
   #if (TEMP_0_PIN > -1) || defined (HEATER_USES_MAX66675)
@@ -1582,11 +1576,16 @@ float analog2tempBed(int raw) {
   #endif
 }
 
-inline void kill(byte debug)
+inline void kill()
 {
-  if(HEATER_0_PIN > -1) digitalWrite(HEATER_0_PIN,LOW);
+  #if TEMP_0_PIN > -1
+  target_raw=0;
+  digitalWrite(HEATER_0_PIN,LOW);
+  #endif
+  #if TEMP_1_PIN > -1
+  target_bed_raw=0;
   if(HEATER_1_PIN > -1) digitalWrite(HEATER_1_PIN,LOW);
-  
+  #endif
   disable_x();
   disable_y();
   disable_z();
@@ -1594,22 +1593,9 @@ inline void kill(byte debug)
   
   if(PS_ON_PIN > -1) pinMode(PS_ON_PIN,INPUT);
   
-  while(1)
-  {
-    switch(debug)
-    {
-      case 1: Serial.print("Inactivity Shutdown, Last Line: "); break;
-      case 2: Serial.print("Linear Move Abort, Last Line: "); break;
-      case 3: Serial.print("Homing X Min Stop Fail, Last Line: "); break;
-      case 4: Serial.print("Homing Y Min Stop Fail, Last Line: "); break;
-      case 5: Serial.print("Hot-end overheat protection, Last Line: "); break;
-    } 
-    Serial.println(gcode_LastN);
-    delay(5000); // 5 Second delay
-  }
 }
 
 inline void manage_inactivity(byte debug) { 
-if( (millis()-previous_millis_cmd) >  max_inactive_time ) if(max_inactive_time) kill(debug); 
+if( (millis()-previous_millis_cmd) >  max_inactive_time ) if(max_inactive_time) kill(); 
 if( (millis()-previous_millis_cmd) >  stepper_inactive_time ) if(stepper_inactive_time) { disable_x(); disable_y(); disable_z(); disable_e(); }
 }
