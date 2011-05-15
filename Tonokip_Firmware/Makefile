@@ -37,11 +37,11 @@ INSTALL_DIR = /home/chris/arduino-0022
 UPLOAD_RATE = 38400
 AVRDUDE_PROGRAMMER = stk500v1
 PORT = /dev/ttyUSB0
-MCU = atmega2560
+#MCU = atmega2560
 #For "old" Arduino Mega
 #MCU = atmega1280
 #For Sanguinololu
-#MCU = atmega644p 
+MCU = atmega644p 
 F_CPU = 16000000
 
 
@@ -55,7 +55,7 @@ $(ARDUINO)/wiring_analog.c $(ARDUINO)/wiring_digital.c \
 $(ARDUINO)/wiring_pulse.c $(ARDUINO)/wiring_serial.c \
 $(ARDUINO)/wiring_shift.c $(ARDUINO)/WInterrupts.c
 CXXSRC = $(ARDUINO)/HardwareSerial.cpp $(ARDUINO)/WMath.cpp \
-$(ARDUINO)/Print.cpp ./SdFile.cpp ./SdVolume.cpp ./Sd2Card.cpp
+$(ARDUINO)/Print.cpp ./SdFile.cpp ./SdVolume.cpp ./Sd2Card.cpp ./Axis.cpp
 FORMAT = ihex
 
 

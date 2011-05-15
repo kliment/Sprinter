@@ -4,6 +4,7 @@
 #include "Tonokip_Firmware.h"
 #include "configuration.h"
 #include "pins.h"
+#include "Axis.h"
 
 #ifdef SDSUPPORT
 #include "SdFat.h"
@@ -50,6 +51,7 @@
 // M85  - Set inactivity shutdown timer with parameter S<seconds>. To disable set zero (default)
 // M86  - If Endstop is Not Activated then Abort Print. Specify X and/or Y
 // M92  - Set axis_steps_per_unit - same syntax as G92
+// M114 - Report current location
 // M115	- Capabilities string
 // M140 - Set bed target temp
 // M190 - Wait for bed current temp to reach target temp.
@@ -57,43 +59,23 @@
 // M202 - Set max acceleration in units/s^2 for travel moves (M202 X1000 Y1000)
 
 
+// Newstyle Axis
+Axis AXIS[NUM_AXIS] = 
+{ 
+	Axis(X_STEP_PIN,X_DIR_PIN,X_ENABLE_PIN,X_MIN_PIN,X_MAX_PIN,x_steps_per_unit,X_ENABLE_ON,INVERT_X_DIR,X_MAX_LENGTH),
+	Axis(Y_STEP_PIN,Y_DIR_PIN,Y_ENABLE_PIN,Y_MIN_PIN,Y_MAX_PIN,y_steps_per_unit,Y_ENABLE_ON,INVERT_Y_DIR,Y_MAX_LENGTH),
+	Axis(Z_STEP_PIN,Z_DIR_PIN,Z_ENABLE_PIN,Z_MIN_PIN,Z_MAX_PIN,z_steps_per_unit,Z_ENABLE_ON,INVERT_Z_DIR,Z_MAX_LENGTH),
+	Axis(E_STEP_PIN,E_DIR_PIN,E_ENABLE_PIN,-1,-1,e_steps_per_unit,E_ENABLE_ON,INVERT_E_DIR,E_MAX_LENGTH)
+};
+
 //Stepper Movement Variables
-bool direction_x, direction_y, direction_z, direction_e;
-unsigned long previous_micros = 0, previous_micros_x = 0, previous_micros_y = 0, previous_micros_z = 0, previous_micros_e = 0, previous_millis_heater, previous_millis_bed_heater;
-unsigned long x_steps_to_take, y_steps_to_take, z_steps_to_take, e_steps_to_take;
-#ifdef RAMP_ACCELERATION
-  unsigned long max_x_interval = 100000000.0 / (min_units_per_second * x_steps_per_unit);
-  unsigned long max_y_interval = 100000000.0 / (min_units_per_second * y_steps_per_unit);
-  unsigned long max_interval;
-  unsigned long x_steps_per_sqr_second = max_acceleration_units_per_sq_second * x_steps_per_unit;
-  unsigned long y_steps_per_sqr_second = max_acceleration_units_per_sq_second * y_steps_per_unit;
-  unsigned long x_travel_steps_per_sqr_second = max_travel_acceleration_units_per_sq_second * x_steps_per_unit;
-  unsigned long y_travel_steps_per_sqr_second = max_travel_acceleration_units_per_sq_second * y_steps_per_unit;
-  unsigned long steps_per_sqr_second, plateau_steps;
-#endif
-#ifdef EXP_ACCELERATION
-  unsigned long long_full_velocity_units = full_velocity_units * 100;
-  unsigned long long_travel_move_full_velocity_units = travel_move_full_velocity_units * 100;
-  unsigned long max_x_interval = 100000000.0 / (min_units_per_second * x_steps_per_unit);
-  unsigned long max_y_interval = 100000000.0 / (min_units_per_second * y_steps_per_unit);
-  unsigned long max_interval;
-  unsigned long x_min_constant_speed_steps = min_constant_speed_units * x_steps_per_unit,
-    y_min_constant_speed_steps = min_constant_speed_units * y_steps_per_unit, min_constant_speed_steps;
-#endif
+unsigned long previous_millis_heater, previous_millis_bed_heater;
 boolean acceleration_enabled = false, accelerating = false;
 unsigned long interval;
-float destination_x = 0.0, destination_y = 0.0, destination_z = 0.0, destination_e = 0.0;
-float current_x = 0.0, current_y = 0.0, current_z = 0.0, current_e = 0.0;
-long x_interval, y_interval, z_interval, e_interval; // for speed delay
 float feedrate = 1500, next_feedrate, z_feedrate, saved_feedrate;
-float time_for_move;
+unsigned long time_for_move;
 long gcode_N, gcode_LastN;
-bool relative_mode = false;  //Determines Absolute or Relative Coordinates
-bool relative_mode_e = false;  //Determines Absolute or Relative E Codes while in Absolute Coordinates mode. E is always relative in Relative Coordinates mode.
 long timediff = 0;
-#ifdef STEP_DELAY_RATIO
-  long long_step_delay_ratio = STEP_DELAY_RATIO * 100;
-#endif
 
 
 // comm variables
@@ -208,38 +190,6 @@ void setup()
   for(int i = 0; i < BUFSIZE; i++){
       fromsd[i] = false;
   }
-  //Initialize Step Pins
-  if(X_STEP_PIN > -1) pinMode(X_STEP_PIN,OUTPUT);
-  if(Y_STEP_PIN > -1) pinMode(Y_STEP_PIN,OUTPUT);
-  if(Z_STEP_PIN > -1) pinMode(Z_STEP_PIN,OUTPUT);
-  if(E_STEP_PIN > -1) pinMode(E_STEP_PIN,OUTPUT);
-  
-  //Initialize Dir Pins
-  if(X_DIR_PIN > -1) pinMode(X_DIR_PIN,OUTPUT);
-  if(Y_DIR_PIN > -1) pinMode(Y_DIR_PIN,OUTPUT);
-  if(Z_DIR_PIN > -1) pinMode(Z_DIR_PIN,OUTPUT);
-  if(E_DIR_PIN > -1) pinMode(E_DIR_PIN,OUTPUT);
-
-  //Steppers default to disabled.
-  if(X_ENABLE_PIN > -1) if(!X_ENABLE_ON) digitalWrite(X_ENABLE_PIN,HIGH);
-  if(Y_ENABLE_PIN > -1) if(!Y_ENABLE_ON) digitalWrite(Y_ENABLE_PIN,HIGH);
-  if(Z_ENABLE_PIN > -1) if(!Z_ENABLE_ON) digitalWrite(Z_ENABLE_PIN,HIGH);
-  if(E_ENABLE_PIN > -1) if(!E_ENABLE_ON) digitalWrite(E_ENABLE_PIN,HIGH);
-
-  //endstop pullups
-  #ifdef ENDSTOPPULLUPS
-    if(X_MIN_PIN > -1) { pinMode(X_MIN_PIN,INPUT); digitalWrite(X_MIN_PIN,HIGH);}
-    if(Y_MIN_PIN > -1) { pinMode(Y_MIN_PIN,INPUT); digitalWrite(Y_MIN_PIN,HIGH);}
-    if(Z_MIN_PIN > -1) { pinMode(Z_MIN_PIN,INPUT); digitalWrite(Z_MIN_PIN,HIGH);}
-    if(X_MAX_PIN > -1) { pinMode(X_MAX_PIN,INPUT); digitalWrite(X_MAX_PIN,HIGH);}
-    if(Y_MAX_PIN > -1) { pinMode(Y_MAX_PIN,INPUT); digitalWrite(Y_MAX_PIN,HIGH);}
-    if(Z_MAX_PIN > -1) { pinMode(Z_MAX_PIN,INPUT); digitalWrite(Z_MAX_PIN,HIGH);}
-  #endif
-  //Initialize Enable Pins
-  if(X_ENABLE_PIN > -1) pinMode(X_ENABLE_PIN,OUTPUT);
-  if(Y_ENABLE_PIN > -1) pinMode(Y_ENABLE_PIN,OUTPUT);
-  if(Z_ENABLE_PIN > -1) pinMode(Z_ENABLE_PIN,OUTPUT);
-  if(E_ENABLE_PIN > -1) pinMode(E_ENABLE_PIN,OUTPUT);
 
   if(HEATER_0_PIN > -1) pinMode(HEATER_0_PIN,OUTPUT);
   if(HEATER_1_PIN > -1) pinMode(HEATER_1_PIN,OUTPUT);
@@ -438,14 +388,14 @@ inline bool code_seen(char code)
   strchr_pointer = strchr(cmdbuffer[bufindr], code);
   return (strchr_pointer != NULL);  //Return True if a character was found
 }
- //experimental feedrate calc
-float d = 0;
-float xdiff = 0, ydiff = 0, zdiff = 0, ediff = 0;
 
 inline void process_commands()
 {
   unsigned long codenum; //throw away variable
+
+#ifdef SDSUPPORT
   char *starpos = NULL;
+#endif
 
   if(code_seen('G'))
   {
@@ -456,9 +406,7 @@ inline void process_commands()
         get_coordinates(); // For X Y Z E F
         prepare_move();
         previous_millis_cmd = millis();
-        //ClearToSend();
         return;
-        //break;
       case 4: // G4 dwell
         codenum = 0;
         if(code_seen('P')) codenum = code_value(); // milliseconds to wait
@@ -467,85 +415,23 @@ inline void process_commands()
         while((millis() - previous_millis_heater) < codenum ) manage_heater(); //manage heater until time is up
         break;
       case 28: //G28 Home all Axis one at a time
-        saved_feedrate = feedrate;
-        destination_x = 0;
-        current_x = 0;
-        destination_y = 0;
-        current_y = 0;
-        destination_z = 0;
-        current_z = 0;
-        destination_e = 0;
-        current_e = 0;
-        feedrate = 0;
-
-        if(X_MIN_PIN > -1 || X_MAX_PIN > -1) {
-          current_x = 0;
-          destination_x = 1.5 * X_MAX_LENGTH * X_HOME_DIR;
-          feedrate = min_units_per_second * 60;
-          prepare_move();
-          
-          current_x = 0;
-          destination_x = -1 * X_HOME_DIR;
-          prepare_move();
-          
-          destination_x = 10 * X_HOME_DIR;
-          prepare_move();
-          
-          current_x = 0;
-          destination_x = 0;
-          feedrate = 0;
-        }
-        
-        if(Y_MIN_PIN > -1 || Y_MAX_PIN > -1) {
-          current_y = 0;
-          destination_y = 1.5 * Y_MAX_LENGTH * Y_HOME_DIR;
-          feedrate = min_units_per_second * 60;
-          prepare_move();
-          
-          current_y = 0;
-          destination_y = -1 * Y_HOME_DIR;
-          prepare_move();
-          
-          destination_y = 10 * Y_HOME_DIR;
-          prepare_move();
-          
-          current_y = 0;
-          destination_y = 0;
-          feedrate = 0;
-        }
-        
-        if(Z_MIN_PIN > -1 || Z_MAX_PIN > -1) {
-          current_z = 0;
-          destination_z = 1.5 * Z_MAX_LENGTH * Z_HOME_DIR;
-          feedrate = max_z_feedrate/2;
-          prepare_move();
-          
-          current_z = 0;
-          destination_z = -1 * Z_HOME_DIR;
-          prepare_move();
-          
-          destination_z = 10 * Z_HOME_DIR;
-          prepare_move();
-          
-          current_z = 0;
-          destination_z = 0;
-          feedrate = 0;
-        }
-        
+	;
         feedrate = saved_feedrate;
         previous_millis_cmd = millis();
         break;
       case 90: // G90
-        relative_mode = false;
+	for(int ax=0;ax<NUM_AXIS;ax++)
+		AXIS[ax].relative = false;
         break;
       case 91: // G91
-        relative_mode = true;
+	for(int ax=0;ax<NUM_AXIS;ax++)
+		AXIS[ax].relative = true;
         break;
       case 92: // G92
-        if(code_seen('X')) current_x = code_value();
-        if(code_seen('Y')) current_y = code_value();
-        if(code_seen('Z')) current_z = code_value();
-        if(code_seen('E')) current_e = code_value();
+        if(code_seen('X')) AXIS[0].current = code_value();
+        if(code_seen('Y')) AXIS[1].current = code_value();
+        if(code_seen('Z')) AXIS[2].current = code_value();
+        if(code_seen('E')) AXIS[3].current = code_value();
         break;
         
     }
@@ -743,52 +629,42 @@ inline void process_commands()
         if(PS_ON_PIN > -1) pinMode(PS_ON_PIN,INPUT); //Floating
         break;
       case 82:
-        relative_mode_e = false;
+        AXIS[3].relative = false;
         break;
       case 83:
-        relative_mode_e = true;
+        AXIS[3].relative = true;
         break;
       case 84:
         if(code_seen('S')){ stepper_inactive_time = code_value() * 1000; }
-        else{ disable_x(); disable_y(); disable_z(); disable_e(); }
+        else{ ; }
         break;
       case 85: // M85
         code_seen('S');
         max_inactive_time = code_value() * 1000; 
         break;
       case 86: // M86 If Endstop is Not Activated then Abort Print
-        if(code_seen('X')) if( digitalRead(X_MIN_PIN) == ENDSTOPS_INVERTING ) kill(3);
-        if(code_seen('Y')) if( digitalRead(Y_MIN_PIN) == ENDSTOPS_INVERTING ) kill(4);
+	;
         break;
       case 92: // M92
-        if(code_seen('X')) x_steps_per_unit = code_value();
-        if(code_seen('Y')) y_steps_per_unit = code_value();
-        if(code_seen('Z')) z_steps_per_unit = code_value();
-        if(code_seen('E')) e_steps_per_unit = code_value();
+        if(code_seen('X')) AXIS[0].steps_per_unit = code_value();
+        if(code_seen('Y')) AXIS[1].steps_per_unit = code_value();
+        if(code_seen('Z')) AXIS[2].steps_per_unit = code_value();
+        if(code_seen('E')) AXIS[3].steps_per_unit = code_value();
         break;
       case 115: // M115
         Serial.println("FIRMWARE_NAME:Sprinter FIRMWARE_URL:http%%3A/github.com/kliment/Sprinter/ PROTOCOL_VERSION:1.0 MACHINE_TYPE:Mendel EXTRUDER_COUNT:1");
         break;
       case 114: // M114
 	Serial.print("X:");
-        Serial.print(current_x);
+        Serial.print(AXIS[0].current);
 	Serial.print("Y:");
-        Serial.print(current_y);
+        Serial.print(AXIS[1].current);
 	Serial.print("Z:");
-        Serial.print(current_z);
+        Serial.print(AXIS[2].current);
 	Serial.print("E:");
-        Serial.println(current_e);
+        Serial.println(AXIS[3].current);
+	AXIS[0].debug();
         break;
-      #ifdef RAMP_ACCELERATION
-      case 201: // M201
-        if(code_seen('X')) x_steps_per_sqr_second = code_value() * x_steps_per_unit;
-        if(code_seen('Y')) y_steps_per_sqr_second = code_value() * y_steps_per_unit;
-        break;
-      case 202: // M202
-        if(code_seen('X')) x_travel_steps_per_sqr_second = code_value() * x_steps_per_unit;
-        if(code_seen('Y')) y_travel_steps_per_sqr_second = code_value() * y_steps_per_unit;
-        break;
-      #endif
     }
     
   }
@@ -822,14 +698,10 @@ inline void ClearToSend()
 
 inline void get_coordinates()
 {
-  if(code_seen('X')) destination_x = (float)code_value() + relative_mode*current_x;
-  else destination_x = current_x;                                                       //Are these else lines really needed?
-  if(code_seen('Y')) destination_y = (float)code_value() + relative_mode*current_y;
-  else destination_y = current_y;
-  if(code_seen('Z')) destination_z = (float)code_value() + relative_mode*current_z;
-  else destination_z = current_z;
-  if(code_seen('E')) destination_e = (float)code_value() + (relative_mode_e || relative_mode)*current_e;
-  else destination_e = current_e;
+  if(code_seen('X')) AXIS[0].set_target((float)code_value());
+  if(code_seen('Y')) AXIS[1].set_target((float)code_value());
+  if(code_seen('Z')) AXIS[2].set_target((float)code_value());
+  if(code_seen('E')) AXIS[3].set_target((float)code_value());
   if(code_seen('F')) {
     next_feedrate = code_value();
     if(next_feedrate > 0.0) feedrate = next_feedrate;
@@ -838,458 +710,54 @@ inline void get_coordinates()
 
 inline void prepare_move()
 {
-  //Find direction
-  if(destination_x >= current_x) direction_x = 1;
-  else direction_x = 0;
-  if(destination_y >= current_y) direction_y = 1;
-  else direction_y = 0;
-  if(destination_z >= current_z) direction_z = 1;
-  else direction_z = 0;
-  if(destination_e >= current_e) direction_e = 1;
-  else direction_e = 0;
-  
-  
-  if (min_software_endstops) {
-    if (destination_x < 0) destination_x = 0.0;
-    if (destination_y < 0) destination_y = 0.0;
-    if (destination_z < 0) destination_z = 0.0;
-  }
+  // Determine which axis will take the longest time.
+  time_for_move = max(AXIS[0].get_time_for_move(feedrate), AXIS[1].get_time_for_move(feedrate));
+  for(int ax=2;ax < NUM_AXIS;ax++) time_for_move = max(time_for_move, AXIS[ax].get_time_for_move(feedrate));
 
-  if (max_software_endstops) {
-    if (destination_x > X_MAX_LENGTH) destination_x = X_MAX_LENGTH;
-    if (destination_y > Y_MAX_LENGTH) destination_y = Y_MAX_LENGTH;
-    if (destination_z > Z_MAX_LENGTH) destination_z = Z_MAX_LENGTH;
-  }
-  
-  if(feedrate > max_feedrate) feedrate = max_feedrate;
+  // Inform all axis how long the slowpoke takes.
+  for(int ax=0;ax<NUM_AXIS;ax++) AXIS[ax].set_time_for_move(time_for_move);
 
-  if(feedrate > max_z_feedrate) z_feedrate = max_z_feedrate;
-  else z_feedrate = feedrate;
-  
-  xdiff = (destination_x - current_x);
-  ydiff = (destination_y - current_y);
-  zdiff = (destination_z - current_z);
-  ediff = (destination_e - current_e);
-  x_steps_to_take = abs(xdiff) * x_steps_per_unit;
-  y_steps_to_take = abs(ydiff) * y_steps_per_unit;
-  z_steps_to_take = abs(zdiff) * z_steps_per_unit;
-  e_steps_to_take = abs(ediff) * e_steps_per_unit;
-  if(feedrate < 10)
-      feedrate = 10;
-  /*
-  //experimental feedrate calc
-  if(abs(xdiff) > 0.1 && abs(ydiff) > 0.1)
-      d = sqrt(xdiff * xdiff + ydiff * ydiff);
-  else if(abs(xdiff) > 0.1)
-      d = abs(xdiff);
-  else if(abs(ydiff) > 0.1)
-      d = abs(ydiff);
-  else if(abs(zdiff) > 0.05)
-      d = abs(zdiff);
-  else if(abs(ediff) > 0.1)
-      d = abs(ediff);
-  else d = 1; //extremely slow move, should be okay for moves under 0.1mm
-  time_for_move = (xdiff / (feedrate / 60000000) );
-  //time = 60000000 * dist / feedrate
-  //int feedz = (60000000 * zdiff) / time_for_move;
-  //if(feedz > maxfeed)
-  */
-  #define X_TIME_FOR_MOVE ((float)x_steps_to_take / (x_steps_per_unit*feedrate/60000000))
-  #define Y_TIME_FOR_MOVE ((float)y_steps_to_take / (y_steps_per_unit*feedrate/60000000))
-  #define Z_TIME_FOR_MOVE ((float)z_steps_to_take / (z_steps_per_unit*z_feedrate/60000000))
-  #define E_TIME_FOR_MOVE ((float)e_steps_to_take / (e_steps_per_unit*feedrate/60000000))
-  
-  time_for_move = max(X_TIME_FOR_MOVE, Y_TIME_FOR_MOVE);
-  time_for_move = max(time_for_move, Z_TIME_FOR_MOVE);
-  if(time_for_move <= 0) time_for_move = max(time_for_move, E_TIME_FOR_MOVE);
-
-  if(x_steps_to_take) x_interval = time_for_move / x_steps_to_take * 100;
-  if(y_steps_to_take) y_interval = time_for_move / y_steps_to_take * 100;
-  if(z_steps_to_take) z_interval = time_for_move / z_steps_to_take * 100;
-  if(e_steps_to_take && (x_steps_to_take + y_steps_to_take <= 0) ) e_interval = time_for_move / e_steps_to_take * 100;
-  
-  //#define DEBUGGING false
-  #if 0        
-  if(0) {
-    Serial.print("destination_x: "); Serial.println(destination_x); 
-    Serial.print("current_x: "); Serial.println(current_x); 
-    Serial.print("x_steps_to_take: "); Serial.println(x_steps_to_take); 
-    Serial.print("X_TIME_FOR_MVE: "); Serial.println(X_TIME_FOR_MOVE); 
-    Serial.print("x_interval: "); Serial.println(x_interval); 
-    Serial.println("");
-    Serial.print("destination_y: "); Serial.println(destination_y); 
-    Serial.print("current_y: "); Serial.println(current_y); 
-    Serial.print("y_steps_to_take: "); Serial.println(y_steps_to_take); 
-    Serial.print("Y_TIME_FOR_MVE: "); Serial.println(Y_TIME_FOR_MOVE); 
-    Serial.print("y_interval: "); Serial.println(y_interval); 
-    Serial.println("");
-    Serial.print("destination_z: "); Serial.println(destination_z); 
-    Serial.print("current_z: "); Serial.println(current_z); 
-    Serial.print("z_steps_to_take: "); Serial.println(z_steps_to_take); 
-    Serial.print("Z_TIME_FOR_MVE: "); Serial.println(Z_TIME_FOR_MOVE); 
-    Serial.print("z_interval: "); Serial.println(z_interval); 
-    Serial.println("");
-    Serial.print("destination_e: "); Serial.println(destination_e); 
-    Serial.print("current_e: "); Serial.println(current_e); 
-    Serial.print("e_steps_to_take: "); Serial.println(e_steps_to_take); 
-    Serial.print("E_TIME_FOR_MVE: "); Serial.println(E_TIME_FOR_MOVE); 
-    Serial.print("e_interval: "); Serial.println(e_interval); 
-    Serial.println("");
-  }
-  #endif
-  
-  linear_move(x_steps_to_take, y_steps_to_take, z_steps_to_take, e_steps_to_take); // make the move
+  // Keep on truckin'
+  linear_move(); // make the move
 }
 
-void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remaining, unsigned long z_steps_remaining, unsigned long e_steps_remaining) // make linear move with preset speeds and destinations, see G0 and G1
+void linear_move() // make linear move with preset speeds and destinations, see G0 and G1
 {
-  //Determine direction of movement
-  if (destination_x > current_x) digitalWrite(X_DIR_PIN,!INVERT_X_DIR);
-  else digitalWrite(X_DIR_PIN,INVERT_X_DIR);
-  if (destination_y > current_y) digitalWrite(Y_DIR_PIN,!INVERT_Y_DIR);
-  else digitalWrite(Y_DIR_PIN,INVERT_Y_DIR);
-  if (destination_z > current_z) digitalWrite(Z_DIR_PIN,!INVERT_Z_DIR);
-  else digitalWrite(Z_DIR_PIN,INVERT_Z_DIR);
-  if (destination_e > current_e) digitalWrite(E_DIR_PIN,!INVERT_E_DIR);
-  else digitalWrite(E_DIR_PIN,INVERT_E_DIR);
-  
-  if(X_MIN_PIN > -1) if(!direction_x) if(digitalRead(X_MIN_PIN) != ENDSTOPS_INVERTING) x_steps_remaining=0;
-  if(Y_MIN_PIN > -1) if(!direction_y) if(digitalRead(Y_MIN_PIN) != ENDSTOPS_INVERTING) y_steps_remaining=0;
-  if(Z_MIN_PIN > -1) if(!direction_z) if(digitalRead(Z_MIN_PIN) != ENDSTOPS_INVERTING) z_steps_remaining=0;
-  if(X_MAX_PIN > -1) if(direction_x) if(digitalRead(X_MAX_PIN) != ENDSTOPS_INVERTING) x_steps_remaining=0;
-  if(Y_MAX_PIN > -1) if(direction_y) if(digitalRead(Y_MAX_PIN) != ENDSTOPS_INVERTING) y_steps_remaining=0;
-  if(Z_MAX_PIN > -1) if(direction_z) if(digitalRead(Z_MAX_PIN) != ENDSTOPS_INVERTING) z_steps_remaining=0;
-  
-  
-  //Only enable axis that are moving. If the axis doesn't need to move then it can stay disabled depending on configuration.
-  if(x_steps_remaining) enable_x();
-  if(y_steps_remaining) enable_y();
-  if(z_steps_remaining) { enable_z(); do_z_step(); z_steps_remaining--; }
-  if(e_steps_remaining) { enable_e(); do_e_step(); e_steps_remaining--; }
-
-  
   previous_millis_heater = millis();
   
-  //Define variables that are needed for the Bresenham algorithm. Please note that  Z is not currently included in the Bresenham algorithm.
-  unsigned int delta_x = x_steps_remaining;
-  unsigned long x_interval_nanos;
-  unsigned int delta_y = y_steps_remaining;
-  unsigned long y_interval_nanos;
-  unsigned int delta_z = z_steps_remaining;
-  unsigned long z_interval_nanos;
-  boolean steep_y = delta_y > delta_x;// && delta_y > delta_e && delta_y > delta_z;
-  boolean steep_x = delta_x >= delta_y;// && delta_x > delta_e && delta_x > delta_z;
-  //boolean steep_z = delta_z > delta_x && delta_z > delta_y && delta_z > delta_e;
-  int error_x;
-  int error_y;
-  int error_z;
-  #ifdef RAMP_ACCELERATION
-  long max_speed_steps_per_second;
-  long min_speed_steps_per_second;
-  #endif
-  #ifdef EXP_ACCELERATION
-  unsigned long virtual_full_velocity_steps;
-  unsigned long full_velocity_steps;
-  #endif
-  unsigned long steps_remaining;
-  unsigned long steps_to_take;
-  
-  //Do some Bresenham calculations depending on which axis will lead it.
-  if(steep_y) {
-   error_x = delta_y / 2;
-   interval = y_interval;
-   #ifdef RAMP_ACCELERATION
-   max_interval = max_y_interval;
-   if(e_steps_to_take > 0) steps_per_sqr_second = y_steps_per_sqr_second;
-   else steps_per_sqr_second = y_travel_steps_per_sqr_second;
-   max_speed_steps_per_second = 100000000 / interval;
-   min_speed_steps_per_second = 100000000 / max_interval;
-   float plateau_time = (max_speed_steps_per_second - min_speed_steps_per_second) / (float) steps_per_sqr_second;
-   plateau_steps = (long) ((steps_per_sqr_second / 2.0 * plateau_time + min_speed_steps_per_second) * plateau_time);
-   #endif
-   #ifdef EXP_ACCELERATION
-   if(e_steps_to_take > 0) virtual_full_velocity_steps = long_full_velocity_units * y_steps_per_unit /100;
-   else virtual_full_velocity_steps = long_travel_move_full_velocity_units * y_steps_per_unit /100;
-   full_velocity_steps = min(virtual_full_velocity_steps, (delta_y - y_min_constant_speed_steps) / 2);
-   max_interval = max_y_interval;
-   min_constant_speed_steps = y_min_constant_speed_steps;
-   #endif
-   steps_remaining = delta_y;
-   steps_to_take = delta_y;
-  } else if (steep_x) {
-   error_y = delta_x / 2;
-   interval = x_interval;
-   #ifdef RAMP_ACCELERATION
-   max_interval = max_x_interval;
-   if(e_steps_to_take > 0) steps_per_sqr_second = x_steps_per_sqr_second;
-   else steps_per_sqr_second = x_travel_steps_per_sqr_second;
-   max_speed_steps_per_second = 100000000 / interval;
-   min_speed_steps_per_second = 100000000 / max_interval;
-   float plateau_time = (max_speed_steps_per_second - min_speed_steps_per_second) / (float) steps_per_sqr_second;
-   plateau_steps = (long) ((steps_per_sqr_second / 2.0 * plateau_time + min_speed_steps_per_second) * plateau_time);
-   #endif
-   #ifdef EXP_ACCELERATION
-   if(e_steps_to_take > 0) virtual_full_velocity_steps = long_full_velocity_units * x_steps_per_unit /100;
-   else virtual_full_velocity_steps = long_travel_move_full_velocity_units * x_steps_per_unit /100;
-   full_velocity_steps = min(virtual_full_velocity_steps, (delta_x - x_min_constant_speed_steps) / 2);
-   max_interval = max_x_interval;
-   min_constant_speed_steps = x_min_constant_speed_steps;
-   #endif
-   steps_remaining = delta_x;
-   steps_to_take = delta_x;
-  }
-  unsigned long steps_done = 0;
-  #ifdef RAMP_ACCELERATION
-  plateau_steps *= 1.01; // This is to compensate we use discrete intervals
-  acceleration_enabled = true;
-  long full_interval = interval;
-  if(interval > max_interval) acceleration_enabled = false;
-  boolean decelerating = false;
-  #endif
-  #ifdef EXP_ACCELERATION
-  acceleration_enabled = true;
-  if(full_velocity_steps == 0) full_velocity_steps++;
-  if(interval > max_interval) acceleration_enabled = false;
-  unsigned long full_interval = interval;
-  if(min_constant_speed_steps >= steps_to_take) {
-    acceleration_enabled = false;
-    full_interval = max(max_interval, interval); // choose the min speed between feedrate and acceleration start speed
-  }
-  if(full_velocity_steps < virtual_full_velocity_steps && acceleration_enabled) full_interval = max(interval,
-      max_interval - ((max_interval - full_interval) * full_velocity_steps / virtual_full_velocity_steps)); // choose the min speed between feedrate and speed at full steps
-  unsigned int steps_acceleration_check = 1;
-  accelerating = acceleration_enabled;
-  #endif
-  
+  for(int ax=0;ax<NUM_AXIS;ax++)
+	AXIS[ax].precomputemove();
+
   unsigned long start_move_micros = micros();
-  previous_micros_x = start_move_micros*100;
-  previous_micros_y = previous_micros_x;
-  previous_micros_z = previous_micros_x;
-  previous_micros_e = previous_micros_x;
-  
-  //move until no more steps remain 
-  while(x_steps_remaining + y_steps_remaining + z_steps_remaining + e_steps_remaining > 0) {
+
+  while(axis_are_moving())
+  {
+	unsigned long current_micros = micros();
+	if(start_move_micros > current_micros) start_move_micros = 0;  // Wrapped around.
+	unsigned long micros_since_start = current_micros - start_move_micros;
+
+	for(int ax=0;ax<NUM_AXIS;ax++)
+	{
+		AXIS[ax].move(micros_since_start);
+	}
+
     //If more that 50ms have passed since previous heating check, adjust temp
     if((millis() - previous_millis_heater) >= 50 ) {
       manage_heater();
       previous_millis_heater = millis();
       
-      manage_inactivity(2);
-    }
-    #ifdef RAMP_ACCELERATION
-    //If acceleration is enabled on this move and we are in the acceleration segment, calculate the current interval
-    if (acceleration_enabled && steps_done == 0) {
-        interval = max_interval;
-    } else if (acceleration_enabled && steps_done <= plateau_steps) {
-        long current_speed = (long) ((((long) steps_per_sqr_second) / 10000)
-	    * ((micros() - start_move_micros)  / 100) + (long) min_speed_steps_per_second);
-	    interval = 100000000 / current_speed;
-      if (interval < full_interval) {
-        accelerating = false;
-      	interval = full_interval;
-      }
-      if (steps_done >= steps_to_take / 2) {
-	plateau_steps = steps_done;
-	max_speed_steps_per_second = 100000000 / interval;
-	accelerating = false;
-      }
-    } else if (acceleration_enabled && steps_remaining <= plateau_steps) { //(interval > minInterval * 100) {
-      if (!accelerating) {
-        start_move_micros = micros();
-        accelerating = true;
-        decelerating = true;
-      }				
-      long current_speed = (long) ((long) max_speed_steps_per_second - ((((long) steps_per_sqr_second) / 10000)
-          * ((micros() - start_move_micros) / 100)));
-      interval = 100000000 / current_speed;
-      if (interval > max_interval)
-	interval = max_interval;
-    } else {
-      //Else, we are just use the full speed interval as current interval
-      interval = full_interval;
-      accelerating = false;
-    }
-    #endif
-    #ifdef EXP_ACCELERATION
-    //If acceleration is enabled on this move and we are in the acceleration segment, calculate the current interval
-    if (acceleration_enabled && steps_done < full_velocity_steps && steps_done / full_velocity_steps < 1 && (steps_done % steps_acceleration_check == 0)) {
-      if(steps_done == 0) {
-        interval = max_interval;
-      } else {
-        interval = max_interval - ((max_interval - full_interval) * steps_done / virtual_full_velocity_steps);
-      }
-    } else if (acceleration_enabled && steps_remaining < full_velocity_steps) {
-      //Else, if acceleration is enabled on this move and we are in the deceleration segment, calculate the current interval
-      if(steps_remaining == 0) {
-        interval = max_interval;
-      } else {
-        interval = max_interval - ((max_interval - full_interval) * steps_remaining / virtual_full_velocity_steps);
-      }
-      accelerating = true;
-    } else if (steps_done - full_velocity_steps >= 1 || !acceleration_enabled){
-      //Else, we are just use the full speed interval as current interval
-      interval = full_interval;
-      accelerating = false;
-    }
-    #endif
-
-    //If there are x or y steps remaining, perform Bresenham algorithm
-    if(x_steps_remaining || y_steps_remaining) {
-      if(X_MIN_PIN > -1) if(!direction_x) if(digitalRead(X_MIN_PIN) != ENDSTOPS_INVERTING) break;
-      if(Y_MIN_PIN > -1) if(!direction_y) if(digitalRead(Y_MIN_PIN) != ENDSTOPS_INVERTING) break;
-      if(X_MAX_PIN > -1) if(direction_x) if(digitalRead(X_MAX_PIN) != ENDSTOPS_INVERTING) break;
-      if(Y_MAX_PIN > -1) if(direction_y) if(digitalRead(Y_MAX_PIN) != ENDSTOPS_INVERTING) break;
-      if(steep_y) {
-        timediff = micros() * 100 - previous_micros_y;
-        while(timediff >= interval && y_steps_remaining > 0) {
-          steps_done++;
-          steps_remaining--;
-          y_steps_remaining--; timediff -= interval;
-          error_x = error_x - delta_x;
-          do_y_step();
-          if(error_x < 0) {
-            do_x_step(); x_steps_remaining--;
-            error_x = error_x + delta_y;
-          }
-          #ifdef RAMP_ACCELERATION
-          if (steps_remaining == plateau_steps || (steps_done >= steps_to_take / 2 && accelerating && !decelerating)) break;
-          #endif
-          #ifdef STEP_DELAY_RATIO
-          if(timediff >= interval) delayMicroseconds(long_step_delay_ratio * interval / 10000);
-          #endif
-          #ifdef STEP_DELAY_MICROS
-          if(timediff >= interval) delayMicroseconds(STEP_DELAY_MICROS);
-          #endif
-        }
-      } else if (steep_x) {
-        timediff=micros() * 100 - previous_micros_x;
-        while(timediff >= interval && x_steps_remaining>0) {
-          steps_done++;
-          steps_remaining--;
-          x_steps_remaining--; timediff -= interval;
-          error_y = error_y - delta_y;
-          do_x_step();
-          if(error_y < 0) { 
-            do_y_step(); y_steps_remaining--;
-            error_y = error_y + delta_x;
-          }
-          #ifdef RAMP_ACCELERATION
-          if (steps_remaining == plateau_steps || (steps_done >= steps_to_take / 2 && accelerating && !decelerating)) break;
-          #endif
-          #ifdef STEP_DELAY_RATIO
-          if(timediff >= interval) delayMicroseconds(long_step_delay_ratio * interval / 10000);
-          #endif
-          #ifdef STEP_DELAY_MICROS
-          if(timediff >= interval) delayMicroseconds(STEP_DELAY_MICROS);
-          #endif
-        }
-      }
-    }
-    #ifdef RAMP_ACCELERATION
-    if((x_steps_remaining>0 || y_steps_remaining>0) &&
-        steps_to_take > 0 && 
-        (steps_remaining == plateau_steps || (steps_done >= steps_to_take / 2 && accelerating && !decelerating))) continue;
-    #endif
-
-    //If there are z steps remaining, check if z steps must be taken
-    if(z_steps_remaining) {
-      if(Z_MIN_PIN > -1) if(!direction_z) if(digitalRead(Z_MIN_PIN) != ENDSTOPS_INVERTING) break;
-      if(Z_MAX_PIN > -1) if(direction_z) if(digitalRead(Z_MAX_PIN) != ENDSTOPS_INVERTING) break;
-      timediff = micros() * 100-previous_micros_z;
-      while(timediff >= z_interval && z_steps_remaining) {
-        do_z_step();
-        z_steps_remaining--;
-        timediff -= z_interval;
-        #ifdef STEP_DELAY_RATIO
-        if(timediff >= z_interval) delayMicroseconds(long_step_delay_ratio * z_interval / 10000);
-        #endif
-        #ifdef STEP_DELAY_MICROS
-        if(timediff >= z_interval) delayMicroseconds(STEP_DELAY_MICROS);
-        #endif
-      }
-    }
-
-    //If there are e steps remaining, check if e steps must be taken
-    if(e_steps_remaining){
-      if (x_steps_to_take + y_steps_to_take <= 0) timediff = micros()*100 - previous_micros_e;
-      unsigned int final_e_steps_remaining = 0;
-      if (steep_x && x_steps_to_take > 0) final_e_steps_remaining = e_steps_to_take * x_steps_remaining / x_steps_to_take;
-      else if (steep_y && y_steps_to_take > 0) final_e_steps_remaining = e_steps_to_take * y_steps_remaining / y_steps_to_take;
-      //If this move has X or Y steps, let E follow the Bresenham pace
-      if (final_e_steps_remaining > 0)  while(e_steps_remaining > final_e_steps_remaining) { do_e_step(); e_steps_remaining--;}
-      else if (x_steps_to_take + y_steps_to_take > 0)  while(e_steps_remaining) { do_e_step(); e_steps_remaining--;}
-      //Else, normally check if e steps must be taken
-      else while (timediff >= e_interval && e_steps_remaining) {
-        do_e_step();
-        e_steps_remaining--;
-        timediff -= e_interval;
-        #ifdef STEP_DELAY_RATIO
-        if(timediff >= e_interval) delayMicroseconds(long_step_delay_ratio * e_interval / 10000);
-        #endif
-        #ifdef STEP_DELAY_MICROS
-        if(timediff >= e_interval) delayMicroseconds(STEP_DELAY_MICROS);
-        #endif
-      }
     }
   }
-  
-  if(DISABLE_X) disable_x();
-  if(DISABLE_Y) disable_y();
-  if(DISABLE_Z) disable_z();
-  if(DISABLE_E) disable_e();
-  
-  // Update current position partly based on direction, we probably can combine this with the direction code above...
-  if (destination_x > current_x) current_x = current_x + x_steps_to_take / x_steps_per_unit;
-  else current_x = current_x - x_steps_to_take / x_steps_per_unit;
-  if (destination_y > current_y) current_y = current_y + y_steps_to_take / y_steps_per_unit;
-  else current_y = current_y - y_steps_to_take / y_steps_per_unit;
-  if (destination_z > current_z) current_z = current_z + z_steps_to_take / z_steps_per_unit;
-  else current_z = current_z - z_steps_to_take / z_steps_per_unit;
-  if (destination_e > current_e) current_e = current_e + e_steps_to_take / e_steps_per_unit;
-  else current_e = current_e - e_steps_to_take / e_steps_per_unit;
+	
 }
 
-
-inline void do_x_step()
+bool axis_are_moving()
 {
-  digitalWrite(X_STEP_PIN, HIGH);
-  previous_micros_x += interval;
-  //delayMicroseconds(3);
-  digitalWrite(X_STEP_PIN, LOW);
+	for(int ax=0;ax<NUM_AXIS;ax++)
+		if(AXIS[ax].is_moving()) return true;
+	return false;
 }
 
-inline void do_y_step()
-{
-  digitalWrite(Y_STEP_PIN, HIGH);
-  previous_micros_y += interval;
-  //delayMicroseconds(3);
-  digitalWrite(Y_STEP_PIN, LOW);
-}
-
-inline void do_z_step()
-{
-  digitalWrite(Z_STEP_PIN, HIGH);
-  previous_micros_z += z_interval;
-  //delayMicroseconds(3);
-  digitalWrite(Z_STEP_PIN, LOW);
-}
-
-inline void do_e_step()
-{
-  digitalWrite(E_STEP_PIN, HIGH);
-  previous_micros_e += e_interval;
-  //delayMicroseconds(3);
-  digitalWrite(E_STEP_PIN, LOW);
-}
-
-inline void disable_x() { if(X_ENABLE_PIN > -1) digitalWrite(X_ENABLE_PIN,!X_ENABLE_ON); }
-inline void disable_y() { if(Y_ENABLE_PIN > -1) digitalWrite(Y_ENABLE_PIN,!Y_ENABLE_ON); }
-inline void disable_z() { if(Z_ENABLE_PIN > -1) digitalWrite(Z_ENABLE_PIN,!Z_ENABLE_ON); }
-inline void disable_e() { if(E_ENABLE_PIN > -1) digitalWrite(E_ENABLE_PIN,!E_ENABLE_ON); }
-inline void  enable_x() { if(X_ENABLE_PIN > -1) digitalWrite(X_ENABLE_PIN, X_ENABLE_ON); }
-inline void  enable_y() { if(Y_ENABLE_PIN > -1) digitalWrite(Y_ENABLE_PIN, Y_ENABLE_ON); }
-inline void  enable_z() { if(Z_ENABLE_PIN > -1) digitalWrite(Z_ENABLE_PIN, Z_ENABLE_ON); }
-inline void  enable_e() { if(E_ENABLE_PIN > -1) digitalWrite(E_ENABLE_PIN, E_ENABLE_ON); }
 
 #define HEAT_INTERVAL 250
 #ifdef HEATER_USES_MAX6675
@@ -1573,11 +1041,6 @@ inline void kill(byte debug)
   if(HEATER_0_PIN > -1) digitalWrite(HEATER_0_PIN,LOW);
   if(HEATER_1_PIN > -1) digitalWrite(HEATER_1_PIN,LOW);
   
-  disable_x();
-  disable_y();
-  disable_z();
-  disable_e();
-  
   if(PS_ON_PIN > -1) pinMode(PS_ON_PIN,INPUT);
   
   while(1)
@@ -1597,5 +1060,4 @@ inline void kill(byte debug)
 
 inline void manage_inactivity(byte debug) { 
 if( (millis()-previous_millis_cmd) >  max_inactive_time ) if(max_inactive_time) kill(debug); 
-if( (millis()-previous_millis_cmd) >  stepper_inactive_time ) if(stepper_inactive_time) { disable_x(); disable_y(); disable_z(); disable_e(); }
 }
