@@ -18,10 +18,10 @@
 
 // RAMP Accel may not be working in this commit.
 //Comment this to disable ramp acceleration
-//#define RAMP_ACCELERATION 1
+#define RAMP_ACCELERATION 1
 
 //Uncomment this to enable exponential acceleration
-#define EXP_ACCELERATION 1
+//#define EXP_ACCELERATION 1
 // No accel when these axis are involved.
 // 0x02 = Z
 #define ACCEL_MASK 0x02 
@@ -97,10 +97,16 @@
 #define Z_STEPS_PER_UNIT 3200/1.25
 #define E_STEPS_PER_UNIT 550
 
-#define X_MAX_FEED  200000
-#define Y_MAX_FEED  200000
-#define Z_MAX_FEED  100
-#define E_MAX_FEED  200000
+#define X_MAX_FEED  12000
+#define Y_MAX_FEED  12000
+#define Z_MAX_FEED  120
+#define E_MAX_FEED  12000
+
+// Feedrate to use during firmware homing routine
+#define X_HOME_FEED  1500
+#define Y_HOME_FEED  1500
+#define Z_HOME_FEED  70
+#define E_HOME_FEED  1500
 
 //For Inverting Stepper Enable Pins (Active Low) use 0, Non Inverting (Active High) use 1
 const bool X_ENABLE_ON = 0;

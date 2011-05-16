@@ -24,3 +24,7 @@ bool non_accel_axis_are_moving();
 
 void kill(byte debug);
 
+
+// exported globals
+// feedrate should probably be handled differently
+extern float feedrate;

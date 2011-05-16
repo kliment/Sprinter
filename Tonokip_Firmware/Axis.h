@@ -20,6 +20,7 @@ class Axis
 	float steps_per_unit;
 	float max_length;
   float max_feedrate;
+  float home_feedrate;
   int homing_dir;
 
 	bool relative;
@@ -38,7 +39,7 @@ class Axis
 	
 	Axis(int step_pin, int dir_pin, int enable_pin, int min_pin, int max_pin, 
        float steps_per_unit, bool enable_inverted, bool dir_inverted, float max_length,
-       float max_feedrate, int homing_dir);
+       float max_feedrate, float min_feedrate, int homing_dir);
 
 	void enable();
 	void disable();

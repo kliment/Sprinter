@@ -1,7 +1,7 @@
 #include "Axis.h"
 
 Axis::Axis(int step_pin, int dir_pin, int enable_pin, int min_pin, int max_pin, 
-           float steps_per_unit, bool enable_inverted, bool dir_inverted, float max_length, float max_feedrate,int homing_dir)
+           float steps_per_unit, bool enable_inverted, bool dir_inverted, float max_length, float max_feedrate, float home_feedrate, int homing_dir)
 {
 	// Initialize class data
 	direction = false;
@@ -15,6 +15,7 @@ Axis::Axis(int step_pin, int dir_pin, int enable_pin, int min_pin, int max_pin,
 	this->dir_inverted   = dir_inverted;
 	this->max_length = max_length;
   this->max_feedrate = max_feedrate;
+  this->home_feedrate = home_feedrate;
   this->homing_dir = homing_dir;
 
 	acceleration_enabled = false;
@@ -41,6 +42,7 @@ Axis::Axis(int step_pin, int dir_pin, int enable_pin, int min_pin, int max_pin,
 		pinMode(max_pin, INPUT);
 		digitalWrite(max_pin, ENDSTOPPULLUPS);
 	}
+  setup_accel();
 }
 	
 void Axis::home()
@@ -48,7 +50,8 @@ void Axis::home()
   current = 0;
   if(homing_dir == 0)
     return;
-    
+
+  ::feedrate = home_feedrate;
   destination = 1.5 * max_length * homing_dir;
   // Serial.print("Homing: ");Serial.println(destination);
   prepare_move(); // Strange way to move - call global prepare_move on all steppers.
