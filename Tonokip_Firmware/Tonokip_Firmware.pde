@@ -414,7 +414,11 @@ void process_commands()
         while((millis() - previous_millis_heater) < codenum ) manage_heater(); //manage heater until time is up
         break;
       case 28: //G28 Home all Axis one at a time
+#ifdef HOME_Z_FIRST
+        for(int ax=NUM_AXIS-1;ax>=0;ax--)
+#else
         for(int ax=0;ax<NUM_AXIS;ax++)
+#endif
           AXIS[ax].home();
         previous_millis_cmd = millis();
         break;

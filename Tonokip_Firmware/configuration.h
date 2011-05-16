@@ -108,6 +108,13 @@
 #define Z_HOME_FEED  70
 #define E_HOME_FEED  1500
 
+#define X_HOME_DIR -1
+#define Y_HOME_DIR 1
+#define Z_HOME_DIR 1
+
+#define HOME_Z_FIRST 
+
+
 //For Inverting Stepper Enable Pins (Active Low) use 0, Non Inverting (Active High) use 1
 const bool X_ENABLE_ON = 0;
 const bool Y_ENABLE_ON = 0;
@@ -123,12 +130,7 @@ const bool DISABLE_E = false;
 const bool INVERT_X_DIR = true;
 const bool INVERT_Y_DIR = false;
 const bool INVERT_Z_DIR = true;
-const bool INVERT_E_DIR = false;
-
-#define X_HOME_DIR -1
-#define Y_HOME_DIR 1
-#define Z_HOME_DIR 1
-
+const bool INVERT_E_DIR = true;
 //Thermistor settings:
 
 //Uncomment for 100k thermistor
