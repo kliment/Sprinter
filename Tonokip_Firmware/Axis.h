@@ -73,6 +73,9 @@ class Axis
   void setup_accel();
   void precompute_accel(unsigned long interval,unsigned int delta);
   unsigned long recompute_accel(unsigned long timediff, unsigned long interval);
+  bool RAMPhook1();
+  bool RAMPhook2();
+
   unsigned long max_interval;
   unsigned long steps_per_sqr_second;
   unsigned long plateau_steps;

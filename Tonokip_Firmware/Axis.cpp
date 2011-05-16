@@ -50,13 +50,15 @@ void Axis::home()
     return;
     
   destination = 1.5 * max_length * homing_dir;
-  Serial.print("Homing: ");Serial.println(destination);
+  // Serial.print("Homing: ");Serial.println(destination);
   prepare_move(); // Strange way to move - call global prepare_move on all steppers.
   current = 0; 
   destination = 0;
 }
 
 
+// This is probbaly ugly and best split up.
+// destination = current, to account for error.
 void Axis::do_step()
 {
   if(steps_remaining == 0) return;
@@ -64,25 +66,38 @@ void Axis::do_step()
   {
     if(max_pin > -1 && digitalRead(max_pin) != ENDSTOPS_INVERTING)
     {
+      current += (float)steps_done / (float)steps_per_unit;
+      destination = current;
       steps_remaining = 0;
       return;
     }
-    current += 1 / steps_per_unit;
   }
   else
   {
     if(min_pin > -1 && digitalRead(min_pin) != ENDSTOPS_INVERTING)
     {
+      current -= (float)steps_done / (float)steps_per_unit;
+      destination = current;
       steps_remaining = 0;
       return;
     }
-    current -= 1 / steps_per_unit;
   }
   steps_remaining--;
   steps_done++;
 
   digitalWrite(step_pin, HIGH);
   digitalWrite(step_pin, LOW);
+
+  if(steps_remaining == 0)
+  {
+    if(direction)
+      current += (float)steps_done / (float)steps_per_unit;
+    else
+      current -= (float)steps_done / (float)steps_per_unit;
+
+    destination = current;
+  }
+    
 }
 
 
@@ -106,12 +121,10 @@ unsigned long Axis::get_time_for_move(float feedrate)
   // Caru's advice was to make sure all math is done with floats.  OK then.
   unsigned long tfm = steps_to_take / (steps_per_unit * feedrate / 60000000.0);
 
-  Serial.print("feed: ");Serial.print(feedrate);
-  Serial.print(" tfm: ");Serial.print(tfm);
-  Serial.print(" steps: ");Serial.println(steps_to_take);
+  //Serial.print("feed: ");Serial.print(feedrate);
+  //Serial.print(" tfm: ");Serial.print(tfm);
+  //Serial.print(" steps: ");Serial.println(steps_to_take);
 
-	
-	// return time for move
 	return tfm;
 	// return (diff/feedrate) * 60000000;
 }
@@ -123,7 +136,7 @@ float Axis::set_time_for_move(unsigned long tfm)
   else
     interval = 0;
 
-  Serial.print("interval: ");Serial.println(interval);
+  //Serial.print("interval: ");Serial.println(interval);
 }
 
 void Axis::precomputemove()
@@ -278,7 +291,6 @@ unsigned long Axis::recompute_accel(unsigned long timediff, unsigned long interv
   {
     if (!accelerating)
     {
-      // Huh?  why do we change this here?
       start_move_micros = micros();
       accelerating = true;
       decelerating = true;
@@ -295,6 +307,24 @@ unsigned long Axis::recompute_accel(unsigned long timediff, unsigned long interv
     accelerating = false;
   }
   return interval;
+}
+
+//hackish
+// RAMP accel might need to break out of the loop or continue early.
+bool Axis::RAMPhook1()
+{
+  if (steps_remaining == plateau_steps || (steps_done >= steps_to_take / 2 && accelerating && !decelerating)) 
+    return true;
+
+  return false;
+}
+
+bool Axis::RAMPhook2()
+{
+  if (steps_remaining == plateau_steps || (steps_done >= steps_to_take / 2 && accelerating && !decelerating)) 
+    return true;
+
+  return false;
 }
 
 #endif // RAMP_ACCELERATION

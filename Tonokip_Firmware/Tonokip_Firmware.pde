@@ -709,7 +709,7 @@ void get_coordinates()
 void prepare_move()
 {
   // Determine which axis will take the longest time.
-  Serial.print("Prepare: "); Serial.println(feedrate);
+  // Serial.print("Prepare: "); Serial.println(feedrate);
   unsigned long time_for_move = 0;
   for(int ax=0;ax < NUM_AXIS;ax++) 
   {
@@ -749,10 +749,12 @@ void linear_move() // make linear move with preset speeds and destinations, see 
     
   interval = AXIS[primary_axis].interval;
 
-  Serial.print("PA: ");Serial.print(primary_axis);
-  Serial.print(" int: ");Serial.println(interval);
+  //Serial.print("PA: ");Serial.print(primary_axis);
+  //Serial.print("non-accel: ");Serial.print(non_accel_axis_are_moving());
+  //Serial.print(" int: ");Serial.println(interval);
 
-  AXIS[primary_axis].precompute_accel(interval, deltas[primary_axis]);
+  if(!non_accel_axis_are_moving())
+    AXIS[primary_axis].precompute_accel(interval, deltas[primary_axis]);
 
 	unsigned long previous_nanos = micros() * 100l;
   unsigned long timediff = 0;
@@ -763,7 +765,8 @@ void linear_move() // make linear move with preset speeds and destinations, see 
     timediff += now_nanos - previous_nanos;
     previous_nanos = now_nanos;
 
-    interval = AXIS[primary_axis].recompute_accel(timediff, interval);
+    if(!non_accel_axis_are_moving())
+      interval = AXIS[primary_axis].recompute_accel(timediff, interval);
     while(timediff >= interval && axis_are_moving())
     {
       timediff -= interval;
@@ -781,7 +784,15 @@ void linear_move() // make linear move with preset speeds and destinations, see 
           errors[ax] = errors[ax] + deltas[primary_axis];
         }
       }
+#ifdef RAMP_ACCELERATION      
+      if(AXIS[primary_axis].RAMPhook1())
+        break;
+#endif      
     }
+
+    // I think RAMPhook2() would go here, but I also think RAMPhook2() is an artifact of the old bham.
+    // if(AXIS[primary_axis].RAMPhook2())
+    //  continue;
         
     //If more that 50ms have passed since previous heating check, adjust temp
     if((millis() - previous_millis_heater) >= 50 ) 
@@ -800,6 +811,15 @@ bool axis_are_moving()
 	return false;
 }
 
+bool non_accel_axis_are_moving()
+{
+  char axismap = 0;
+  for(int ax=0;ax<NUM_AXIS;ax++)
+    axismap = (axismap << 1) | AXIS[ax].is_moving();
+
+  if(axismap & ACCEL_MASK) return true;
+  return false;
+}
 
 #define HEAT_INTERVAL 250
 #ifdef HEATER_USES_MAX6675
@@ -1102,4 +1122,5 @@ void kill(byte debug)
 
 void manage_inactivity(byte debug) { 
 if( (millis()-previous_millis_cmd) >  max_inactive_time ) if(max_inactive_time) kill(debug); 
+if( (millis()-previous_millis_cmd) >  stepper_inactive_time ) if(stepper_inactive_time) { for(int ax=0;ax<NUM_AXIS;ax++) { AXIS[ax].disable(); } }
 }

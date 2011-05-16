@@ -20,6 +20,7 @@ void get_coordinates();
 void prepare_move();
 void linear_move();
 bool axis_are_moving();
+bool non_accel_axis_are_moving();
 
 void kill(byte debug);
 

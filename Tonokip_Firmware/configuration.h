@@ -16,16 +16,19 @@
 //If you enable this, make sure STEP_DELAY_MICROS is disabled.
 //#define STEP_DELAY_RATIO 0.25
 
+// RAMP Accel may not be working in this commit.
 //Comment this to disable ramp acceleration
 //#define RAMP_ACCELERATION 1
 
 //Uncomment this to enable exponential acceleration
-//#define EXP_ACCELERATION 1
-
+#define EXP_ACCELERATION 1
+// No accel when these axis are involved.
+// 0x02 = Z
+#define ACCEL_MASK 0x02 
 //Acceleration settings
 #ifdef RAMP_ACCELERATION
 // the minimum feedrate
-#define MIN_UNITS_PER_SECOND  35.0 
+#define MIN_UNITS_PER_SECOND  20.0 
 // Max acceleration in mm/s^2 for printing moves
 #define MAX_ACCELERATION_UNITS_PER_SQ_SECOND 750
 // Max acceleration in mm/s^2 for travel moves
