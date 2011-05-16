@@ -29,12 +29,16 @@ const long max_acceleration_units_per_sq_second = 750; // Max acceleration in mm
 const long max_travel_acceleration_units_per_sq_second = 1500; // Max acceleration in mm/s^2 for travel moves
 #endif
 #ifdef EXP_ACCELERATION
-const float full_velocity_units = 10; // the units between minimum and G1 move feedrate
-const float travel_move_full_velocity_units = 10; // used for travel moves
-const float min_units_per_second = 20.0; // the minimum feedrate
-const float min_constant_speed_units = 2; // the minimum units of an accelerated move that must be done at constant speed
-                                    // Note that if the move is shorter than this value, acceleration won't be perfomed,
-                                    // but will be done at the minimum between min_units_per_seconds and move feedrate speeds.
+// the units between minimum and G1 move feedrate
+#define FULL_VELOCITY_UNITS 10
+// used for travel moves
+#define TRAVEL_MOVE_FULL_VELOCITY_UNITS 10 
+// the minimum feedrate
+#define MIN_UNITS_PER_SECOND 20.0 
+// the minimum units of an accelerated move that must be done at constant speed
+// Note that if the move is shorter than this value, acceleration won't be perfomed,
+// but will be done at the minimum between min_units_per_seconds and move feedrate speeds.
+#define MIN_CONSTANT_SPEED_UNITS 2 
 #endif
 
 // AD595 THERMOCOUPLE SUPPORT UNTESTED... USE WITH CAUTION!!!!

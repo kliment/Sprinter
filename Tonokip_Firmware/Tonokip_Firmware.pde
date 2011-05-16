@@ -769,19 +769,21 @@ void linear_move() // make linear move with preset speeds and destinations, see 
   unsigned long primary_axis_steps = 0;
   for(int ax=0;ax<NUM_AXIS;ax++)
   {
-	AXIS[ax].precomputemove(); // SJTODO: needed?
-	deltas[ax] = AXIS[ax].steps_remaining;
-	steps_remaining += AXIS[ax].steps_remaining;
-	if(AXIS[ax].steps_remaining > primary_axis_steps)
-	{
-		primary_axis = ax;
-		primary_axis_steps = AXIS[ax].steps_remaining;
-	}
+    AXIS[ax].precomputemove(); // SJTODO: needed?
+    deltas[ax] = AXIS[ax].steps_remaining;
+    steps_remaining += AXIS[ax].steps_remaining;
+    if(AXIS[ax].steps_remaining > primary_axis_steps)
+    {
+      primary_axis = ax;
+      primary_axis_steps = AXIS[ax].steps_remaining;
+    }
   }
 
   interval = AXIS[primary_axis].interval;
   steps_remaining = AXIS[primary_axis].steps_remaining;
   steps_to_take = AXIS[primary_axis].steps_remaining;
+
+  AXIS[primary_axis].precompute_accel(interval, deltas[primary_axis]);
 
   unsigned long start_move_micros = micros();
   for(int ax=0;ax<NUM_AXIS;ax++) 
@@ -789,35 +791,36 @@ void linear_move() // make linear move with preset speeds and destinations, see 
 
   while(axis_are_moving())
   {
-	// TODO: tht timer can and will wrap around.
-	unsigned long timediff = micros() * 100 - previous_nanos[primary_axis];
-	while(timediff >= interval && axis_are_moving())
-	{
-		steps_done++;
-		steps_remaining--;
-		for(int ax=0;ax<NUM_AXIS;ax++)
-		{
-			if(ax == primary_axis)
-			{
-				AXIS[ax].do_step();
-				continue;
-			}
-			errors[ax] = errors[ax] - deltas[ax];
-			if(errors[ax] < 0)
-			{
-				AXIS[ax].do_step();
-				errors[ax] = errors[ax] + deltas[primary_axis];
-			}
-		}
-	}
-			
-    	//If more that 50ms have passed since previous heating check, adjust temp
-    	if((millis() - previous_millis_heater) >= 50 ) 
-	{
-      		manage_heater();
-      		previous_millis_heater = millis();
-		manage_inactivity(2);
-    	}
+    // TODO: tht timer can and will wrap around.
+    unsigned long timediff = micros() * 100 - previous_nanos[primary_axis];
+    interval = AXIS[primary_axis].recompute_accel(timediff, interval);
+    while(timediff >= interval && axis_are_moving())
+    {
+      steps_done++;
+      steps_remaining--;
+      for(int ax=0;ax<NUM_AXIS;ax++)
+      {
+        if(ax == primary_axis)
+        {
+          AXIS[ax].do_step();
+          continue;
+        }
+        errors[ax] = errors[ax] - deltas[ax];
+        if(errors[ax] < 0)
+        {
+          AXIS[ax].do_step();
+          errors[ax] = errors[ax] + deltas[primary_axis];
+        }
+      }
+    }
+        
+        //If more that 50ms have passed since previous heating check, adjust temp
+    if((millis() - previous_millis_heater) >= 50 ) 
+    {
+      manage_heater();
+      previous_millis_heater = millis();
+      manage_inactivity(2);
+    }
   }
 }
 #endif // USE_BRESENHAM

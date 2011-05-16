@@ -45,6 +45,27 @@ class Axis
 	unsigned long steps_remaining;
 	unsigned long steps_done;
 	unsigned long lastinterval;
+#ifdef EXP_ACCELERATION
+  void setup_accel();
+  unsigned long precompute_accel(unsigned long interval,unsigned int delta);
+  unsigned long recompute_accel(unsigned long timediff, unsigned long interval);
+  float full_velocity_units;
+  float min_units_per_second;
+  float min_constant_speed_units;
+  unsigned long long_full_velocity_units;
+  unsigned long max_interval;
+  unsigned long min_constant_speed_steps;
+  unsigned long virtual_full_velocity_steps;
+  unsigned long full_velocity_steps;
+  unsigned long full_interval;
+  unsigned int steps_acceleration_check;
+#else
+  void setup_accel() { return; };
+  unsigned long precompute_accel(unsigned long interval,unsigned int delta) { return interval };
+  unsigned long recompute_accel(unsigned long timediff, unsigned long interval) { return interval };
+#endif
+
+  
 };
 
 #endif // __AXIS_H__
