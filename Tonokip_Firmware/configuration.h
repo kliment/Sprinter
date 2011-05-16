@@ -20,13 +20,16 @@
 //#define RAMP_ACCELERATION 1
 
 //Uncomment this to enable exponential acceleration
-#define EXP_ACCELERATION 1
+//#define EXP_ACCELERATION 1
 
 //Acceleration settings
 #ifdef RAMP_ACCELERATION
-const float min_units_per_second = 35.0; // the minimum feedrate
-const long max_acceleration_units_per_sq_second = 750; // Max acceleration in mm/s^2 for printing moves
-const long max_travel_acceleration_units_per_sq_second = 1500; // Max acceleration in mm/s^2 for travel moves
+// the minimum feedrate
+#define MIN_UNITS_PER_SECOND  35.0 
+// Max acceleration in mm/s^2 for printing moves
+#define MAX_ACCELERATION_UNITS_PER_SQ_SECOND 750
+// Max acceleration in mm/s^2 for travel moves
+#define MAX_TRAVEL_ACCELERATION_UNITS_PER_SQ_SECOND 1500
 #endif
 #ifdef EXP_ACCELERATION
 // the units between minimum and G1 move feedrate
@@ -86,18 +89,15 @@ const long max_travel_acceleration_units_per_sq_second = 1500; // Max accelerati
 // units are in millimeters or whatever length unit you prefer: inches,football-fields,parsecs etc
 
 //Calibration variables
-const float x_steps_per_unit = 80.376;
-const float y_steps_per_unit = 80.376;
-const float z_steps_per_unit = 3200/1.25;
-const float e_steps_per_unit = 550;
-const float max_feedrate = 20000; //mmm, acceleration!
-const float max_z_feedrate = 200;
+#define X_STEPS_PER_UNIT 80.376
+#define Y_STEPS_PER_UNIT 80.376
+#define Z_STEPS_PER_UNIT 3200/1.25
+#define E_STEPS_PER_UNIT 550
 
-//float x_steps_per_unit = 10.047;
-//float y_steps_per_unit = 10.047;
-//float z_steps_per_unit = 833.398;
-//float e_steps_per_unit = 0.706;
-//float max_feedrate = 3000;
+#define X_MAX_FEED  200000
+#define Y_MAX_FEED  200000
+#define Z_MAX_FEED  100
+#define E_MAX_FEED  200000
 
 //For Inverting Stepper Enable Pins (Active Low) use 0, Non Inverting (Active High) use 1
 const bool X_ENABLE_ON = 0;
@@ -116,9 +116,9 @@ const bool INVERT_Y_DIR = false;
 const bool INVERT_Z_DIR = true;
 const bool INVERT_E_DIR = false;
 
-const int X_HOME_DIR = -1;
-const int Y_HOME_DIR = 1;
-const int Z_HOME_DIR = 1;
+#define X_HOME_DIR -1
+#define Y_HOME_DIR 1
+#define Z_HOME_DIR 1
 
 //Thermistor settings:
 
@@ -143,15 +143,14 @@ const bool ENDSTOPS_INVERTING = true;
 //If true, axis won't move to coordinates less than zero.
 #define MIN_SOFTWARE_ENDSTOPS false
 //If true, axis won't move to coordinates greater than the defined lengths below.
-#define MAX_SOFTWARE_ENDSTOPS true  
+#define MAX_SOFTWARE_ENDSTOPS false  
 #define X_MAX_LENGTH 220
 #define Y_MAX_LENGTH 220
 #define Z_MAX_LENGTH 110
 #define E_MAX_LENGTH 99999999
 
-#define USE_BRESENHAM
 #define NUM_AXIS 4
-#define MINIMUM_FEEDRATE 10
+#define MINIMUM_FEEDRATE 70
 
 
 #define BAUDRATE 115200

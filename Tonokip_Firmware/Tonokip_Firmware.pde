@@ -62,18 +62,17 @@
 // Newstyle Axis
 Axis AXIS[NUM_AXIS] = 
 { 
-	Axis(X_STEP_PIN,X_DIR_PIN,X_ENABLE_PIN,X_MIN_PIN,X_MAX_PIN,x_steps_per_unit,X_ENABLE_ON,INVERT_X_DIR,X_MAX_LENGTH),
-	Axis(Y_STEP_PIN,Y_DIR_PIN,Y_ENABLE_PIN,Y_MIN_PIN,Y_MAX_PIN,y_steps_per_unit,Y_ENABLE_ON,INVERT_Y_DIR,Y_MAX_LENGTH),
-	Axis(Z_STEP_PIN,Z_DIR_PIN,Z_ENABLE_PIN,Z_MIN_PIN,Z_MAX_PIN,z_steps_per_unit,Z_ENABLE_ON,INVERT_Z_DIR,Z_MAX_LENGTH),
-	Axis(E_STEP_PIN,E_DIR_PIN,E_ENABLE_PIN,-1,-1,e_steps_per_unit,E_ENABLE_ON,INVERT_E_DIR,E_MAX_LENGTH)
+	Axis(X_STEP_PIN,X_DIR_PIN,X_ENABLE_PIN,X_MIN_PIN,X_MAX_PIN,X_STEPS_PER_UNIT,X_ENABLE_ON,INVERT_X_DIR,X_MAX_LENGTH,X_MAX_FEED,X_HOME_DIR),
+	Axis(Y_STEP_PIN,Y_DIR_PIN,Y_ENABLE_PIN,Y_MIN_PIN,Y_MAX_PIN,Y_STEPS_PER_UNIT,Y_ENABLE_ON,INVERT_Y_DIR,Y_MAX_LENGTH,Y_MAX_FEED,Y_HOME_DIR),
+	Axis(Z_STEP_PIN,Z_DIR_PIN,Z_ENABLE_PIN,Z_MIN_PIN,Z_MAX_PIN,Z_STEPS_PER_UNIT,Z_ENABLE_ON,INVERT_Z_DIR,Z_MAX_LENGTH,Z_MAX_FEED,Z_HOME_DIR),
+	Axis(E_STEP_PIN,E_DIR_PIN,E_ENABLE_PIN,-1,-1,E_STEPS_PER_UNIT,E_ENABLE_ON,INVERT_E_DIR,E_MAX_LENGTH,E_MAX_FEED,0)
 };
 
 //Stepper Movement Variables
 unsigned long previous_millis_heater, previous_millis_bed_heater;
 boolean acceleration_enabled = false, accelerating = false;
 unsigned long interval;
-float feedrate = 1500, next_feedrate, z_feedrate, saved_feedrate;
-unsigned long time_for_move;
+float feedrate = 1500;
 long gcode_N, gcode_LastN;
 long timediff = 0;
 
@@ -415,8 +414,8 @@ inline void process_commands()
         while((millis() - previous_millis_heater) < codenum ) manage_heater(); //manage heater until time is up
         break;
       case 28: //G28 Home all Axis one at a time
-	;
-        feedrate = saved_feedrate;
+        for(int ax=0;ax<NUM_AXIS;ax++)
+          AXIS[ax].home();
         previous_millis_cmd = millis();
         break;
       case 90: // G90
@@ -663,7 +662,6 @@ inline void process_commands()
         Serial.print(AXIS[2].current);
 	Serial.print("E:");
         Serial.println(AXIS[3].current);
-	AXIS[0].debug();
         break;
     }
     
@@ -703,16 +701,21 @@ inline void get_coordinates()
   if(code_seen('Z')) AXIS[2].set_target((float)code_value());
   if(code_seen('E')) AXIS[3].set_target((float)code_value());
   if(code_seen('F')) {
-    next_feedrate = code_value();
+    float next_feedrate = code_value();
     if(next_feedrate > 0.0) feedrate = next_feedrate;
   }
 }
 
-inline void prepare_move()
+void prepare_move()
 {
   // Determine which axis will take the longest time.
-  time_for_move = max(AXIS[0].get_time_for_move(feedrate), AXIS[1].get_time_for_move(feedrate));
-  for(int ax=2;ax < NUM_AXIS;ax++) time_for_move = max(time_for_move, AXIS[ax].get_time_for_move(feedrate));
+  Serial.print("Prepare: "); Serial.println(feedrate);
+  unsigned long time_for_move = 0;
+  for(int ax=0;ax < NUM_AXIS;ax++) 
+  {
+    unsigned long axtime = AXIS[ax].get_time_for_move(feedrate);
+    if(axtime > time_for_move) time_for_move =  axtime;
+  }
 
   // Inform all axis how long the slowpoke takes.
   for(int ax=0;ax<NUM_AXIS;ax++) AXIS[ax].set_time_for_move(time_for_move);
@@ -721,57 +724,19 @@ inline void prepare_move()
   linear_move(); // make the move
 }
 
-#ifndef USE_BRESENHAM
 void linear_move() // make linear move with preset speeds and destinations, see G0 and G1
 {
   previous_millis_heater = millis();
   
-  for(int ax=0;ax<NUM_AXIS;ax++)
-	AXIS[ax].precomputemove();
-
-  unsigned long start_move_micros = micros();
-
-  while(axis_are_moving())
-  {
-	unsigned long current_micros = micros();
-	if(start_move_micros > current_micros) start_move_micros = 0;  // Wrapped around.
-	unsigned long micros_since_start = current_micros - start_move_micros;
-
-	for(int ax=0;ax<NUM_AXIS;ax++)
-	{
-		AXIS[ax].move(micros_since_start);
-	}
-
-    //If more that 50ms have passed since previous heating check, adjust temp
-    if((millis() - previous_millis_heater) >= 50 ) {
-      manage_heater();
-      previous_millis_heater = millis();
-      
-    }
-  }
-	
-}
-#else // USE_BRESENHAM
-void linear_move() // make linear move with preset speeds and destinations, see G0 and G1
-{
-  previous_millis_heater = millis();
-  
-  unsigned int deltas[NUM_AXIS];
-  int errors[NUM_AXIS];
-  unsigned long previous_nanos[NUM_AXIS];
-
-  unsigned long steps_remaining = 0;
-  unsigned long steps_to_take   = 0;
-  unsigned long steps_done      = 0;
+  unsigned long deltas[NUM_AXIS];
+  long errors[NUM_AXIS];
   unsigned long interval        = 0;
-
   int primary_axis = 0;
   unsigned long primary_axis_steps = 0;
   for(int ax=0;ax<NUM_AXIS;ax++)
   {
-    AXIS[ax].precomputemove(); // SJTODO: needed?
+    AXIS[ax].precomputemove(); 
     deltas[ax] = AXIS[ax].steps_remaining;
-    steps_remaining += AXIS[ax].steps_remaining;
     if(AXIS[ax].steps_remaining > primary_axis_steps)
     {
       primary_axis = ax;
@@ -779,25 +744,29 @@ void linear_move() // make linear move with preset speeds and destinations, see 
     }
   }
 
+  for(int ax=0;ax<NUM_AXIS;ax++)
+    errors[ax] = AXIS[primary_axis].steps_remaining / 2;
+    
   interval = AXIS[primary_axis].interval;
-  steps_remaining = AXIS[primary_axis].steps_remaining;
-  steps_to_take = AXIS[primary_axis].steps_remaining;
+
+  Serial.print("PA: ");Serial.print(primary_axis);
+  Serial.print(" int: ");Serial.println(interval);
 
   AXIS[primary_axis].precompute_accel(interval, deltas[primary_axis]);
 
-  unsigned long start_move_micros = micros();
-  for(int ax=0;ax<NUM_AXIS;ax++) 
-	previous_nanos[ax] = start_move_micros * 100;
-
+	unsigned long previous_nanos = micros() * 100l;
+  unsigned long timediff = 0;
   while(axis_are_moving())
   {
     // TODO: tht timer can and will wrap around.
-    unsigned long timediff = micros() * 100 - previous_nanos[primary_axis];
+    unsigned long now_nanos = micros() * 100l;
+    timediff += now_nanos - previous_nanos;
+    previous_nanos = now_nanos;
+
     interval = AXIS[primary_axis].recompute_accel(timediff, interval);
     while(timediff >= interval && axis_are_moving())
     {
-      steps_done++;
-      steps_remaining--;
+      timediff -= interval;
       for(int ax=0;ax<NUM_AXIS;ax++)
       {
         if(ax == primary_axis)
@@ -814,7 +783,7 @@ void linear_move() // make linear move with preset speeds and destinations, see 
       }
     }
         
-        //If more that 50ms have passed since previous heating check, adjust temp
+    //If more that 50ms have passed since previous heating check, adjust temp
     if((millis() - previous_millis_heater) >= 50 ) 
     {
       manage_heater();
@@ -823,7 +792,6 @@ void linear_move() // make linear move with preset speeds and destinations, see 
     }
   }
 }
-#endif // USE_BRESENHAM
 
 bool axis_are_moving()
 {
