@@ -160,7 +160,7 @@ unsigned long stepper_inactive_time = 0;
   #endif
   }
   
-  inline void write_command(char *buf){
+  void write_command(char *buf){
       char* begin = buf;
       char* npos = 0;
       char* end = buf + strlen(buf) - 1;
@@ -253,7 +253,7 @@ void loop()
 }
 
 
-inline void get_command() 
+void get_command() 
 { 
   while( Serial.available() > 0  && buflen < BUFSIZE) {
     serial_char = Serial.read();
@@ -378,17 +378,17 @@ if(!sdmode || serial_count!=0){
 }
 
 
-inline float code_value() { return (strtod(&cmdbuffer[bufindr][strchr_pointer - cmdbuffer[bufindr] + 1], NULL)); }
-inline long code_value_long() { return (strtol(&cmdbuffer[bufindr][strchr_pointer - cmdbuffer[bufindr] + 1], NULL, 10)); }
-inline bool code_seen(char code_string[]) { return (strstr(cmdbuffer[bufindr], code_string) != NULL); }  //Return True if the string was found
+float code_value() { return (strtod(&cmdbuffer[bufindr][strchr_pointer - cmdbuffer[bufindr] + 1], NULL)); }
+long code_value_long() { return (strtol(&cmdbuffer[bufindr][strchr_pointer - cmdbuffer[bufindr] + 1], NULL, 10)); }
+bool code_seen(char code_string[]) { return (strstr(cmdbuffer[bufindr], code_string) != NULL); }  //Return True if the string was found
 
-inline bool code_seen(char code)
+bool code_seen(char code)
 {
   strchr_pointer = strchr(cmdbuffer[bufindr], code);
   return (strchr_pointer != NULL);  //Return True if a character was found
 }
 
-inline void process_commands()
+void process_commands()
 {
   unsigned long codenum; //throw away variable
 
@@ -675,7 +675,7 @@ inline void process_commands()
       
 }
 
-inline void FlushSerialRequestResend()
+void FlushSerialRequestResend()
 {
   //char cmdbuffer[bufindr][100]="Resend:";
   Serial.flush();
@@ -684,7 +684,7 @@ inline void FlushSerialRequestResend()
   ClearToSend();
 }
 
-inline void ClearToSend()
+void ClearToSend()
 {
   previous_millis_cmd = millis();
   #ifdef SDSUPPORT
@@ -694,7 +694,7 @@ inline void ClearToSend()
   Serial.println("ok"); 
 }
 
-inline void get_coordinates()
+void get_coordinates()
 {
   if(code_seen('X')) AXIS[0].set_target((float)code_value());
   if(code_seen('Y')) AXIS[1].set_target((float)code_value());
@@ -806,7 +806,7 @@ bool axis_are_moving()
 unsigned long max6675_previous_millis = 0;
 int max6675_temp = 2000;
 
-inline int read_max6675()
+int read_max6675()
 {
   if (millis() - max6675_previous_millis < HEAT_INTERVAL) 
     return max6675_temp;
@@ -858,7 +858,7 @@ inline int read_max6675()
 #endif
 
 
-inline void manage_heater()
+void manage_heater()
 {
   #ifdef HEATER_USES_THERMISTOR
     current_raw = analogRead(TEMP_0_PIN); 
@@ -1078,7 +1078,7 @@ float analog2tempBed(int raw) {
   #endif
 }
 
-inline void kill(byte debug)
+void kill(byte debug)
 {
   if(HEATER_0_PIN > -1) digitalWrite(HEATER_0_PIN,LOW);
   if(HEATER_1_PIN > -1) digitalWrite(HEATER_1_PIN,LOW);
@@ -1100,6 +1100,6 @@ inline void kill(byte debug)
   }
 }
 
-inline void manage_inactivity(byte debug) { 
+void manage_inactivity(byte debug) { 
 if( (millis()-previous_millis_cmd) >  max_inactive_time ) if(max_inactive_time) kill(debug); 
 }

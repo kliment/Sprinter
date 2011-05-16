@@ -1,5 +1,9 @@
 #ifndef __AXIS_H__ 
 #define __AXIS_H__
+/* Axis control class
+ * (c) 2011 Christopher "ScribbleJ" Jansen
+ *
+ */
 
 #include <WProgram.h>
 #include "configuration.h"
@@ -43,7 +47,7 @@ class Axis
 	unsigned long get_time_for_move(float feedrate);
 	float set_time_for_move(unsigned long tfm);
 	void precomputemove();
-	bool is_moving();
+	inline bool is_moving() { if(steps_remaining > 0) return true; return false; };
 	void set_target(float target);
 
 	unsigned long steps_to_take;
@@ -78,9 +82,9 @@ class Axis
   long min_speed_steps_per_second;
   unsigned long start_move_micros;
 #else // no acceleration
-  void setup_accel() { return; };
-  void precompute_accel(unsigned long interval,unsigned int delta) { return; };
-  unsigned long recompute_accel(unsigned long timediff, unsigned long interval) { return interval; };
+  inline void setup_accel() { return; };
+  inline void precompute_accel(unsigned long interval,unsigned int delta) { return; };
+  inline unsigned long recompute_accel(unsigned long timediff, unsigned long interval) { return interval; };
 #endif // RAMP_ACCELERATION
 #endif // EXP_ACCELERATION
 

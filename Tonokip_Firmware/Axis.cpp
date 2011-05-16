@@ -57,6 +57,35 @@ void Axis::home()
 }
 
 
+void Axis::do_step()
+{
+  if(steps_remaining == 0) return;
+  if(direction)
+  {
+    if(max_pin > -1 && digitalRead(max_pin) != ENDSTOPS_INVERTING)
+    {
+      steps_remaining = 0;
+      return;
+    }
+    current += 1 / steps_per_unit;
+  }
+  else
+  {
+    if(min_pin > -1 && digitalRead(min_pin) != ENDSTOPS_INVERTING)
+    {
+      steps_remaining = 0;
+      return;
+    }
+    current -= 1 / steps_per_unit;
+  }
+  steps_remaining--;
+  steps_done++;
+
+  digitalWrite(step_pin, HIGH);
+  digitalWrite(step_pin, LOW);
+}
+
+
 void Axis::enable()
 {
 	if(enable_pin > -1) digitalWrite(enable_pin, !enable_inverted);
@@ -67,34 +96,6 @@ void Axis::disable()
 	if(enable_pin > -1) digitalWrite(enable_pin, enable_inverted);
 }
 
-void Axis::do_step()
-{
-  if(steps_remaining == 0) return;
-	if(direction)
-	{
-		if(max_pin > -1 && digitalRead(max_pin) != ENDSTOPS_INVERTING) 
-		{
-			steps_remaining = 0;
-			return;
-		}
-		current += 1 / steps_per_unit;
-	}
-	else
-	{
-		if(min_pin > -1 && digitalRead(min_pin) != ENDSTOPS_INVERTING) 
-		{
-			steps_remaining = 0;
-			return;
-		}
-		current -= 1 / steps_per_unit;
-	}
-	steps_remaining--;
-	steps_done++;
-
-	digitalWrite(step_pin, HIGH);
-	digitalWrite(step_pin, LOW);
-}
-
 unsigned long Axis::get_time_for_move(float feedrate)
 {
 	if(feedrate > max_feedrate) feedrate = max_feedrate;
@@ -102,7 +103,8 @@ unsigned long Axis::get_time_for_move(float feedrate)
 
 	float diff = abs(destination - current);
 	steps_to_take = diff * steps_per_unit;
-  unsigned long tfm = (steps_to_take / (steps_per_unit * feedrate / 60000000));
+  // Caru's advice was to make sure all math is done with floats.  OK then.
+  unsigned long tfm = steps_to_take / (steps_per_unit * feedrate / 60000000.0);
 
   Serial.print("feed: ");Serial.print(feedrate);
   Serial.print(" tfm: ");Serial.print(tfm);
@@ -117,7 +119,7 @@ unsigned long Axis::get_time_for_move(float feedrate)
 float Axis::set_time_for_move(unsigned long tfm)
 {
 	if(steps_to_take)
-		interval = (tfm * 100) / steps_to_take;  // interval mesaured in nanos
+		interval = ((float)tfm / (float)steps_to_take) * 100.0;  // interval mesaured in partial micros
   else
     interval = 0;
 
@@ -135,12 +137,6 @@ void Axis::precomputemove()
 	steps_remaining = steps_to_take;
 	if(steps_remaining) enable();
 	steps_done = 0;
-}
-
-bool Axis::is_moving()
-{
-	if(steps_remaining > 0) return true;
-	return false;
 }
 
 void Axis::set_target(float target)
@@ -201,22 +197,22 @@ void Axis::precompute_accel(unsigned long interval,unsigned int delta)
 unsigned long Axis::recompute_accel(unsigned long timediff, unsigned long interval)
 {
     //If acceleration is enabled on this move and we are in the acceleration segment, calculate the current interval
-    if (acceleration_enabled && steps_done < full_velocity_steps && steps_done / full_velocity_steps < 1 && (steps_done % steps_acceleration_check == 0)) 
+    if (acceleration_enabled && steps_done < full_velocity_steps && steps_done / full_velocity_steps < 1 && (steps_done % steps_acceleration_check == 0))
     {
       if(steps_done == 0)
         interval = max_interval;
-      else 
+      else
         interval = max_interval - ((max_interval - full_interval) * steps_done / virtual_full_velocity_steps);
-    } 
-    else if (acceleration_enabled && steps_remaining < full_velocity_steps) 
+    }
+    else if (acceleration_enabled && steps_remaining < full_velocity_steps)
     {
       //Else, if acceleration is enabled on this move and we are in the deceleration segment, calculate the current interval
-      if(steps_remaining == 0) 
+      if(steps_remaining == 0)
         interval = max_interval;
       else
         interval = max_interval - ((max_interval - full_interval) * steps_remaining / virtual_full_velocity_steps);
       accelerating = true;
-    } 
+    }
     else if (steps_done - full_velocity_steps >= 1 || !acceleration_enabled)
     {
       //Else, we are just use the full speed interval as current interval
@@ -225,6 +221,7 @@ unsigned long Axis::recompute_accel(unsigned long timediff, unsigned long interv
     }
     return interval;
 }
+
 #endif // EXP_ACCELERATION
 
 #ifdef RAMP_ACCELERATION
@@ -257,29 +254,29 @@ void Axis::precompute_accel(unsigned long interval,unsigned int delta)
 unsigned long Axis::recompute_accel(unsigned long timediff, unsigned long interval)
 {
   //If acceleration is enabled on this move and we are in the acceleration segment, calculate the current interval
-  if (acceleration_enabled && steps_done == 0) 
+  if (acceleration_enabled && steps_done == 0)
   {
     interval = max_interval;
-  } 
-  else if (acceleration_enabled && steps_done <= plateau_steps) 
+  }
+  else if (acceleration_enabled && steps_done <= plateau_steps)
   {
     long current_speed = (long) ((((long) steps_per_sqr_second) / 10000) * ((micros() - start_move_micros)  / 100) + (long) min_speed_steps_per_second);
     interval = 100000000 / current_speed;
-    if (interval < full_interval) 
+    if (interval < full_interval)
     {
       accelerating = false;
       interval = full_interval;
     }
-    if (steps_done >= steps_to_take / 2) 
+    if (steps_done >= steps_to_take / 2)
     {
       plateau_steps = steps_done;
       max_speed_steps_per_second = 100000000 / interval;
       accelerating = false;
     }
-  } 
-  else if (acceleration_enabled && steps_remaining <= plateau_steps) 
-  { 
-    if (!accelerating) 
+  }
+  else if (acceleration_enabled && steps_remaining <= plateau_steps)
+  {
+    if (!accelerating)
     {
       // Huh?  why do we change this here?
       start_move_micros = micros();
@@ -290,8 +287,8 @@ unsigned long Axis::recompute_accel(unsigned long timediff, unsigned long interv
     interval = 100000000 / current_speed;
     if (interval > max_interval)
       interval = max_interval;
-  } 
-  else 
+  }
+  else
   {
     //Else, we are just use the full speed interval as current interval
     interval = full_interval;
@@ -299,4 +296,5 @@ unsigned long Axis::recompute_accel(unsigned long timediff, unsigned long interv
   }
   return interval;
 }
+
 #endif // RAMP_ACCELERATION

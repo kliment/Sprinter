@@ -36,7 +36,7 @@ TARGET = $(notdir $(CURDIR))
 INSTALL_DIR = /home/chris/arduino-0022
 UPLOAD_RATE = 38400
 AVRDUDE_PROGRAMMER = stk500v1
-PORT = /dev/ttyUSB0
+PORT = /dev/ttyUSB?
 #MCU = atmega2560
 #For "old" Arduino Mega
 #MCU = atmega1280
@@ -84,7 +84,7 @@ CXXINCS = -I$(ARDUINO)
 # gnu99 - c99 plus GCC extensions
 CSTANDARD = -std=gnu99
 CDEBUG = -g$(DEBUG)
-CWARN = -Wall -Wstrict-prototypes
+CWARN = -Wall -Wstrict-prototypes -Winline
 CTUNING = -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums
 #CEXTRA = -Wa,-adhlns=$(<:.c=.lst)
 
