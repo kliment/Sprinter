@@ -59,7 +59,7 @@
 //Stepper Movement Variables
 bool direction_x, direction_y, direction_z, direction_e;
 const int STEP_PIN[NUM_AXIS] = {X_STEP_PIN, Y_STEP_PIN, Z_STEP_PIN, E_STEP_PIN};
-long axis_previous_micros[NUM_AXIS];
+unsigned long axis_previous_micros[NUM_AXIS];
 unsigned long previous_micros = 0, previous_millis_heater, previous_millis_bed_heater;
 unsigned long x_steps_to_take, y_steps_to_take, z_steps_to_take, e_steps_to_take;
 #ifdef RAMP_ACCELERATION
