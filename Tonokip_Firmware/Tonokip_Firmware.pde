@@ -760,14 +760,14 @@ void linear_move() // make linear move with preset speeds and destinations, see 
   if(!non_accel_axis_are_moving())
     AXIS[primary_axis].precompute_accel(interval, deltas[primary_axis]);
 
-	unsigned long previous_nanos = micros() * 100l;
+	unsigned long previous_time = micros() * 100l; // Measured in partial micros
   unsigned long timediff = 0;
   while(axis_are_moving())
   {
     // TODO: tht timer can and will wrap around.
-    unsigned long now_nanos = micros() * 100l;
-    timediff += now_nanos - previous_nanos;
-    previous_nanos = now_nanos;
+    unsigned long now_time = micros() * 100l; // partial micros
+    timediff += now_time - previous_time;
+    previous_time = now_time;
 
     if(!non_accel_axis_are_moving())
       interval = AXIS[primary_axis].recompute_accel(timediff, interval);
