@@ -186,8 +186,21 @@ void Axis::setup_accel()
   steps_acceleration_check = 1;
 }
 
-void Axis::precompute_accel(unsigned long interval,unsigned int delta)
+// As explained in Tonokip_Firmware.pde - accel_time doesn't have to return a time, or any 
+// number that's meaningful to the outside universe.  What's important is this:
+// * The axis that constrains the accel should have either the greatest or lowest returned accel_time.
+// * The value of accel_time is all that is needed to constrain accel properly regardless of other accel settings.
+//   (i.e. it is the basis for all future calculations)
+unsigned long Axis::get_accel_time(unsigned long interval)
 {
+  unsigned long accel_time = 0; // caru ! halp!
+  accel_time = virtual_full_velocity_steps;
+  return accel_time;
+}
+
+void Axis::precompute_accel(unsigned long interval,unsigned int delta, unsigned long accel_time)
+{
+  virtual_full_velocity_steps = accel_time;
   full_velocity_steps = min(virtual_full_velocity_steps, (delta - min_constant_speed_steps) / 2);
   acceleration_enabled = true;
 
@@ -243,6 +256,7 @@ unsigned long Axis::recompute_accel(unsigned long timediff, unsigned long interv
 #ifdef RAMP_ACCELERATION
 void Axis::setup_accel()
 {
+  // i'm not sure max_intervalis handled properly here - should perhaps be set based on the interval or accel time of the slowest axis?
   max_interval = 100000000.0 / (MIN_UNITS_PER_SECOND * steps_per_unit);
   steps_per_sqr_second = MAX_ACCELERATION_UNITS_PER_SQ_SECOND * steps_per_unit;
   plateau_steps = 0;
@@ -253,11 +267,19 @@ void Axis::setup_accel()
   start_move_micros = 0;
 }
 
-void Axis::precompute_accel(unsigned long interval,unsigned int delta)
+unsigned long Axis::get_accel_time(unsigned long interval)
 {
+  // In the absence of any guidance, I've decided this is what I'm supposed to calc on for caru's implementation.
   max_speed_steps_per_second = 100000000 / interval;
   min_speed_steps_per_second = 100000000 / max_interval;
   plateau_time = (max_speed_steps_per_second - min_speed_steps_per_second) / (float) steps_per_sqr_second;
+  return plateau_time;
+}
+
+
+void Axis::precompute_accel(unsigned long interval,unsigned int delta, unsigned long accel_time)
+{
+  plateau_time = accel_time;
   plateau_steps = (long) ((steps_per_sqr_second / 2.0 * plateau_time + min_speed_steps_per_second) * plateau_time);
   plateau_steps *= 1.01; // This is to compensate we use discrete intervals
   acceleration_enabled = true;

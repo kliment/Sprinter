@@ -57,7 +57,8 @@ class Axis
 	unsigned long lastinterval;
 #ifdef EXP_ACCELERATION
   void setup_accel();
-  void precompute_accel(unsigned long interval,unsigned int delta);
+  unsigned long get_accel_time(unsigned long interval); // caru suggests asking each axis how long it takes to get to full speed and using slowest time.
+  void precompute_accel(unsigned long interval,unsigned int delta, unsigned long accel_time);
   unsigned long recompute_accel(unsigned long timediff, unsigned long interval);
   float full_velocity_units;
   float min_units_per_second;
@@ -72,7 +73,8 @@ class Axis
 #else // not EXP
 #ifdef RAMP_ACCELERATION
   void setup_accel();
-  void precompute_accel(unsigned long interval,unsigned int delta);
+  unsigned long get_accel_time(unsigned long interval); // caru suggests asking each axis how long it takes to get to full speed and using slowest time.
+  void precompute_accel(unsigned long interval,unsigned int delta, unsigned long accel_time);
   unsigned long recompute_accel(unsigned long timediff, unsigned long interval);
   bool RAMPhook1();
   bool RAMPhook2();
@@ -87,7 +89,8 @@ class Axis
   unsigned long start_move_micros;
 #else // no acceleration
   inline void setup_accel() { return; };
-  inline void precompute_accel(unsigned long interval,unsigned int delta) { return; };
+  inline unsigned long get_accel_time(unsigned long interval) { return 0; }; // caru suggests asking each axis how long it takes to get to full speed and using slowest time.
+  inline void precompute_accel(unsigned long interval,unsigned int delta, unsigned long accel_time) { return; };
   inline unsigned long recompute_accel(unsigned long timediff, unsigned long interval) { return interval; };
 #endif // RAMP_ACCELERATION
 #endif // EXP_ACCELERATION

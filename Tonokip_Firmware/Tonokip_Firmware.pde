@@ -758,7 +758,25 @@ void linear_move() // make linear move with preset speeds and destinations, see 
   //Serial.print(" int: ");Serial.println(interval);
 
   if(!non_accel_axis_are_moving())
-    AXIS[primary_axis].precompute_accel(interval, deltas[primary_axis]);
+  {
+    // Check which axis has the greatest accel_time
+    // Accel_time here misnamed - just needs to be any value we can compute here 
+    // and later base all the rest of the accel calculations on, that furthermore
+    // is either the max or mimimum value for the axis we wish to constrain by.
+    unsigned long accel_time = AXIS[primary_axis].get_accel_time(interval);
+    for(int ax=0;ax<NUM_AXIS;ax++)
+    {
+      unsigned long t = AXIS[ax].get_accel_time(interval);
+#ifdef RAMP_ACCELERATION
+      if(t > accel_time)
+#else
+      if(t < accel_time)
+#endif
+        accel_time = t;
+    }
+    // precomute acceleration on main axis - send it accel_time so it can do it right.
+    AXIS[primary_axis].precompute_accel(interval, deltas[primary_axis], accel_time);
+  }
 
 	unsigned long previous_time = micros() * 100l; // Measured in partial micros
   unsigned long timediff = 0;
