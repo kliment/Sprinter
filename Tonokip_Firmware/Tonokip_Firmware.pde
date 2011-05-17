@@ -58,7 +58,9 @@
 
 //Stepper Movement Variables
 bool direction_x, direction_y, direction_z, direction_e;
-unsigned long previous_micros = 0, previous_micros_x = 0, previous_micros_y = 0, previous_micros_z = 0, previous_micros_e = 0, previous_millis_heater, previous_millis_bed_heater;
+const int STEP_PIN[NUM_AXIS] = {X_STEP_PIN, Y_STEP_PIN, Z_STEP_PIN, E_STEP_PIN};
+long axis_previous_micros[NUM_AXIS];
+unsigned long previous_micros = 0, previous_millis_heater, previous_millis_bed_heater;
 unsigned long x_steps_to_take, y_steps_to_take, z_steps_to_take, e_steps_to_take;
 #ifdef RAMP_ACCELERATION
   unsigned long max_x_interval = 100000000.0 / (min_units_per_second * x_steps_per_unit);
@@ -83,7 +85,7 @@ boolean acceleration_enabled = false, accelerating = false;
 unsigned long interval;
 float destination_x = 0.0, destination_y = 0.0, destination_z = 0.0, destination_e = 0.0;
 float current_x = 0.0, current_y = 0.0, current_z = 0.0, current_e = 0.0;
-long x_interval, y_interval, z_interval, e_interval; // for speed delay
+long axis_interval[NUM_AXIS]; // for speed delay
 float feedrate = 1500, next_feedrate, z_feedrate, saved_feedrate;
 float time_for_move;
 long gcode_N, gcode_LastN;
@@ -207,11 +209,9 @@ void setup()
   for(int i = 0; i < BUFSIZE; i++){
       fromsd[i] = false;
   }
+
   //Initialize Step Pins
-  if(X_STEP_PIN > -1) pinMode(X_STEP_PIN,OUTPUT);
-  if(Y_STEP_PIN > -1) pinMode(Y_STEP_PIN,OUTPUT);
-  if(Z_STEP_PIN > -1) pinMode(Z_STEP_PIN,OUTPUT);
-  if(E_STEP_PIN > -1) pinMode(E_STEP_PIN,OUTPUT);
+  for(int i=0; i < NUM_AXIS; i++) if(STEP_PIN[i] > -1) pinMode(STEP_PIN[i],OUTPUT);
   
   //Initialize Dir Pins
   if(X_DIR_PIN > -1) pinMode(X_DIR_PIN,OUTPUT);
@@ -900,10 +900,10 @@ inline void prepare_move()
   time_for_move = max(time_for_move, Z_TIME_FOR_MOVE);
   if(time_for_move <= 0) time_for_move = max(time_for_move, E_TIME_FOR_MOVE);
 
-  if(x_steps_to_take) x_interval = time_for_move / x_steps_to_take * 100;
-  if(y_steps_to_take) y_interval = time_for_move / y_steps_to_take * 100;
-  if(z_steps_to_take) z_interval = time_for_move / z_steps_to_take * 100;
-  if(e_steps_to_take && (x_steps_to_take + y_steps_to_take <= 0) ) e_interval = time_for_move / e_steps_to_take * 100;
+  if(x_steps_to_take) axis_interval[0] = time_for_move / x_steps_to_take * 100;
+  if(y_steps_to_take) axis_interval[1] = time_for_move / y_steps_to_take * 100;
+  if(z_steps_to_take) axis_interval[2] = time_for_move / z_steps_to_take * 100;
+  if(e_steps_to_take && (x_steps_to_take + y_steps_to_take <= 0) ) axis_interval[3] = time_for_move / e_steps_to_take * 100;
   
   //#define DEBUGGING false
   #if 0        
@@ -912,25 +912,25 @@ inline void prepare_move()
     Serial.print("current_x: "); Serial.println(current_x); 
     Serial.print("x_steps_to_take: "); Serial.println(x_steps_to_take); 
     Serial.print("X_TIME_FOR_MVE: "); Serial.println(X_TIME_FOR_MOVE); 
-    Serial.print("x_interval: "); Serial.println(x_interval); 
+    Serial.print("axis_interval[0]: "); Serial.println(axis_interval[0]); 
     Serial.println("");
     Serial.print("destination_y: "); Serial.println(destination_y); 
     Serial.print("current_y: "); Serial.println(current_y); 
     Serial.print("y_steps_to_take: "); Serial.println(y_steps_to_take); 
     Serial.print("Y_TIME_FOR_MVE: "); Serial.println(Y_TIME_FOR_MOVE); 
-    Serial.print("y_interval: "); Serial.println(y_interval); 
+    Serial.print("axis_interval[1]: "); Serial.println(axis_interval[1]); 
     Serial.println("");
     Serial.print("destination_z: "); Serial.println(destination_z); 
     Serial.print("current_z: "); Serial.println(current_z); 
     Serial.print("z_steps_to_take: "); Serial.println(z_steps_to_take); 
     Serial.print("Z_TIME_FOR_MVE: "); Serial.println(Z_TIME_FOR_MOVE); 
-    Serial.print("z_interval: "); Serial.println(z_interval); 
+    Serial.print("axis_interval[2]: "); Serial.println(axis_interval[2]); 
     Serial.println("");
     Serial.print("destination_e: "); Serial.println(destination_e); 
     Serial.print("current_e: "); Serial.println(current_e); 
     Serial.print("e_steps_to_take: "); Serial.println(e_steps_to_take); 
     Serial.print("E_TIME_FOR_MVE: "); Serial.println(E_TIME_FOR_MOVE); 
-    Serial.print("e_interval: "); Serial.println(e_interval); 
+    Serial.print("axis_interval[3]: "); Serial.println(axis_interval[3]); 
     Serial.println("");
   }
   #endif
@@ -961,8 +961,8 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
   //Only enable axis that are moving. If the axis doesn't need to move then it can stay disabled depending on configuration.
   if(x_steps_remaining) enable_x();
   if(y_steps_remaining) enable_y();
-  if(z_steps_remaining) { enable_z(); do_z_step(); z_steps_remaining--; }
-  if(e_steps_remaining) { enable_e(); do_e_step(); e_steps_remaining--; }
+  if(z_steps_remaining) { enable_z(); do_step(2); z_steps_remaining--; }
+  if(e_steps_remaining) { enable_e(); do_step(3); e_steps_remaining--; }
 
     //Define variables that are needed for the Bresenham algorithm. Please note that  Z is not currently included in the Bresenham algorithm.
   unsigned int delta_x = x_steps_remaining;
@@ -991,7 +991,7 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
   //Do some Bresenham calculations depending on which axis will lead it.
   if(steep_y) {
    error_x = delta_y / 2;
-   interval = y_interval;
+   interval = axis_interval[1];
    #ifdef RAMP_ACCELERATION
    max_interval = max_y_interval;
    if(e_steps_to_take > 0) steps_per_sqr_second = y_steps_per_sqr_second;
@@ -1012,7 +1012,7 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
    steps_to_take = delta_y;
   } else if (steep_x) {
    error_y = delta_x / 2;
-   interval = x_interval;
+   interval = axis_interval[0];
    #ifdef RAMP_ACCELERATION
    max_interval = max_x_interval;
    if(e_steps_to_take > 0) steps_per_sqr_second = x_steps_per_sqr_second;
@@ -1056,10 +1056,9 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
   #endif
   
   unsigned long start_move_micros = micros();
-  previous_micros_x = start_move_micros*100;
-  previous_micros_y = previous_micros_x;
-  previous_micros_z = previous_micros_x;
-  previous_micros_e = previous_micros_x;
+  for(int i = 0; i < NUM_AXIS; i++) {
+    axis_previous_micros[i] = start_move_micros * 100;
+  }
   
   //move until no more steps remain 
   while(x_steps_remaining + y_steps_remaining + z_steps_remaining + e_steps_remaining > 0) {
@@ -1130,15 +1129,15 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
       if(X_MAX_PIN > -1) if(direction_x) if(digitalRead(X_MAX_PIN) != ENDSTOPS_INVERTING) break;
       if(Y_MAX_PIN > -1) if(direction_y) if(digitalRead(Y_MAX_PIN) != ENDSTOPS_INVERTING) break;
       if(steep_y) {
-        timediff = micros() * 100 - previous_micros_y;
+        timediff = micros() * 100 - axis_previous_micros[1];
         while(timediff >= interval && y_steps_remaining > 0) {
           steps_done++;
           steps_remaining--;
           y_steps_remaining--; timediff -= interval;
           error_x = error_x - delta_x;
-          do_y_step();
+          do_step(1);
           if(error_x < 0) {
-            do_x_step(); x_steps_remaining--;
+            do_step(0); x_steps_remaining--;
             error_x = error_x + delta_y;
           }
           #ifdef RAMP_ACCELERATION
@@ -1152,15 +1151,15 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
           #endif
         }
       } else if (steep_x) {
-        timediff=micros() * 100 - previous_micros_x;
+        timediff=micros() * 100 - axis_previous_micros[0];
         while(timediff >= interval && x_steps_remaining>0) {
           steps_done++;
           steps_remaining--;
           x_steps_remaining--; timediff -= interval;
           error_y = error_y - delta_y;
-          do_x_step();
+          do_step(0);
           if(error_y < 0) { 
-            do_y_step(); y_steps_remaining--;
+            do_step(1); y_steps_remaining--;
             error_y = error_y + delta_x;
           }
           #ifdef RAMP_ACCELERATION
@@ -1185,39 +1184,39 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
     if(z_steps_remaining) {
       if(Z_MIN_PIN > -1) if(!direction_z) if(digitalRead(Z_MIN_PIN) != ENDSTOPS_INVERTING) break;
       if(Z_MAX_PIN > -1) if(direction_z) if(digitalRead(Z_MAX_PIN) != ENDSTOPS_INVERTING) break;
-      timediff = micros() * 100-previous_micros_z;
-      while(timediff >= z_interval && z_steps_remaining) {
-        do_z_step();
+      timediff = micros() * 100-axis_previous_micros[2];
+      while(timediff >= axis_interval[2] && z_steps_remaining) {
+        do_step(2);
         z_steps_remaining--;
-        timediff -= z_interval;
+        timediff -= axis_interval[2];
         #ifdef STEP_DELAY_RATIO
-        if(timediff >= z_interval) delayMicroseconds(long_step_delay_ratio * z_interval / 10000);
+        if(timediff >= axis_interval[2]) delayMicroseconds(long_step_delay_ratio * axis_interval[2] / 10000);
         #endif
         #ifdef STEP_DELAY_MICROS
-        if(timediff >= z_interval) delayMicroseconds(STEP_DELAY_MICROS);
+        if(timediff >= axis_interval[2]) delayMicroseconds(STEP_DELAY_MICROS);
         #endif
       }
     }
 
     //If there are e steps remaining, check if e steps must be taken
     if(e_steps_remaining){
-      if (x_steps_to_take + y_steps_to_take <= 0) timediff = micros()*100 - previous_micros_e;
+      if (x_steps_to_take + y_steps_to_take <= 0) timediff = micros()*100 - axis_previous_micros[3];
       unsigned int final_e_steps_remaining = 0;
       if (steep_x && x_steps_to_take > 0) final_e_steps_remaining = e_steps_to_take * x_steps_remaining / x_steps_to_take;
       else if (steep_y && y_steps_to_take > 0) final_e_steps_remaining = e_steps_to_take * y_steps_remaining / y_steps_to_take;
       //If this move has X or Y steps, let E follow the Bresenham pace
-      if (final_e_steps_remaining > 0)  while(e_steps_remaining > final_e_steps_remaining) { do_e_step(); e_steps_remaining--;}
-      else if (x_steps_to_take + y_steps_to_take > 0)  while(e_steps_remaining) { do_e_step(); e_steps_remaining--;}
+      if (final_e_steps_remaining > 0)  while(e_steps_remaining > final_e_steps_remaining) { do_step(3); e_steps_remaining--;}
+      else if (x_steps_to_take + y_steps_to_take > 0)  while(e_steps_remaining) { do_step(3); e_steps_remaining--;}
       //Else, normally check if e steps must be taken
-      else while (timediff >= e_interval && e_steps_remaining) {
-        do_e_step();
+      else while (timediff >= axis_interval[3] && e_steps_remaining) {
+        do_step(3);
         e_steps_remaining--;
-        timediff -= e_interval;
+        timediff -= axis_interval[3];
         #ifdef STEP_DELAY_RATIO
-        if(timediff >= e_interval) delayMicroseconds(long_step_delay_ratio * e_interval / 10000);
+        if(timediff >= axis_interval[3]) delayMicroseconds(long_step_delay_ratio * axis_interval[3] / 10000);
         #endif
         #ifdef STEP_DELAY_MICROS
-        if(timediff >= e_interval) delayMicroseconds(STEP_DELAY_MICROS);
+        if(timediff >= axis_interval[3]) delayMicroseconds(STEP_DELAY_MICROS);
         #endif
       }
     }
@@ -1240,36 +1239,13 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
 }
 
 
-inline void do_x_step()
-{
-  digitalWrite(X_STEP_PIN, HIGH);
-  previous_micros_x += interval;
-  //delayMicroseconds(3);
-  digitalWrite(X_STEP_PIN, LOW);
-}
-
-inline void do_y_step()
-{
-  digitalWrite(Y_STEP_PIN, HIGH);
-  previous_micros_y += interval;
-  //delayMicroseconds(3);
-  digitalWrite(Y_STEP_PIN, LOW);
-}
-
-inline void do_z_step()
-{
-  digitalWrite(Z_STEP_PIN, HIGH);
-  previous_micros_z += z_interval;
-  //delayMicroseconds(3);
-  digitalWrite(Z_STEP_PIN, LOW);
-}
-
-inline void do_e_step()
-{
-  digitalWrite(E_STEP_PIN, HIGH);
-  previous_micros_e += e_interval;
-  //delayMicroseconds(3);
-  digitalWrite(E_STEP_PIN, LOW);
+inline void do_step(int axis) {
+  digitalWrite(STEP_PIN[axis], HIGH);
+  //TODO: the following check is ugly and not the best thing to do here, but this will be sorted out more easily when all
+  // axis will be under Bresenham
+  if(axis < 2) axis_previous_micros[axis] += interval;
+  else axis_previous_micros[axis] += axis_interval[axis];
+  digitalWrite(STEP_PIN[axis], LOW);
 }
 
 inline void disable_x() { if(X_ENABLE_PIN > -1) digitalWrite(X_ENABLE_PIN,!X_ENABLE_ON); }

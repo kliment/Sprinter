@@ -86,6 +86,7 @@ float min_constant_speed_units = 2; // the minimum units of an accelerated move 
 // units are in millimeters or whatever length unit you prefer: inches,football-fields,parsecs etc
 
 //Calibration variables
+const int NUM_AXIS = 4; // The axis order in all axis related arrays is X, Y, Z, E
 float x_steps_per_unit = 80.376;
 float y_steps_per_unit = 80.376;
 float z_steps_per_unit = 3200/1.25;
