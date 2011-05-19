@@ -66,10 +66,12 @@ unsigned long x_steps_to_take, y_steps_to_take, z_steps_to_take, e_steps_to_take
   unsigned long axis_max_interval[] = {100000000.0 / (max_start_speed_units_per_second[0] * axis_steps_per_unit[0]),
       100000000.0 / (max_start_speed_units_per_second[1] * axis_steps_per_unit[1]),
       100000000.0 / (max_start_speed_units_per_second[2] * axis_steps_per_unit[2]),
-      100000000.0 / (max_start_speed_units_per_second[3] * axis_steps_per_unit[3])}; //TODO: refactor all things like this in a function
+      100000000.0 / (max_start_speed_units_per_second[3] * axis_steps_per_unit[3])}; //TODO: refactor all things like this in a function, or move to setup()
   unsigned long max_interval;
-  unsigned long axis_steps_per_sqr_second[] = {max_acceleration_units_per_sq_second[0] * axis_steps_per_unit[0], max_acceleration_units_per_sq_second[1] * axis_steps_per_unit[1]};
-  unsigned long axis_travel_steps_per_sqr_second[] = {max_travel_acceleration_units_per_sq_second[0] * axis_steps_per_unit[0], max_travel_acceleration_units_per_sq_second[1] * axis_steps_per_unit[1]};
+  unsigned long axis_steps_per_sqr_second[] = {max_acceleration_units_per_sq_second[0] * axis_steps_per_unit[0],
+        max_acceleration_units_per_sq_second[1] * axis_steps_per_unit[1], max_acceleration_units_per_sq_second[2] * axis_steps_per_unit[2]};
+  unsigned long axis_travel_steps_per_sqr_second[] = {max_travel_acceleration_units_per_sq_second[0] * axis_steps_per_unit[0],
+        max_travel_acceleration_units_per_sq_second[1] * axis_steps_per_unit[1], max_travel_acceleration_units_per_sq_second[2] * axis_steps_per_unit[2]};
   unsigned long steps_per_sqr_second, plateau_steps;
 #endif
 #ifdef EXP_ACCELERATION
@@ -822,10 +824,12 @@ inline void process_commands()
       case 201: // M201
         if(code_seen('X')) axis_steps_per_sqr_second[0] = code_value() * axis_steps_per_unit[0];
         if(code_seen('Y')) axis_steps_per_sqr_second[1] = code_value() * axis_steps_per_unit[1];
+        if(code_seen('Z')) axis_steps_per_sqr_second[2] = code_value() * axis_steps_per_unit[2];
         break;
       case 202: // M202
         if(code_seen('X')) axis_travel_steps_per_sqr_second[0] = code_value() * axis_steps_per_unit[0];
         if(code_seen('Y')) axis_travel_steps_per_sqr_second[1] = code_value() * axis_steps_per_unit[1];
+        if(code_seen('Z')) axis_travel_steps_per_sqr_second[2] = code_value() * axis_steps_per_unit[2];
         break;
       #endif
     }
@@ -1011,18 +1015,19 @@ void linear_move(unsigned long axis_steps_remaining[]) // make linear move with 
   // but will reduce code size
   if(axis_steps_remaining[0]) enable_x();
   if(axis_steps_remaining[1]) enable_y();
-  if(axis_steps_remaining[2]) { enable_z(); do_step(2); axis_steps_remaining[2]--; }
+  if(axis_steps_remaining[2]) enable_z();
   if(axis_steps_remaining[3]) { enable_e(); do_step(3); axis_steps_remaining[3]--; }
 
     //Define variables that are needed for the Bresenham algorithm. Please note that  Z is not currently included in the Bresenham algorithm.
   unsigned int delta[] = {axis_steps_remaining[0], axis_steps_remaining[1], axis_steps_remaining[2], axis_steps_remaining[3]}; //TODO: implement a "for" to support N axes
-  boolean steep_y = delta[1] > delta[0];// && delta[1] > delta[3] && delta[1] > delta[2];
-  boolean steep_x = delta[0] >= delta[1];// && delta[0] > delta[3] && delta[0] > delta[2];
-  //boolean steep_z = delta[2] > delta[0] && delta[2] > delta[1] && delta[2] > delta[3];
+  boolean steep_y = delta[1] > delta[0] && delta[1] > delta[2];// && delta[1] > delta[3];
+  boolean steep_x = delta[0] >= delta[1] && delta[0] > delta[2];// && delta[0] > delta[3]];
+  boolean steep_z = delta[2] >= delta[0] && delta[2] >= delta[1]; // && delta[2] > delta[3];
   int axis_error[NUM_AXIS];
   unsigned int primary_axis;
   if(steep_x) primary_axis = 0;
-  else primary_axis = 1;
+  else if (steep_y) primary_axis = 1;
+  else primary_axis = 2;
   #ifdef RAMP_ACCELERATION
   long max_speed_steps_per_second;
   long min_speed_steps_per_second;
@@ -1064,7 +1069,7 @@ void linear_move(unsigned long axis_steps_remaining[]) // make linear move with 
     //Serial.print("Max interval :"); Serial.println(max_interval); //TODO: delete this println when finished
     //Calculate slowest axis plateau time
     float slowest_axis_plateau_time = 0;
-    for(int i=0; i < 2 ; i++) { //TODO: change to NUM_AXIS as axes get added to bresenham
+    for(int i=0; i < 3 ; i++) { //TODO: change to NUM_AXIS as axes get added to bresenham
       if(axis_steps_remaining[i] > 0) {
         if(e_steps_to_take > 0 && axis_steps_remaining[i] > 0) slowest_axis_plateau_time = max(slowest_axis_plateau_time,
               (100000000.0 / axis_interval[i] - 100000000.0 / new_axis_max_intervals[i]) / (float) axis_steps_per_sqr_second[i]);
@@ -1153,6 +1158,7 @@ void linear_move(unsigned long axis_steps_remaining[]) // make linear move with 
     #endif
     #ifdef EXP_ACCELERATION
     //If acceleration is enabled on this move and we are in the acceleration segment, calculate the current interval
+    // TODO: is this any useful? -> steps_done % steps_acceleration_check == 0
     if (acceleration_enabled && steps_done < full_velocity_steps && steps_done / full_velocity_steps < 1 && (steps_done % steps_acceleration_check == 0)) {
       if(steps_done == 0) {
         interval = max_interval;
@@ -1175,18 +1181,20 @@ void linear_move(unsigned long axis_steps_remaining[]) // make linear move with 
     #endif
 
     //If there are x or y steps remaining, perform Bresenham algorithm
-    if(axis_steps_remaining[0] || axis_steps_remaining[1]) {
+    if(axis_steps_remaining[0] || axis_steps_remaining[1] || axis_steps_remaining[2]) {
       if(X_MIN_PIN > -1) if(!direction_x) if(digitalRead(X_MIN_PIN) != ENDSTOPS_INVERTING) break;
       if(Y_MIN_PIN > -1) if(!direction_y) if(digitalRead(Y_MIN_PIN) != ENDSTOPS_INVERTING) break;
       if(X_MAX_PIN > -1) if(direction_x) if(digitalRead(X_MAX_PIN) != ENDSTOPS_INVERTING) break;
       if(Y_MAX_PIN > -1) if(direction_y) if(digitalRead(Y_MAX_PIN) != ENDSTOPS_INVERTING) break;
+      if(Z_MIN_PIN > -1) if(!direction_z) if(digitalRead(Z_MIN_PIN) != ENDSTOPS_INVERTING) break;
+      if(Z_MAX_PIN > -1) if(direction_z) if(digitalRead(Z_MAX_PIN) != ENDSTOPS_INVERTING) break;
       timediff = micros() * 100 - axis_previous_micros[primary_axis];
       while(timediff >= interval && axis_steps_remaining[primary_axis] > 0) {
         steps_done++;
         steps_remaining--;
         axis_steps_remaining[primary_axis]--; timediff -= interval;
         do_step(primary_axis);
-        for(int i=0; i < 2; i++) if(i != primary_axis) {//TODO change "2" to NUM_AXIS when other axes gets added to bresenham
+        for(int i=0; i < 3; i++) if(i != primary_axis) {//TODO change "3" to NUM_AXIS when other axes gets added to bresenham
           axis_error[i] = axis_error[i] - delta[i];
           if(axis_error[i] < 0) {
             do_step(i); axis_steps_remaining[i]--;
@@ -1194,6 +1202,7 @@ void linear_move(unsigned long axis_steps_remaining[]) // make linear move with 
           }
         }
         #ifdef RAMP_ACCELERATION
+        //TODO: may this check be dangerous? -> steps_remaining == plateau_steps
         if (steps_remaining == plateau_steps || (steps_done >= steps_to_take / 2 && accelerating && !decelerating)) break;
         #endif
         #ifdef STEP_DELAY_RATIO
@@ -1210,33 +1219,16 @@ void linear_move(unsigned long axis_steps_remaining[]) // make linear move with 
         (steps_remaining == plateau_steps || (steps_done >= steps_to_take / 2 && accelerating && !decelerating))) continue;
     #endif
 
-    //If there are z steps remaining, check if z steps must be taken
-    if(axis_steps_remaining[2]) {
-      if(Z_MIN_PIN > -1) if(!direction_z) if(digitalRead(Z_MIN_PIN) != ENDSTOPS_INVERTING) break;
-      if(Z_MAX_PIN > -1) if(direction_z) if(digitalRead(Z_MAX_PIN) != ENDSTOPS_INVERTING) break;
-      timediff = micros() * 100-axis_previous_micros[2];
-      while(timediff >= axis_interval[2] && axis_steps_remaining[2]) {
-        do_step(2);
-        axis_steps_remaining[2]--;
-        timediff -= axis_interval[2];
-        #ifdef STEP_DELAY_RATIO
-        if(timediff >= axis_interval[2]) delayMicroseconds(long_step_delay_ratio * axis_interval[2] / 10000);
-        #endif
-        #ifdef STEP_DELAY_MICROS
-        if(timediff >= axis_interval[2]) delayMicroseconds(STEP_DELAY_MICROS);
-        #endif
-      }
-    }
-
     //If there are e steps remaining, check if e steps must be taken
     if(axis_steps_remaining[3]){
-      if (x_steps_to_take + y_steps_to_take <= 0) timediff = micros()*100 - axis_previous_micros[3];
+      if (x_steps_to_take + y_steps_to_take + z_steps_to_take<= 0) timediff = micros()*100 - axis_previous_micros[3];
       unsigned int final_e_steps_remaining = 0;
       if (steep_x && x_steps_to_take > 0) final_e_steps_remaining = e_steps_to_take * axis_steps_remaining[0] / x_steps_to_take;
       else if (steep_y && y_steps_to_take > 0) final_e_steps_remaining = e_steps_to_take * axis_steps_remaining[1] / y_steps_to_take;
+      else if (steep_z && z_steps_to_take > 0) final_e_steps_remaining = e_steps_to_take * axis_steps_remaining[2] / z_steps_to_take;
       //If this move has X or Y steps, let E follow the Bresenham pace
       if (final_e_steps_remaining > 0)  while(axis_steps_remaining[3] > final_e_steps_remaining) { do_step(3); axis_steps_remaining[3]--;}
-      else if (x_steps_to_take + y_steps_to_take > 0)  while(axis_steps_remaining[3]) { do_step(3); axis_steps_remaining[3]--;}
+      else if (x_steps_to_take + y_steps_to_take + z_steps_to_take > 0)  while(axis_steps_remaining[3]) { do_step(3); axis_steps_remaining[3]--;}
       //Else, normally check if e steps must be taken
       else while (timediff >= axis_interval[3] && axis_steps_remaining[3]) {
         do_step(3);

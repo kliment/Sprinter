@@ -19,15 +19,17 @@
 //Comment this to disable ramp acceleration
 #define RAMP_ACCELERATION 1
 
-//Uncomment this to enable exponential acceleration
+//Uncomment this to enable exponential acceleration. WARNING!! This is not supported in the current version, and will be fixed before
+// merging it to the stable branch.
+// TODO: fix exp acceleration to correctly perform N bresenham.
 //#define EXP_ACCELERATION 1
 
 //Acceleration settings
 #ifdef RAMP_ACCELERATION
 //X, Y, Z, E maximum start speed for accelerated moves. E default value is good for skeinforge 40+, for older versions raise it a lot.
-float max_start_speed_units_per_second[] = {35.0,35.0,1.0,10.0};
-long max_acceleration_units_per_sq_second[] = {750,750,100,10000}; // X, Y (Z and E currently not used) max acceleration in mm/s^2 for printing moves
-long max_travel_acceleration_units_per_sq_second[] = {1500,1500,100}; // X, Y (Z currently not used) max acceleration in mm/s^2 for travel moves
+float max_start_speed_units_per_second[] = {35.0,35.0,0.2,10.0};
+long max_acceleration_units_per_sq_second[] = {750,750,50,4000}; // X, Y, Z (E currently not used) max acceleration in mm/s^2 for printing moves
+long max_travel_acceleration_units_per_sq_second[] = {1500,1500,50}; // X, Y, Z max acceleration in mm/s^2 for travel moves
 #endif
 #ifdef EXP_ACCELERATION
 float full_velocity_units = 10; // the units between minimum and G1 move feedrate
@@ -89,8 +91,8 @@ float min_constant_speed_units = 2; // the minimum units of an accelerated move 
 //Calibration variables
 const int NUM_AXIS = 4; // The axis order in all axis related arrays is X, Y, Z, E
 float axis_steps_per_unit[] = {80.376,80.376,3200/1.25,16};
-float max_feedrate = 200000; //mmm, acceleration!
-float max_z_feedrate = 120;
+float max_feedrate = 200000; // mm/min, acceleration!
+float max_z_feedrate = 180; // mm/min, acceleration!
 
 //float x_steps_per_unit = 10.047;
 //float y_steps_per_unit = 10.047;
