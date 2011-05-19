@@ -934,8 +934,13 @@ inline void prepare_move()
     Serial.println("");
   }
   #endif
-  
+  #ifdef PRINT_MOVE_TIME
+    unsigned long startmove = micros();
+  #endif
   linear_move(x_steps_to_take, y_steps_to_take, z_steps_to_take, e_steps_to_take); // make the move
+  #ifdef PRINT_MOVE_TIME
+  Serial.println(micros()-startmove);
+  #endif
 }
 
 void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remaining, unsigned long z_steps_remaining, unsigned long e_steps_remaining) // make linear move with preset speeds and destinations, see G0 and G1
