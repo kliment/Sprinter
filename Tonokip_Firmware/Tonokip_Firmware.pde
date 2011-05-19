@@ -63,23 +63,19 @@ unsigned long axis_previous_micros[NUM_AXIS];
 unsigned long previous_micros = 0, previous_millis_heater, previous_millis_bed_heater;
 unsigned long x_steps_to_take, y_steps_to_take, z_steps_to_take, e_steps_to_take;
 #ifdef RAMP_ACCELERATION
-  unsigned long max_x_interval = 100000000.0 / (min_units_per_second * x_steps_per_unit);
-  unsigned long max_y_interval = 100000000.0 / (min_units_per_second * y_steps_per_unit);
+  unsigned long axis_max_interval[] = {100000000.0 / (min_units_per_second * x_steps_per_unit), 100000000.0 / (min_units_per_second * y_steps_per_unit)};
   unsigned long max_interval;
-  unsigned long x_steps_per_sqr_second = max_acceleration_units_per_sq_second * x_steps_per_unit;
-  unsigned long y_steps_per_sqr_second = max_acceleration_units_per_sq_second * y_steps_per_unit;
-  unsigned long x_travel_steps_per_sqr_second = max_travel_acceleration_units_per_sq_second * x_steps_per_unit;
-  unsigned long y_travel_steps_per_sqr_second = max_travel_acceleration_units_per_sq_second * y_steps_per_unit;
+  unsigned long axis_steps_per_sqr_second[] = {max_acceleration_units_per_sq_second * x_steps_per_unit, max_acceleration_units_per_sq_second * y_steps_per_unit};
+  unsigned long axis_travel_steps_per_sqr_second[] = {max_travel_acceleration_units_per_sq_second * x_steps_per_unit, max_travel_acceleration_units_per_sq_second * y_steps_per_unit};
   unsigned long steps_per_sqr_second, plateau_steps;
 #endif
 #ifdef EXP_ACCELERATION
   unsigned long long_full_velocity_units = full_velocity_units * 100;
   unsigned long long_travel_move_full_velocity_units = travel_move_full_velocity_units * 100;
-  unsigned long max_x_interval = 100000000.0 / (min_units_per_second * x_steps_per_unit);
-  unsigned long max_y_interval = 100000000.0 / (min_units_per_second * y_steps_per_unit);
+  unsigned long axis_max_interval[] = {100000000.0 / (min_units_per_second * x_steps_per_unit), 100000000.0 / (min_units_per_second * y_steps_per_unit)};
   unsigned long max_interval;
-  unsigned long x_min_constant_speed_steps = min_constant_speed_units * x_steps_per_unit,
-    y_min_constant_speed_steps = min_constant_speed_units * y_steps_per_unit, min_constant_speed_steps;
+  unsigned long axis_min_constant_speed_steps[] = {min_constant_speed_units * x_steps_per_unit, min_constant_speed_units * y_steps_per_unit};
+  unsigned long min_constant_speed_steps;
 #endif
 boolean acceleration_enabled = false, accelerating = false;
 unsigned long interval;
@@ -778,12 +774,12 @@ inline void process_commands()
         break;
       #ifdef RAMP_ACCELERATION
       case 201: // M201
-        if(code_seen('X')) x_steps_per_sqr_second = code_value() * x_steps_per_unit;
-        if(code_seen('Y')) y_steps_per_sqr_second = code_value() * y_steps_per_unit;
+        if(code_seen('X')) axis_steps_per_sqr_second[0] = code_value() * x_steps_per_unit;
+        if(code_seen('Y')) axis_steps_per_sqr_second[1] = code_value() * y_steps_per_unit;
         break;
       case 202: // M202
-        if(code_seen('X')) x_travel_steps_per_sqr_second = code_value() * x_steps_per_unit;
-        if(code_seen('Y')) y_travel_steps_per_sqr_second = code_value() * y_steps_per_unit;
+        if(code_seen('X')) axis_travel_steps_per_sqr_second[0] = code_value() * x_steps_per_unit;
+        if(code_seen('Y')) axis_travel_steps_per_sqr_second[1] = code_value() * y_steps_per_unit;
         break;
       #endif
     }
@@ -971,7 +967,7 @@ void linear_move(unsigned long axis_steps_remaining[]) // make linear move with 
   if(axis_steps_remaining[3]) { enable_e(); do_step(3); axis_steps_remaining[3]--; }
 
     //Define variables that are needed for the Bresenham algorithm. Please note that  Z is not currently included in the Bresenham algorithm.
-  unsigned int delta[NUM_AXIS] = {axis_steps_remaining[0], axis_steps_remaining[1], axis_steps_remaining[2], axis_steps_remaining[3]}; //TODO: implement a "for" to support N axes
+  unsigned int delta[] = {axis_steps_remaining[0], axis_steps_remaining[1], axis_steps_remaining[2], axis_steps_remaining[3]}; //TODO: implement a "for" to support N axes
   boolean steep_y = delta[1] > delta[0];// && delta[1] > delta[3] && delta[1] > delta[2];
   boolean steep_x = delta[0] >= delta[1];// && delta[0] > delta[3] && delta[0] > delta[2];
   //boolean steep_z = delta[2] > delta[0] && delta[2] > delta[1] && delta[2] > delta[3];
@@ -992,40 +988,32 @@ void linear_move(unsigned long axis_steps_remaining[]) // make linear move with 
   for(int i=0; i < NUM_AXIS; i++) if(i != primary_axis) axis_error[i] = delta[primary_axis] / 2;
   interval = axis_interval[primary_axis];
 
+  #ifdef RAMP_ACCELERATION
+    max_interval = axis_max_interval[primary_axis];
+    if(e_steps_to_take > 0) steps_per_sqr_second = axis_steps_per_sqr_second[primary_axis];
+    else steps_per_sqr_second = axis_travel_steps_per_sqr_second[primary_axis];
+    max_speed_steps_per_second = 100000000 / interval;
+    min_speed_steps_per_second = 100000000 / max_interval;
+    float plateau_time = (max_speed_steps_per_second - min_speed_steps_per_second) / (float) steps_per_sqr_second;
+    plateau_steps = (long) ((steps_per_sqr_second / 2.0 * plateau_time + min_speed_steps_per_second) * plateau_time);
+  #endif
+
   //Do some Bresenham calculations depending on which axis will lead it.
   if(steep_y) {
-   #ifdef RAMP_ACCELERATION
-   max_interval = max_y_interval;
-   if(e_steps_to_take > 0) steps_per_sqr_second = y_steps_per_sqr_second;
-   else steps_per_sqr_second = y_travel_steps_per_sqr_second;
-   max_speed_steps_per_second = 100000000 / interval;
-   min_speed_steps_per_second = 100000000 / max_interval;
-   float plateau_time = (max_speed_steps_per_second - min_speed_steps_per_second) / (float) steps_per_sqr_second;
-   plateau_steps = (long) ((steps_per_sqr_second / 2.0 * plateau_time + min_speed_steps_per_second) * plateau_time);
-   #endif
    #ifdef EXP_ACCELERATION
    if(e_steps_to_take > 0) virtual_full_velocity_steps = long_full_velocity_units * y_steps_per_unit /100;
    else virtual_full_velocity_steps = long_travel_move_full_velocity_units * y_steps_per_unit /100;
-   full_velocity_steps = min(virtual_full_velocity_steps, (delta[1] - y_min_constant_speed_steps) / 2);
-   max_interval = max_y_interval;
-   min_constant_speed_steps = y_min_constant_speed_steps;
+   full_velocity_steps = min(virtual_full_velocity_steps, (delta[1] - axis_min_constant_speed_steps[1]) / 2);
+   max_interval = axis_max_interval[1];
+   min_constant_speed_steps = axis_min_constant_speed_steps[1];
    #endif
   } else if (steep_x) {
-   #ifdef RAMP_ACCELERATION
-   max_interval = max_x_interval;
-   if(e_steps_to_take > 0) steps_per_sqr_second = x_steps_per_sqr_second;
-   else steps_per_sqr_second = x_travel_steps_per_sqr_second;
-   max_speed_steps_per_second = 100000000 / interval;
-   min_speed_steps_per_second = 100000000 / max_interval;
-   float plateau_time = (max_speed_steps_per_second - min_speed_steps_per_second) / (float) steps_per_sqr_second;
-   plateau_steps = (long) ((steps_per_sqr_second / 2.0 * plateau_time + min_speed_steps_per_second) * plateau_time);
-   #endif
    #ifdef EXP_ACCELERATION
    if(e_steps_to_take > 0) virtual_full_velocity_steps = long_full_velocity_units * x_steps_per_unit /100;
    else virtual_full_velocity_steps = long_travel_move_full_velocity_units * x_steps_per_unit /100;
-   full_velocity_steps = min(virtual_full_velocity_steps, (delta[0] - x_min_constant_speed_steps) / 2);
-   max_interval = max_x_interval;
-   min_constant_speed_steps = x_min_constant_speed_steps;
+   full_velocity_steps = min(virtual_full_velocity_steps, (delta[0] - axis_min_constant_speed_steps[0]) / 2);
+   max_interval = axis_max_interval[0];
+   min_constant_speed_steps = axis_min_constant_speed_steps[0];
    #endif
   }
   unsigned long steps_done = 0;
