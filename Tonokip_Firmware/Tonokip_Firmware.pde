@@ -63,7 +63,6 @@ unsigned long axis_previous_micros[NUM_AXIS];
 unsigned long previous_micros = 0, previous_millis_heater, previous_millis_bed_heater;
 unsigned long x_steps_to_take, y_steps_to_take, z_steps_to_take, e_steps_to_take;
 #ifdef RAMP_ACCELERATION
-  unsigned int max_start_speed_axis_asc_order[NUM_AXIS];
   unsigned long axis_max_interval[] = {100000000.0 / (max_start_speed_units_per_second[0] * axis_steps_per_unit[0]),
       100000000.0 / (max_start_speed_units_per_second[1] * axis_steps_per_unit[1]),
       100000000.0 / (max_start_speed_units_per_second[2] * axis_steps_per_unit[2]),
@@ -270,6 +269,8 @@ void setup()
 
 #endif
 
+
+/*
   //Sort the axis with ascending max start speed in steps/s. The insertion sort
   // algorithm is used, since it's the less expensive in code size.
   #ifdef RAMP_ACCELERATION
@@ -281,13 +282,11 @@ void setup()
     for(int i=1; i < NUM_AXIS; i++) {
       int j=i-1;
       long axis_value = temp_max_intervals[i];
-      Serial.print("Axis value: "); Serial.println(axis_value);
       while(j >= 0 && temp_max_intervals[j] < axis_value) {
         temp_max_intervals[j+1] = temp_max_intervals[j];
         max_start_speed_axis_asc_order[j+1] = max_start_speed_axis_asc_order[j];
         j--;
       }
-      Serial.print("Axis value: "); Serial.println(axis_value);
       temp_max_intervals[j+1] = axis_value;
       max_start_speed_axis_asc_order[j+1] = i;
     }
@@ -298,7 +297,7 @@ void setup()
       Serial.println(max_start_speed_axis_asc_order[2]);
       Serial.println(max_start_speed_axis_asc_order[3]);
     #endif
-  #endif
+  #endif*/
 }
 
 
@@ -794,34 +793,15 @@ inline void process_commands()
         if(code_seen('Y')) axis_steps_per_unit[1] = code_value();
         if(code_seen('Z')) axis_steps_per_unit[2] = code_value();
         if(code_seen('E')) axis_steps_per_unit[3] = code_value();
-        //Update start speed intervals and axis order. TODO: refactor array sorting in
-        // a function, refactor axis_max_interval[] calculation into a function, as they
-        // can be used in setup() as well
+        
+        //Update start speed intervals and axis order. TODO: refactor axis_max_interval[] calculation into a function, as it
+        // should also be used in setup() as well
         #ifdef RAMP_ACCELERATION
           long temp_max_intervals[NUM_AXIS];
           for(int i=0; i < NUM_AXIS; i++) {
-            axis_max_interval[i] = 100000000.0 / (max_start_speed_units_per_second[i] * axis_steps_per_unit[i]);
-            temp_max_intervals[i] = axis_max_interval[i];
-            max_start_speed_axis_asc_order[i] = i;
+            axis_max_interval[i] = 100000000.0 / (max_start_speed_units_per_second[i] * axis_steps_per_unit[i]);//TODO: do this for
+                  // all steps_per_unit related variables
           }
-          for(int i=1; i < NUM_AXIS; i++) {
-            int j=i-1;
-            long axis_value = temp_max_intervals[i];
-            while(j >= 0 && temp_max_intervals[j] < axis_value) {
-              temp_max_intervals[j+1] = temp_max_intervals[j];
-              max_start_speed_axis_asc_order[j+1] = max_start_speed_axis_asc_order[j];
-              j--;
-            }
-            temp_max_intervals[j+1] = axis_value;
-            max_start_speed_axis_asc_order[j+1] = i;
-          }
-          #ifdef DEBUGGING
-            Serial.println("New start speed axes order :");
-            Serial.println(max_start_speed_axis_asc_order[0]);
-            Serial.println(max_start_speed_axis_asc_order[1]);
-            Serial.println(max_start_speed_axis_asc_order[2]);
-            Serial.println(max_start_speed_axis_asc_order[3]);
-          #endif
         #endif
         break;
       case 115: // M115
@@ -1027,6 +1007,8 @@ void linear_move(unsigned long axis_steps_remaining[]) // make linear move with 
   
   
   //Only enable axis that are moving. If the axis doesn't need to move then it can stay disabled depending on configuration.
+  // TODO: maybe it's better to refactor into a generic enable(int axis) function, that will probably take more ram,
+  // but will reduce code size
   if(axis_steps_remaining[0]) enable_x();
   if(axis_steps_remaining[1]) enable_y();
   if(axis_steps_remaining[2]) { enable_z(); do_step(2); axis_steps_remaining[2]--; }
@@ -1055,19 +1037,43 @@ void linear_move(unsigned long axis_steps_remaining[]) // make linear move with 
   interval = axis_interval[primary_axis];
 
   //If acceleration is enabled, do some Bresenham calculations depending on which axis will lead it.
-  //NOTE: if later, axis dependent min speed is introduced, we probably must ensure it is respected here... or maybe not
   #ifdef RAMP_ACCELERATION
     max_interval = axis_max_interval[primary_axis];
+    unsigned long new_axis_max_intervals[NUM_AXIS];
     max_speed_steps_per_second = 100000000 / interval;
-    min_speed_steps_per_second = 100000000 / max_interval;
+    min_speed_steps_per_second = 100000000 / max_interval; //TODO: can this be deleted?
+    //Calculate start speeds based on moving axes max start speed constraints. TODO: delete all println
+    int slowest_start_axis = primary_axis;
+    unsigned long slowest_start_axis_max_interval = max_interval;
+    for(int i = 0; i < NUM_AXIS; i++)
+      if (axis_steps_remaining[i] >0 && i != primary_axis && axis_max_interval[i] * axis_steps_remaining[i]
+              / axis_steps_remaining[slowest_start_axis] > slowest_start_axis_max_interval) {
+        slowest_start_axis = i;
+        slowest_start_axis_max_interval = axis_max_interval[i];
+      }
+    for(int i = 0; i < NUM_AXIS; i++)
+      if(axis_steps_remaining[i] >0) {
+        new_axis_max_intervals[i] = slowest_start_axis_max_interval * axis_steps_remaining[i] / axis_steps_remaining[slowest_start_axis];
+        //Serial.print("new_axis_max_intervals[i] :"); Serial.println(new_axis_max_intervals[i]); //TODO: delete this println when finished
+        if(i == primary_axis) {
+          max_interval = new_axis_max_intervals[i];
+          min_speed_steps_per_second = 100000000 / max_interval;
+        }
+      }
+    max_interval = new_axis_max_intervals[primary_axis];
+    //Serial.print("Max interval :"); Serial.println(max_interval); //TODO: delete this println when finished
     //Calculate slowest axis plateau time
     float slowest_axis_plateau_time = 0;
     for(int i=0; i < 2 ; i++) { //TODO: change to NUM_AXIS as axes get added to bresenham
-      if(e_steps_to_take > 0 && axis_steps_remaining[i] > 0) slowest_axis_plateau_time = max(slowest_axis_plateau_time, (100000000.0 / axis_interval[i] - 100000000.0 / axis_max_interval[i]) / (float) axis_steps_per_sqr_second[i]);
-      else if(axis_steps_remaining[i] > 0) slowest_axis_plateau_time = max(slowest_axis_plateau_time, (100000000.0 / axis_interval[i] - 100000000.0 / axis_max_interval[i]) / (float) axis_travel_steps_per_sqr_second[i]);
+      if(axis_steps_remaining[i] > 0) {
+        if(e_steps_to_take > 0 && axis_steps_remaining[i] > 0) slowest_axis_plateau_time = max(slowest_axis_plateau_time,
+              (100000000.0 / axis_interval[i] - 100000000.0 / new_axis_max_intervals[i]) / (float) axis_steps_per_sqr_second[i]);
+        else if(axis_steps_remaining[i] > 0) slowest_axis_plateau_time = max(slowest_axis_plateau_time,
+              (100000000.0 / axis_interval[i] - 100000000.0 / new_axis_max_intervals[i]) / (float) axis_travel_steps_per_sqr_second[i]);
+      }
     }
     //Now we can calculate the new primary axis acceleration, so that the slowest axis max acceleration is not violated
-    steps_per_sqr_second = (100000000.0 / axis_interval[primary_axis] - 100000000.0 / axis_max_interval[primary_axis]) / slowest_axis_plateau_time;
+    steps_per_sqr_second = (100000000.0 / axis_interval[primary_axis] - 100000000.0 / new_axis_max_intervals[primary_axis]) / slowest_axis_plateau_time;
     plateau_steps = (long) ((steps_per_sqr_second / 2.0 * slowest_axis_plateau_time + min_speed_steps_per_second) * slowest_axis_plateau_time);
   #endif
   #ifdef EXP_ACCELERATION

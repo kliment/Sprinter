@@ -24,7 +24,7 @@
 
 //Acceleration settings
 #ifdef RAMP_ACCELERATION
-//X, Y (Z and E currently not used) maximum start speed. E default value is good for skeinforge 40+, for older versions raise it a lot.
+//X, Y, Z, E maximum start speed for accelerated moves. E default value is good for skeinforge 40+, for older versions raise it a lot.
 float max_start_speed_units_per_second[] = {35.0,35.0,1.0,10.0};
 long max_acceleration_units_per_sq_second[] = {750,750,100,10000}; // X, Y (Z and E currently not used) max acceleration in mm/s^2 for printing moves
 long max_travel_acceleration_units_per_sq_second[] = {1500,1500,100}; // X, Y (Z currently not used) max acceleration in mm/s^2 for travel moves
