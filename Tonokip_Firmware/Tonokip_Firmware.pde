@@ -937,13 +937,14 @@ inline void prepare_move()
   #ifdef PRINT_MOVE_TIME
     unsigned long startmove = micros();
   #endif
-  linear_move(x_steps_to_take, y_steps_to_take, z_steps_to_take, e_steps_to_take); // make the move
+  unsigned long axis_steps_to_take[NUM_AXIS] = {x_steps_to_take, y_steps_to_take, z_steps_to_take, e_steps_to_take};
+  linear_move(axis_steps_to_take); // make the move
   #ifdef PRINT_MOVE_TIME
   Serial.println(micros()-startmove);
   #endif
 }
 
-void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remaining, unsigned long z_steps_remaining, unsigned long e_steps_remaining) // make linear move with preset speeds and destinations, see G0 and G1
+void linear_move(unsigned long axis_steps_remaining[]) // make linear move with preset speeds and destinations, see G0 and G1
 {
   //Determine direction of movement
   if (destination_x > current_x) digitalWrite(X_DIR_PIN,!INVERT_X_DIR);
@@ -955,26 +956,26 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
   if (destination_e > current_e) digitalWrite(E_DIR_PIN,!INVERT_E_DIR);
   else digitalWrite(E_DIR_PIN,INVERT_E_DIR);
   
-  if(X_MIN_PIN > -1) if(!direction_x) if(digitalRead(X_MIN_PIN) != ENDSTOPS_INVERTING) x_steps_remaining=0;
-  if(Y_MIN_PIN > -1) if(!direction_y) if(digitalRead(Y_MIN_PIN) != ENDSTOPS_INVERTING) y_steps_remaining=0;
-  if(Z_MIN_PIN > -1) if(!direction_z) if(digitalRead(Z_MIN_PIN) != ENDSTOPS_INVERTING) z_steps_remaining=0;
-  if(X_MAX_PIN > -1) if(direction_x) if(digitalRead(X_MAX_PIN) != ENDSTOPS_INVERTING) x_steps_remaining=0;
-  if(Y_MAX_PIN > -1) if(direction_y) if(digitalRead(Y_MAX_PIN) != ENDSTOPS_INVERTING) y_steps_remaining=0;
-  if(Z_MAX_PIN > -1) if(direction_z) if(digitalRead(Z_MAX_PIN) != ENDSTOPS_INVERTING) z_steps_remaining=0;
+  if(X_MIN_PIN > -1) if(!direction_x) if(digitalRead(X_MIN_PIN) != ENDSTOPS_INVERTING) axis_steps_remaining[0]=0;
+  if(Y_MIN_PIN > -1) if(!direction_y) if(digitalRead(Y_MIN_PIN) != ENDSTOPS_INVERTING) axis_steps_remaining[1]=0;
+  if(Z_MIN_PIN > -1) if(!direction_z) if(digitalRead(Z_MIN_PIN) != ENDSTOPS_INVERTING) axis_steps_remaining[2]=0;
+  if(X_MAX_PIN > -1) if(direction_x) if(digitalRead(X_MAX_PIN) != ENDSTOPS_INVERTING) axis_steps_remaining[0]=0;
+  if(Y_MAX_PIN > -1) if(direction_y) if(digitalRead(Y_MAX_PIN) != ENDSTOPS_INVERTING) axis_steps_remaining[1]=0;
+  if(Z_MAX_PIN > -1) if(direction_z) if(digitalRead(Z_MAX_PIN) != ENDSTOPS_INVERTING) axis_steps_remaining[2]=0;
   
   
   //Only enable axis that are moving. If the axis doesn't need to move then it can stay disabled depending on configuration.
-  if(x_steps_remaining) enable_x();
-  if(y_steps_remaining) enable_y();
-  if(z_steps_remaining) { enable_z(); do_step(2); z_steps_remaining--; }
-  if(e_steps_remaining) { enable_e(); do_step(3); e_steps_remaining--; }
+  if(axis_steps_remaining[0]) enable_x();
+  if(axis_steps_remaining[1]) enable_y();
+  if(axis_steps_remaining[2]) { enable_z(); do_step(2); axis_steps_remaining[2]--; }
+  if(axis_steps_remaining[3]) { enable_e(); do_step(3); axis_steps_remaining[3]--; }
 
     //Define variables that are needed for the Bresenham algorithm. Please note that  Z is not currently included in the Bresenham algorithm.
-  unsigned int delta_x = x_steps_remaining;
+  unsigned int delta_x = axis_steps_remaining[0];
   unsigned long x_interval_nanos;
-  unsigned int delta_y = y_steps_remaining;
+  unsigned int delta_y = axis_steps_remaining[1];
   unsigned long y_interval_nanos;
-  unsigned int delta_z = z_steps_remaining;
+  unsigned int delta_z = axis_steps_remaining[2];
   unsigned long z_interval_nanos;
   boolean steep_y = delta_y > delta_x;// && delta_y > delta_e && delta_y > delta_z;
   boolean steep_x = delta_x >= delta_y;// && delta_x > delta_e && delta_x > delta_z;
@@ -1066,7 +1067,7 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
   }
   
   //move until no more steps remain 
-  while(x_steps_remaining + y_steps_remaining + z_steps_remaining + e_steps_remaining > 0) {
+  while(axis_steps_remaining[0] + axis_steps_remaining[1] + axis_steps_remaining[2] + axis_steps_remaining[3] > 0) {
     //If more that HEATER_CHECK_INTERVAL ms have passed since previous heating check, adjust temp
     manage_heater();
     manage_inactivity(2);
@@ -1128,21 +1129,21 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
     #endif
 
     //If there are x or y steps remaining, perform Bresenham algorithm
-    if(x_steps_remaining || y_steps_remaining) {
+    if(axis_steps_remaining[0] || axis_steps_remaining[1]) {
       if(X_MIN_PIN > -1) if(!direction_x) if(digitalRead(X_MIN_PIN) != ENDSTOPS_INVERTING) break;
       if(Y_MIN_PIN > -1) if(!direction_y) if(digitalRead(Y_MIN_PIN) != ENDSTOPS_INVERTING) break;
       if(X_MAX_PIN > -1) if(direction_x) if(digitalRead(X_MAX_PIN) != ENDSTOPS_INVERTING) break;
       if(Y_MAX_PIN > -1) if(direction_y) if(digitalRead(Y_MAX_PIN) != ENDSTOPS_INVERTING) break;
       if(steep_y) {
         timediff = micros() * 100 - axis_previous_micros[1];
-        while(timediff >= interval && y_steps_remaining > 0) {
+        while(timediff >= interval && axis_steps_remaining[1] > 0) {
           steps_done++;
           steps_remaining--;
-          y_steps_remaining--; timediff -= interval;
+          axis_steps_remaining[1]--; timediff -= interval;
           error_x = error_x - delta_x;
           do_step(1);
           if(error_x < 0) {
-            do_step(0); x_steps_remaining--;
+            do_step(0); axis_steps_remaining[0]--;
             error_x = error_x + delta_y;
           }
           #ifdef RAMP_ACCELERATION
@@ -1157,14 +1158,14 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
         }
       } else if (steep_x) {
         timediff=micros() * 100 - axis_previous_micros[0];
-        while(timediff >= interval && x_steps_remaining>0) {
+        while(timediff >= interval && axis_steps_remaining[0]>0) {
           steps_done++;
           steps_remaining--;
-          x_steps_remaining--; timediff -= interval;
+          axis_steps_remaining[0]--; timediff -= interval;
           error_y = error_y - delta_y;
           do_step(0);
           if(error_y < 0) { 
-            do_step(1); y_steps_remaining--;
+            do_step(1); axis_steps_remaining[1]--;
             error_y = error_y + delta_x;
           }
           #ifdef RAMP_ACCELERATION
@@ -1180,19 +1181,19 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
       }
     }
     #ifdef RAMP_ACCELERATION
-    if((x_steps_remaining>0 || y_steps_remaining>0) &&
+    if((axis_steps_remaining[0]>0 || axis_steps_remaining[1]>0) &&
         steps_to_take > 0 && 
         (steps_remaining == plateau_steps || (steps_done >= steps_to_take / 2 && accelerating && !decelerating))) continue;
     #endif
 
     //If there are z steps remaining, check if z steps must be taken
-    if(z_steps_remaining) {
+    if(axis_steps_remaining[2]) {
       if(Z_MIN_PIN > -1) if(!direction_z) if(digitalRead(Z_MIN_PIN) != ENDSTOPS_INVERTING) break;
       if(Z_MAX_PIN > -1) if(direction_z) if(digitalRead(Z_MAX_PIN) != ENDSTOPS_INVERTING) break;
       timediff = micros() * 100-axis_previous_micros[2];
-      while(timediff >= axis_interval[2] && z_steps_remaining) {
+      while(timediff >= axis_interval[2] && axis_steps_remaining[2]) {
         do_step(2);
-        z_steps_remaining--;
+        axis_steps_remaining[2]--;
         timediff -= axis_interval[2];
         #ifdef STEP_DELAY_RATIO
         if(timediff >= axis_interval[2]) delayMicroseconds(long_step_delay_ratio * axis_interval[2] / 10000);
@@ -1204,18 +1205,18 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
     }
 
     //If there are e steps remaining, check if e steps must be taken
-    if(e_steps_remaining){
+    if(axis_steps_remaining[3]){
       if (x_steps_to_take + y_steps_to_take <= 0) timediff = micros()*100 - axis_previous_micros[3];
       unsigned int final_e_steps_remaining = 0;
-      if (steep_x && x_steps_to_take > 0) final_e_steps_remaining = e_steps_to_take * x_steps_remaining / x_steps_to_take;
-      else if (steep_y && y_steps_to_take > 0) final_e_steps_remaining = e_steps_to_take * y_steps_remaining / y_steps_to_take;
+      if (steep_x && x_steps_to_take > 0) final_e_steps_remaining = e_steps_to_take * axis_steps_remaining[0] / x_steps_to_take;
+      else if (steep_y && y_steps_to_take > 0) final_e_steps_remaining = e_steps_to_take * axis_steps_remaining[1] / y_steps_to_take;
       //If this move has X or Y steps, let E follow the Bresenham pace
-      if (final_e_steps_remaining > 0)  while(e_steps_remaining > final_e_steps_remaining) { do_step(3); e_steps_remaining--;}
-      else if (x_steps_to_take + y_steps_to_take > 0)  while(e_steps_remaining) { do_step(3); e_steps_remaining--;}
+      if (final_e_steps_remaining > 0)  while(axis_steps_remaining[3] > final_e_steps_remaining) { do_step(3); axis_steps_remaining[3]--;}
+      else if (x_steps_to_take + y_steps_to_take > 0)  while(axis_steps_remaining[3]) { do_step(3); axis_steps_remaining[3]--;}
       //Else, normally check if e steps must be taken
-      else while (timediff >= axis_interval[3] && e_steps_remaining) {
+      else while (timediff >= axis_interval[3] && axis_steps_remaining[3]) {
         do_step(3);
-        e_steps_remaining--;
+        axis_steps_remaining[3]--;
         timediff -= axis_interval[3];
         #ifdef STEP_DELAY_RATIO
         if(timediff >= axis_interval[3]) delayMicroseconds(long_step_delay_ratio * axis_interval[3] / 10000);
