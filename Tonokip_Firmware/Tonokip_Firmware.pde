@@ -976,6 +976,9 @@ void linear_move(unsigned long axis_steps_remaining[]) // make linear move with 
   boolean steep_x = delta[0] >= delta[1];// && delta[0] > delta[3] && delta[0] > delta[2];
   //boolean steep_z = delta[2] > delta[0] && delta[2] > delta[1] && delta[2] > delta[3];
   int axis_error[NUM_AXIS];
+  unsigned int primary_axis;
+  if(steep_x) primary_axis = 0;
+  else primary_axis = 1;
   #ifdef RAMP_ACCELERATION
   long max_speed_steps_per_second;
   long min_speed_steps_per_second;
@@ -984,13 +987,13 @@ void linear_move(unsigned long axis_steps_remaining[]) // make linear move with 
   unsigned long virtual_full_velocity_steps;
   unsigned long full_velocity_steps;
   #endif
-  unsigned long steps_remaining;
-  unsigned long steps_to_take;
-  
+  unsigned long steps_remaining = delta[primary_axis];
+  unsigned long steps_to_take = steps_remaining;
+  for(int i=0; i < NUM_AXIS; i++) if(i != primary_axis) axis_error[i] = delta[primary_axis] / 2;
+  interval = axis_interval[primary_axis];
+
   //Do some Bresenham calculations depending on which axis will lead it.
   if(steep_y) {
-   axis_error[0] = delta[1] / 2;
-   interval = axis_interval[1];
    #ifdef RAMP_ACCELERATION
    max_interval = max_y_interval;
    if(e_steps_to_take > 0) steps_per_sqr_second = y_steps_per_sqr_second;
@@ -1007,11 +1010,7 @@ void linear_move(unsigned long axis_steps_remaining[]) // make linear move with 
    max_interval = max_y_interval;
    min_constant_speed_steps = y_min_constant_speed_steps;
    #endif
-   steps_remaining = delta[1];
-   steps_to_take = delta[1];
   } else if (steep_x) {
-   axis_error[1] = delta[0] / 2;
-   interval = axis_interval[0];
    #ifdef RAMP_ACCELERATION
    max_interval = max_x_interval;
    if(e_steps_to_take > 0) steps_per_sqr_second = x_steps_per_sqr_second;
@@ -1028,8 +1027,6 @@ void linear_move(unsigned long axis_steps_remaining[]) // make linear move with 
    max_interval = max_x_interval;
    min_constant_speed_steps = x_min_constant_speed_steps;
    #endif
-   steps_remaining = delta[0];
-   steps_to_take = delta[0];
   }
   unsigned long steps_done = 0;
   #ifdef RAMP_ACCELERATION
@@ -1127,50 +1124,28 @@ void linear_move(unsigned long axis_steps_remaining[]) // make linear move with 
       if(Y_MIN_PIN > -1) if(!direction_y) if(digitalRead(Y_MIN_PIN) != ENDSTOPS_INVERTING) break;
       if(X_MAX_PIN > -1) if(direction_x) if(digitalRead(X_MAX_PIN) != ENDSTOPS_INVERTING) break;
       if(Y_MAX_PIN > -1) if(direction_y) if(digitalRead(Y_MAX_PIN) != ENDSTOPS_INVERTING) break;
-      if(steep_y) {
-        timediff = micros() * 100 - axis_previous_micros[1];
-        while(timediff >= interval && axis_steps_remaining[1] > 0) {
-          steps_done++;
-          steps_remaining--;
-          axis_steps_remaining[1]--; timediff -= interval;
-          axis_error[0] = axis_error[0] - delta[0];
-          do_step(1);
-          if(axis_error[0] < 0) {
-            do_step(0); axis_steps_remaining[0]--;
-            axis_error[0] = axis_error[0] + delta[1];
+      timediff = micros() * 100 - axis_previous_micros[primary_axis];
+      while(timediff >= interval && axis_steps_remaining[primary_axis] > 0) {
+        steps_done++;
+        steps_remaining--;
+        axis_steps_remaining[primary_axis]--; timediff -= interval;
+        do_step(primary_axis);
+        for(int i=0; i < 2; i++) if(i != primary_axis) {//TODO change "2" to NUM_AXIS when other axes gets added to bresenham
+          axis_error[i] = axis_error[i] - delta[i];
+          if(axis_error[i] < 0) {
+            do_step(i); axis_steps_remaining[i]--;
+            axis_error[i] = axis_error[i] + delta[primary_axis];
           }
-          #ifdef RAMP_ACCELERATION
-          if (steps_remaining == plateau_steps || (steps_done >= steps_to_take / 2 && accelerating && !decelerating)) break;
-          #endif
-          #ifdef STEP_DELAY_RATIO
-          if(timediff >= interval) delayMicroseconds(long_step_delay_ratio * interval / 10000);
-          #endif
-          #ifdef STEP_DELAY_MICROS
-          if(timediff >= interval) delayMicroseconds(STEP_DELAY_MICROS);
-          #endif
         }
-      } else if (steep_x) {
-        timediff=micros() * 100 - axis_previous_micros[0];
-        while(timediff >= interval && axis_steps_remaining[0]>0) {
-          steps_done++;
-          steps_remaining--;
-          axis_steps_remaining[0]--; timediff -= interval;
-          axis_error[1] = axis_error[1] - delta[1];
-          do_step(0);
-          if(axis_error[1] < 0) { 
-            do_step(1); axis_steps_remaining[1]--;
-            axis_error[1] = axis_error[1] + delta[0];
-          }
-          #ifdef RAMP_ACCELERATION
-          if (steps_remaining == plateau_steps || (steps_done >= steps_to_take / 2 && accelerating && !decelerating)) break;
-          #endif
-          #ifdef STEP_DELAY_RATIO
-          if(timediff >= interval) delayMicroseconds(long_step_delay_ratio * interval / 10000);
-          #endif
-          #ifdef STEP_DELAY_MICROS
-          if(timediff >= interval) delayMicroseconds(STEP_DELAY_MICROS);
-          #endif
-        }
+        #ifdef RAMP_ACCELERATION
+        if (steps_remaining == plateau_steps || (steps_done >= steps_to_take / 2 && accelerating && !decelerating)) break;
+        #endif
+        #ifdef STEP_DELAY_RATIO
+        if(timediff >= interval) delayMicroseconds(long_step_delay_ratio * interval / 10000);
+        #endif
+        #ifdef STEP_DELAY_MICROS
+        if(timediff >= interval) delayMicroseconds(STEP_DELAY_MICROS);
+        #endif
       }
     }
     #ifdef RAMP_ACCELERATION
