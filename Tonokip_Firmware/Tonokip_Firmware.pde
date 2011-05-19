@@ -63,20 +63,24 @@ unsigned long axis_previous_micros[NUM_AXIS];
 unsigned long previous_micros = 0, previous_millis_heater, previous_millis_bed_heater;
 unsigned long x_steps_to_take, y_steps_to_take, z_steps_to_take, e_steps_to_take;
 #ifdef RAMP_ACCELERATION
-  unsigned long axis_max_interval[] = {100000000.0 / (min_units_per_second * x_steps_per_unit), 100000000.0 / (min_units_per_second * y_steps_per_unit)};
+  unsigned int max_start_speed_axis_asc_order[NUM_AXIS];
+  unsigned long axis_max_interval[] = {100000000.0 / (max_start_speed_units_per_second[0] * axis_steps_per_unit[0]),
+      100000000.0 / (max_start_speed_units_per_second[1] * axis_steps_per_unit[1]),
+      100000000.0 / (max_start_speed_units_per_second[2] * axis_steps_per_unit[2]),
+      100000000.0 / (max_start_speed_units_per_second[3] * axis_steps_per_unit[3])}; //TODO: refactor all things like this in a function
   unsigned long max_interval;
-  unsigned long axis_steps_per_sqr_second[] = {max_acceleration_units_per_sq_second[0] * x_steps_per_unit, max_acceleration_units_per_sq_second[1] * y_steps_per_unit};
-  unsigned long axis_travel_steps_per_sqr_second[] = {max_travel_acceleration_units_per_sq_second[0] * x_steps_per_unit, max_travel_acceleration_units_per_sq_second[1] * y_steps_per_unit};
+  unsigned long axis_steps_per_sqr_second[] = {max_acceleration_units_per_sq_second[0] * axis_steps_per_unit[0], max_acceleration_units_per_sq_second[1] * axis_steps_per_unit[1]};
+  unsigned long axis_travel_steps_per_sqr_second[] = {max_travel_acceleration_units_per_sq_second[0] * axis_steps_per_unit[0], max_travel_acceleration_units_per_sq_second[1] * axis_steps_per_unit[1]};
   unsigned long steps_per_sqr_second, plateau_steps;
 #endif
 #ifdef EXP_ACCELERATION
-  unsigned long axis_virtual_full_velocity_steps[] = {full_velocity_units * x_steps_per_unit, full_velocity_units * y_steps_per_unit};
-  unsigned long axis_travel_virtual_full_velocity_steps[] = {travel_move_full_velocity_units * x_steps_per_unit,
-        travel_move_full_velocity_units * y_steps_per_unit};
-  unsigned long axis_max_interval[] = {100000000.0 / (min_units_per_second * x_steps_per_unit),
-        100000000.0 / (min_units_per_second * y_steps_per_unit)};
+  unsigned long axis_virtual_full_velocity_steps[] = {full_velocity_units * axis_steps_per_unit[0], full_velocity_units * axis_steps_per_unit[1]};
+  unsigned long axis_travel_virtual_full_velocity_steps[] = {travel_move_full_velocity_units * axis_steps_per_unit[0],
+        travel_move_full_velocity_units * axis_steps_per_unit[1]};
+  unsigned long axis_max_interval[] = {100000000.0 / (max_start_speed_units_per_second[0] * axis_steps_per_unit[0]),
+        100000000.0 / (max_start_speed_units_per_second[1] * axis_steps_per_unit[1])};
   unsigned long max_interval;
-  unsigned long axis_min_constant_speed_steps[] = {min_constant_speed_units * x_steps_per_unit, min_constant_speed_units * y_steps_per_unit};
+  unsigned long axis_min_constant_speed_steps[] = {min_constant_speed_units * axis_steps_per_unit[0], min_constant_speed_units * axis_steps_per_unit[1]};
   unsigned long min_constant_speed_steps;
 #endif
 boolean acceleration_enabled = false, accelerating = false;
@@ -265,6 +269,36 @@ void setup()
   initsd();
 
 #endif
+
+  //Sort the axis with ascending max start speed in steps/s. The insertion sort
+  // algorithm is used, since it's the less expensive in code size.
+  #ifdef RAMP_ACCELERATION
+    long temp_max_intervals[NUM_AXIS];
+    for(int i=0; i < NUM_AXIS; i++) {
+      temp_max_intervals[i] = axis_max_interval[i];
+      max_start_speed_axis_asc_order[i] = i;
+    }
+    for(int i=1; i < NUM_AXIS; i++) {
+      int j=i-1;
+      long axis_value = temp_max_intervals[i];
+      Serial.print("Axis value: "); Serial.println(axis_value);
+      while(j >= 0 && temp_max_intervals[j] < axis_value) {
+        temp_max_intervals[j+1] = temp_max_intervals[j];
+        max_start_speed_axis_asc_order[j+1] = max_start_speed_axis_asc_order[j];
+        j--;
+      }
+      Serial.print("Axis value: "); Serial.println(axis_value);
+      temp_max_intervals[j+1] = axis_value;
+      max_start_speed_axis_asc_order[j+1] = i;
+    }
+    #ifdef DEBUGGING
+      Serial.println("New start speed axes order :");
+      Serial.println(max_start_speed_axis_asc_order[0]);
+      Serial.println(max_start_speed_axis_asc_order[1]);
+      Serial.println(max_start_speed_axis_asc_order[2]);
+      Serial.println(max_start_speed_axis_asc_order[3]);
+    #endif
+  #endif
 }
 
 
@@ -480,7 +514,7 @@ inline void process_commands()
         if((X_MIN_PIN > -1 && X_HOME_DIR==-1) || (X_MAX_PIN > -1 && X_HOME_DIR==1)) {
           current_x = 0;
           destination_x = 1.5 * X_MAX_LENGTH * X_HOME_DIR;
-          feedrate = min_units_per_second * 60;
+          feedrate = max_start_speed_units_per_second[0] * 60;
           prepare_move();
           
           current_x = 0;
@@ -498,7 +532,7 @@ inline void process_commands()
         if((Y_MIN_PIN > -1 && Y_HOME_DIR==-1) || (Y_MAX_PIN > -1 && Y_HOME_DIR==1)) {
           current_y = 0;
           destination_y = 1.5 * Y_MAX_LENGTH * Y_HOME_DIR;
-          feedrate = min_units_per_second * 60;
+          feedrate = max_start_speed_units_per_second[1] * 60;
           prepare_move();
           
           current_y = 0;
@@ -756,10 +790,39 @@ inline void process_commands()
         max_inactive_time = code_value() * 1000; 
         break;
       case 92: // M92
-        if(code_seen('X')) x_steps_per_unit = code_value();
-        if(code_seen('Y')) y_steps_per_unit = code_value();
-        if(code_seen('Z')) z_steps_per_unit = code_value();
-        if(code_seen('E')) e_steps_per_unit = code_value();
+        if(code_seen('X')) axis_steps_per_unit[0] = code_value();
+        if(code_seen('Y')) axis_steps_per_unit[1] = code_value();
+        if(code_seen('Z')) axis_steps_per_unit[2] = code_value();
+        if(code_seen('E')) axis_steps_per_unit[3] = code_value();
+        //Update start speed intervals and axis order. TODO: refactor array sorting in
+        // a function, refactor axis_max_interval[] calculation into a function, as they
+        // can be used in setup() as well
+        #ifdef RAMP_ACCELERATION
+          long temp_max_intervals[NUM_AXIS];
+          for(int i=0; i < NUM_AXIS; i++) {
+            axis_max_interval[i] = 100000000.0 / (max_start_speed_units_per_second[i] * axis_steps_per_unit[i]);
+            temp_max_intervals[i] = axis_max_interval[i];
+            max_start_speed_axis_asc_order[i] = i;
+          }
+          for(int i=1; i < NUM_AXIS; i++) {
+            int j=i-1;
+            long axis_value = temp_max_intervals[i];
+            while(j >= 0 && temp_max_intervals[j] < axis_value) {
+              temp_max_intervals[j+1] = temp_max_intervals[j];
+              max_start_speed_axis_asc_order[j+1] = max_start_speed_axis_asc_order[j];
+              j--;
+            }
+            temp_max_intervals[j+1] = axis_value;
+            max_start_speed_axis_asc_order[j+1] = i;
+          }
+          #ifdef DEBUGGING
+            Serial.println("New start speed axes order :");
+            Serial.println(max_start_speed_axis_asc_order[0]);
+            Serial.println(max_start_speed_axis_asc_order[1]);
+            Serial.println(max_start_speed_axis_asc_order[2]);
+            Serial.println(max_start_speed_axis_asc_order[3]);
+          #endif
+        #endif
         break;
       case 115: // M115
         Serial.println("FIRMWARE_NAME:Sprinter FIRMWARE_URL:http%%3A/github.com/kliment/Sprinter/ PROTOCOL_VERSION:1.0 MACHINE_TYPE:Mendel EXTRUDER_COUNT:1");
@@ -775,13 +838,14 @@ inline void process_commands()
         Serial.println(current_e);
         break;
       #ifdef RAMP_ACCELERATION
+      //TODO: update for all axis, use for loop
       case 201: // M201
-        if(code_seen('X')) axis_steps_per_sqr_second[0] = code_value() * x_steps_per_unit;
-        if(code_seen('Y')) axis_steps_per_sqr_second[1] = code_value() * y_steps_per_unit;
+        if(code_seen('X')) axis_steps_per_sqr_second[0] = code_value() * axis_steps_per_unit[0];
+        if(code_seen('Y')) axis_steps_per_sqr_second[1] = code_value() * axis_steps_per_unit[1];
         break;
       case 202: // M202
-        if(code_seen('X')) axis_travel_steps_per_sqr_second[0] = code_value() * x_steps_per_unit;
-        if(code_seen('Y')) axis_travel_steps_per_sqr_second[1] = code_value() * y_steps_per_unit;
+        if(code_seen('X')) axis_travel_steps_per_sqr_second[0] = code_value() * axis_steps_per_unit[0];
+        if(code_seen('Y')) axis_travel_steps_per_sqr_second[1] = code_value() * axis_steps_per_unit[1];
         break;
       #endif
     }
@@ -865,10 +929,10 @@ inline void prepare_move()
   ydiff = (destination_y - current_y);
   zdiff = (destination_z - current_z);
   ediff = (destination_e - current_e);
-  x_steps_to_take = abs(xdiff) * x_steps_per_unit;
-  y_steps_to_take = abs(ydiff) * y_steps_per_unit;
-  z_steps_to_take = abs(zdiff) * z_steps_per_unit;
-  e_steps_to_take = abs(ediff) * e_steps_per_unit;
+  x_steps_to_take = abs(xdiff) * axis_steps_per_unit[0];
+  y_steps_to_take = abs(ydiff) * axis_steps_per_unit[1];
+  z_steps_to_take = abs(zdiff) * axis_steps_per_unit[2];
+  e_steps_to_take = abs(ediff) * axis_steps_per_unit[3];
   if(feedrate < 10)
       feedrate = 10;
   /*
@@ -889,10 +953,10 @@ inline void prepare_move()
   //int feedz = (60000000 * zdiff) / time_for_move;
   //if(feedz > maxfeed)
   */
-  #define X_TIME_FOR_MOVE ((float)x_steps_to_take / (x_steps_per_unit*feedrate/60000000))
-  #define Y_TIME_FOR_MOVE ((float)y_steps_to_take / (y_steps_per_unit*feedrate/60000000))
-  #define Z_TIME_FOR_MOVE ((float)z_steps_to_take / (z_steps_per_unit*z_feedrate/60000000))
-  #define E_TIME_FOR_MOVE ((float)e_steps_to_take / (e_steps_per_unit*feedrate/60000000))
+  #define X_TIME_FOR_MOVE ((float)x_steps_to_take / (axis_steps_per_unit[0]*feedrate/60000000))
+  #define Y_TIME_FOR_MOVE ((float)y_steps_to_take / (axis_steps_per_unit[1]*feedrate/60000000))
+  #define Z_TIME_FOR_MOVE ((float)z_steps_to_take / (axis_steps_per_unit[2]*z_feedrate/60000000))
+  #define E_TIME_FOR_MOVE ((float)e_steps_to_take / (axis_steps_per_unit[3]*feedrate/60000000))
   
   time_for_move = max(X_TIME_FOR_MOVE, Y_TIME_FOR_MOVE);
   time_for_move = max(time_for_move, Z_TIME_FOR_MOVE);
@@ -1188,14 +1252,14 @@ void linear_move(unsigned long axis_steps_remaining[]) // make linear move with 
   if(DISABLE_E) disable_e();
   
   // Update current position partly based on direction, we probably can combine this with the direction code above...
-  if (destination_x > current_x) current_x = current_x + x_steps_to_take / x_steps_per_unit;
-  else current_x = current_x - x_steps_to_take / x_steps_per_unit;
-  if (destination_y > current_y) current_y = current_y + y_steps_to_take / y_steps_per_unit;
-  else current_y = current_y - y_steps_to_take / y_steps_per_unit;
-  if (destination_z > current_z) current_z = current_z + z_steps_to_take / z_steps_per_unit;
-  else current_z = current_z - z_steps_to_take / z_steps_per_unit;
-  if (destination_e > current_e) current_e = current_e + e_steps_to_take / e_steps_per_unit;
-  else current_e = current_e - e_steps_to_take / e_steps_per_unit;
+  if (destination_x > current_x) current_x = current_x + x_steps_to_take / axis_steps_per_unit[0];
+  else current_x = current_x - x_steps_to_take / axis_steps_per_unit[0];
+  if (destination_y > current_y) current_y = current_y + y_steps_to_take / axis_steps_per_unit[1];
+  else current_y = current_y - y_steps_to_take / axis_steps_per_unit[1];
+  if (destination_z > current_z) current_z = current_z + z_steps_to_take / axis_steps_per_unit[2];
+  else current_z = current_z - z_steps_to_take / axis_steps_per_unit[2];
+  if (destination_e > current_e) current_e = current_e + e_steps_to_take / axis_steps_per_unit[3];
+  else current_e = current_e - e_steps_to_take / axis_steps_per_unit[3];
 }
 
 
