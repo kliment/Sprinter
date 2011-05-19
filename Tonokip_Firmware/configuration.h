@@ -25,8 +25,8 @@
 //Acceleration settings
 #ifdef RAMP_ACCELERATION
 float min_units_per_second = 35.0; // the minimum feedrate
-long max_acceleration_units_per_sq_second = 750; // Max acceleration in mm/s^2 for printing moves
-long max_travel_acceleration_units_per_sq_second = 1500; // Max acceleration in mm/s^2 for travel moves
+long max_acceleration_units_per_sq_second[] = {750,750,100,10000}; // X, Y (Z and E currently not used) max acceleration in mm/s^2 for printing moves
+long max_travel_acceleration_units_per_sq_second[] = {1500,1500,100}; // X, Y (Z currently not used) max acceleration in mm/s^2 for travel moves
 #endif
 #ifdef EXP_ACCELERATION
 float full_velocity_units = 10; // the units between minimum and G1 move feedrate
