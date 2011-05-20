@@ -56,6 +56,12 @@ float min_constant_speed_units = 2; // the minimum units of an accelerated move 
 //How often should the heater check for new temp readings, in milliseconds
 #define HEATER_CHECK_INTERVAL 50
 #define BED_CHECK_INTERVAL 5000
+//Uncomment the following line to disable heat management during acceleration
+//#define DISABLE_CHECK_DURING_ACC
+#ifndef DISABLE_CHECK_DURING_ACC
+  //Uncomment the following line to disable heat management during the move
+  //#define DISABLE_CHECK_DURING_MOVE
+#endif
 
 //Experimental temperature smoothing - only uncomment this if your temp readings are noisy
 //#define SMOOTHING 1

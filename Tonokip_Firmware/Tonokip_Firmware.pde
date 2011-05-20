@@ -1090,9 +1090,19 @@ void linear_move(unsigned long axis_steps_remaining[]) // make linear move with 
   
   //move until no more steps remain 
   while(axis_steps_remaining[0] + axis_steps_remaining[1] + axis_steps_remaining[2] + axis_steps_remaining[3] > 0) {
-    //If more that HEATER_CHECK_INTERVAL ms have passed since previous heating check, adjust temp
-    manage_heater();
-    manage_inactivity(2);
+    #ifdef DISABLE_CHECK_DURING_ACC
+      if(!accelerating && !decelerating) {
+        //If more that HEATER_CHECK_INTERVAL ms have passed since previous heating check, adjust temp
+        manage_heater();
+      }
+    #else
+      #ifdef DISABLE_CHECK_DURING_MOVE
+        {} //Do nothing
+      #else
+        //If more that HEATER_CHECK_INTERVAL ms have passed since previous heating check, adjust temp
+        manage_heater();
+      #endif
+    #endif
     #ifdef RAMP_ACCELERATION
     //If acceleration is enabled on this move and we are in the acceleration segment, calculate the current interval
     if (acceleration_enabled && steps_done == 0) {
