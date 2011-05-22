@@ -444,6 +444,7 @@ inline void process_commands()
 {
   unsigned long codenum; //throw away variable
   char *starpos = NULL;
+  boolean axis_set = false;
 
   if(code_seen('G'))
   {
@@ -466,7 +467,12 @@ inline void process_commands()
           manage_heater();
         }
         break;
+        
       case 28: //G28 Home all Axis one at a time
+        axis_set = false;
+        if (code_seen('X')) axis_set = true;
+        if (code_seen('Y')) axis_set = true;
+        if (code_seen('Z')) axis_set = true;
         saved_feedrate = feedrate;
         destination_x = 0;
         current_x = 0;
@@ -479,7 +485,7 @@ inline void process_commands()
         feedrate = 0;
 
     
-        if((X_MIN_PIN > -1 && X_HOME_DIR==-1) || (X_MAX_PIN > -1 && X_HOME_DIR==1)) {
+        if( (axis_set == false || code_seen('X') ) && ((X_MIN_PIN > -1 && X_HOME_DIR==-1) || (X_MAX_PIN > -1 && X_HOME_DIR==1))) {
           current_x = 0;
           destination_x = 1.5 * X_MAX_LENGTH * X_HOME_DIR;
           feedrate = min_units_per_second * 60;
@@ -497,7 +503,7 @@ inline void process_commands()
           feedrate = 0;
         }
         
-        if((Y_MIN_PIN > -1 && Y_HOME_DIR==-1) || (Y_MAX_PIN > -1 && Y_HOME_DIR==1)) {
+        if( (axis_set == false || code_seen('Y') ) &&  ((Y_MIN_PIN > -1 && Y_HOME_DIR==-1) || (Y_MAX_PIN > -1 && Y_HOME_DIR==1))) {
           current_y = 0;
           destination_y = 1.5 * Y_MAX_LENGTH * Y_HOME_DIR;
           feedrate = min_units_per_second * 60;
@@ -515,7 +521,7 @@ inline void process_commands()
           feedrate = 0;
         }
         
-        if((Z_MIN_PIN > -1 && Z_HOME_DIR==-1) || (Z_MAX_PIN > -1 && Z_HOME_DIR==1)) {
+        if(  (axis_set == false || code_seen('Z') ) && ((Z_MIN_PIN > -1 && Z_HOME_DIR==-1) || (Z_MAX_PIN > -1 && Z_HOME_DIR==1))) {
           current_z = 0;
           destination_z = 1.5 * Z_MAX_LENGTH * Z_HOME_DIR;
           feedrate = max_z_feedrate/2;
