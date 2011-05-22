@@ -3,10 +3,10 @@
 
 // NO RS485/EXTRUDER CONTROLLER SUPPORT
 // PLEASE VERIFY PIN ASSIGNMENTS FOR YOUR CONFIGURATION!!!!!!!
-#define MOTHERBOARD 3 // ATMEGA168 = 0, SANGUINO = 1, MOTHERBOARD = 2, MEGA/RAMPS = 3, ATMEGA328 = 4, Gen6 = 5, Sanguinololu = 6
+#define MOTHERBOARD 5 // ATMEGA168 = 0, SANGUINO = 1, MOTHERBOARD = 2, MEGA/RAMPS = 3, ATMEGA328 = 4, Gen6 = 5, Sanguinololu = 6
 
 //Comment out to disable SD support
-#define SDSUPPORT 1
+// #define SDSUPPORT 1
 
 //Min step delay in microseconds. If you are experiencing missing steps, try to raise the delay microseconds, but be aware this
 // If you enable this, make sure STEP_DELAY_RATIO is disabled.
@@ -14,7 +14,7 @@
 
 //Step delay over interval ratio. If you are still experiencing missing steps, try to uncomment the following line, but be aware this
 //If you enable this, make sure STEP_DELAY_MICROS is disabled.
-//#define STEP_DELAY_RATIO 0.25
+#define STEP_DELAY_RATIO 0.25
 
 //Comment this to disable ramp acceleration
 #define RAMP_ACCELERATION 1
@@ -24,12 +24,12 @@
 
 //Acceleration settings
 #ifdef RAMP_ACCELERATION
-float min_units_per_second = 35.0; // the minimum feedrate
+float min_units_per_second = 30.0; // the minimum feedrate
 long max_acceleration_units_per_sq_second = 750; // Max acceleration in mm/s^2 for printing moves
-long max_travel_acceleration_units_per_sq_second = 1500; // Max acceleration in mm/s^2 for travel moves
+long max_travel_acceleration_units_per_sq_second = 1000; // Max acceleration in mm/s^2 for travel moves
 #endif
 #ifdef EXP_ACCELERATION
-float full_velocity_units = 10; // the units between minimum and G1 move feedrate
+float full_velocity_units = 5; // the units between minimum and G1 move feedrate
 float travel_move_full_velocity_units = 10; // used for travel moves
 float min_units_per_second = 35.0; // the minimum feedrate
 float min_constant_speed_units = 2; // the minimum units of an accelerated move that must be done at constant speed
@@ -41,13 +41,13 @@ float min_constant_speed_units = 2; // the minimum units of an accelerated move 
 
 //PID settings:
 //Uncomment the following line to enable PID support. This is untested and could be disastrous. Be careful.
-//#define PIDTEMP 1
+#define PIDTEMP 1
 #ifdef PIDTEMP
 #define PID_MAX 255 // limits current to nozzle
-#define PID_INTEGRAL_DRIVE_MAX 220
-#define PID_PGAIN 180 //100 is 1.0
-#define PID_IGAIN 2 //100 is 1.0
-#define PID_DGAIN 100 //100 is 1.0
+#define PID_INTEGRAL_DRIVE_MAX 255
+#define PID_PGAIN 500 //100 is 1.0
+#define PID_IGAIN 95 //100 is 1.0
+#define PID_DGAIN 60 //100 is 1.0
 #endif
 
 //How often should the heater check for new temp readings, in milliseconds
@@ -55,21 +55,21 @@ float min_constant_speed_units = 2; // the minimum units of an accelerated move 
 #define BED_CHECK_INTERVAL 5000
 
 //Experimental temperature smoothing - only uncomment this if your temp readings are noisy
-//#define SMOOTHING 1
-//#define SMOOTHFACTOR 16 //best to use a power of two here - determines how many values are averaged together by the smoothing algorithm
+#define SMOOTHING 1
+#define SMOOTHFACTOR 16 //best to use a power of two here - determines how many values are averaged together by the smoothing algorithm
 
 //Experimental watchdog and minimal temp
 //The watchdog waits for the watchperiod in milliseconds whenever an M104 or M109 increases the target temperature
 //If the temperature has not increased at the end of that period, the target temperature is set to zero. It can be reset with another M104/M109
 //#define WATCHPERIOD 5000 //5 seconds
 //The minimal temperature defines the temperature below which the heater will not be enabled
-//#define MINTEMP 
+#define MINTEMP 10 
 
 //Experimental max temp
 //When temperature exceeds max temp, your bot will halt.
 //This feature exists to protect your hotend from overheating accidentally, but *NOT* from thermistor short/failure!
 //You should use MINTEMP for thermistor short/failure protection.
-//#define MAXTEMP 275
+#define MAXTEMP 260
 
 // Select one of these only to define how the nozzle temp is read.
 #define HEATER_USES_THERMISTOR
@@ -85,13 +85,13 @@ float min_constant_speed_units = 2; // the minimum units of an accelerated move 
 // new_axis_steps_per_mm = previous_axis_steps_per_mm * (test_distance_instructed/test_distance_traveled)
 // units are in millimeters or whatever length unit you prefer: inches,football-fields,parsecs etc
 
-//Calibration variables
-float x_steps_per_unit = 80.376;
-float y_steps_per_unit = 80.376;
-float z_steps_per_unit = 3200/1.25;
-float e_steps_per_unit = 16;
-float max_feedrate = 200000; //mmm, acceleration!
-float max_z_feedrate = 120;
+//Calibration variables..  Settings are the default mendel-parts FiveD values.  Feel free to calibrate and correct.
+float x_steps_per_unit = 40.188; 
+float y_steps_per_unit = 40.188;
+float z_steps_per_unit = 3333.592;
+float e_steps_per_unit = 442.30; // my settings for Skeinforge 40 and higher.
+float max_feedrate = 200000;  // The feedrate the FW will set as upper limit.  Anything higher will be valued down to this. (mm/min)
+float max_z_feedrate = 80; // with this limit in skeinforge can be disabled. (mm/min)
 
 //float x_steps_per_unit = 10.047;
 //float y_steps_per_unit = 10.047;
@@ -111,9 +111,9 @@ const bool DISABLE_Y = false;
 const bool DISABLE_Z = true;
 const bool DISABLE_E = false;
 
-const bool INVERT_X_DIR = false;
-const bool INVERT_Y_DIR = false;
-const bool INVERT_Z_DIR = true;
+const bool INVERT_X_DIR = true;
+const bool INVERT_Y_DIR = true;
+const bool INVERT_Z_DIR = false;
 const bool INVERT_E_DIR = false;
 
 // Sets direction of endstops when homing; 1=MAX, -1=MIN
@@ -144,11 +144,11 @@ const int Z_HOME_DIR = -1;
 const bool ENDSTOPS_INVERTING = false;
 const bool min_software_endstops = false; //If true, axis won't move to coordinates less than zero.
 const bool max_software_endstops = true;  //If true, axis won't move to coordinates greater than the defined lengths below.
-const int X_MAX_LENGTH = 220;
-const int Y_MAX_LENGTH = 220;
+const int X_MAX_LENGTH = 200;
+const int Y_MAX_LENGTH = 200;
 const int Z_MAX_LENGTH = 100;
 
-#define BAUDRATE 115200
+#define BAUDRATE 57600
 
 
 
