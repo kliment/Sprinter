@@ -96,7 +96,7 @@ float min_constant_speed_units = 2; // the minimum units of an accelerated move 
 
 //Calibration variables
 const int NUM_AXIS = 4; // The axis order in all axis related arrays is X, Y, Z, E
-bool axis_relative_modes[] = {false, false, false, true};
+bool axis_relative_modes[] = {false, false, false, false};
 float axis_steps_per_unit[] = {80.376,80.376,3200/1.25,16};
 float max_feedrate[] = {200000, 200000, 240, 500000}; //mmm, acceleration!
 
