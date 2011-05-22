@@ -945,8 +945,8 @@ void linear_move(unsigned long axis_steps_remaining[]) // make linear move with 
   if(axis_steps_remaining[3]) enable_e();
 
     //Define variables that are needed for the Bresenham algorithm. Please note that  Z is not currently included in the Bresenham algorithm.
-  unsigned int delta[] = {axis_steps_remaining[0], axis_steps_remaining[1], axis_steps_remaining[2], axis_steps_remaining[3]}; //TODO: implement a "for" to support N axes
-  int axis_error[NUM_AXIS];
+  unsigned long delta[] = {axis_steps_remaining[0], axis_steps_remaining[1], axis_steps_remaining[2], axis_steps_remaining[3]}; //TODO: implement a "for" to support N axes
+  long axis_error[NUM_AXIS];
   unsigned int primary_axis;
   if(delta[1] > delta[0] && delta[1] > delta[2] && delta[1] > delta[3]) primary_axis = 1;
   else if (delta[0] >= delta[1] && delta[0] > delta[2] && delta[0] > delta[3]) primary_axis = 0;
@@ -959,8 +959,8 @@ void linear_move(unsigned long axis_steps_remaining[]) // make linear move with 
   #ifdef DEBUG_BRESENHAM
     log_int("_BRESENHAM - Primary axis", primary_axis);
     log_int("_BRESENHAM - Primary axis full speed interval", interval);
-    log_uint_array("_BRESENHAM - Deltas", delta, NUM_AXIS);
-    log_int_array("_BRESENHAM - Errors", axis_error, NUM_AXIS);
+    log_ulong_array("_BRESENHAM - Deltas", delta, NUM_AXIS);
+    log_long_array("_BRESENHAM - Errors", axis_error, NUM_AXIS);
   #endif
 
   //If acceleration is enabled, do some Bresenham calculations depending on which axis will lead it.
