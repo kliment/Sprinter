@@ -10,7 +10,7 @@
 
 //Min step delay in microseconds. If you are experiencing missing steps, try to raise the delay microseconds, but be aware this
 // If you enable this, make sure STEP_DELAY_RATIO is disabled.
-#define STEP_DELAY_MICROS 1
+//#define STEP_DELAY_MICROS 1
 
 //Step delay over interval ratio. If you are still experiencing missing steps, try to uncomment the following line, but be aware this
 //If you enable this, make sure STEP_DELAY_MICROS is disabled.
@@ -96,9 +96,9 @@ float min_constant_speed_units = 2; // the minimum units of an accelerated move 
 
 //Calibration variables
 const int NUM_AXIS = 4; // The axis order in all axis related arrays is X, Y, Z, E
+bool axis_relative_modes[] = {false, false, false, true};
 float axis_steps_per_unit[] = {80.376,80.376,3200/1.25,16};
-float max_feedrate = 200000; // mm/min, acceleration!
-float max_z_feedrate = 180; // mm/min, acceleration!
+float max_feedrate[] = {200000, 200000, 240, 500000}; //mmm, acceleration!
 
 //float x_steps_per_unit = 10.047;
 //float y_steps_per_unit = 10.047;
