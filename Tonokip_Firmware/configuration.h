@@ -27,8 +27,8 @@
 //Acceleration settings
 #ifdef RAMP_ACCELERATION
 //X, Y, Z, E maximum start speed for accelerated moves. E default values are good for skeinforge 40+, for older versions raise them a lot.
-float max_start_speed_units_per_second[] = {35.0,35.0,0.2,10.0};
-long max_acceleration_units_per_sq_second[] = {750,750,50,4000}; // X, Y, Z and E max acceleration in mm/s^2 for printing moves or retracts
+float max_start_speed_units_per_second[] = {25.0,25.0,0.2,10.0};
+long max_acceleration_units_per_sq_second[] = {3000,3000,50,10000}; // X, Y, Z and E max acceleration in mm/s^2 for printing moves or retracts
 long max_travel_acceleration_units_per_sq_second[] = {1500,1500,50}; // X, Y, Z max acceleration in mm/s^2 for travel moves
 #endif
 #ifdef EXP_ACCELERATION
@@ -54,10 +54,10 @@ float min_constant_speed_units = 2; // the minimum units of an accelerated move 
 #endif
 
 //How often should the heater check for new temp readings, in milliseconds
-#define HEATER_CHECK_INTERVAL 50
+#define HEATER_CHECK_INTERVAL 500
 #define BED_CHECK_INTERVAL 5000
-//Uncomment the following line to disable heat management during acceleration
-//#define DISABLE_CHECK_DURING_ACC
+//Comment the following line to enable heat management during acceleration
+#define DISABLE_CHECK_DURING_ACC
 #ifndef DISABLE_CHECK_DURING_ACC
   //Uncomment the following line to disable heat management during the move
   //#define DISABLE_CHECK_DURING_MOVE
