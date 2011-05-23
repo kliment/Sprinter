@@ -675,7 +675,7 @@ inline void process_commands()
           bt = analog2tempBed(current_bed_raw);
         #endif
         #if (TEMP_0_PIN > -1) || defined (HEATER_USES_MAX6675)
-          Serial.print("T:");
+          Serial.print("ok T:");
           Serial.println(tt); 
           #if TEMP_1_PIN > -1
         
@@ -773,13 +773,13 @@ inline void process_commands()
         Serial.println("FIRMWARE_NAME:Sprinter FIRMWARE_URL:http%%3A/github.com/kliment/Sprinter/ PROTOCOL_VERSION:1.0 MACHINE_TYPE:Mendel EXTRUDER_COUNT:1");
         break;
       case 114: // M114
-	Serial.print("X:");
+	Serial.print("C: X:");
         Serial.print(current_x);
-	Serial.print("Y:");
+	Serial.print(" Y:");
         Serial.print(current_y);
-	Serial.print("Z:");
+	Serial.print(" Z:");
         Serial.print(current_z);
-	Serial.print("E:");
+	Serial.print(" E:");
         Serial.println(current_e);
         break;
       #ifdef RAMP_ACCELERATION
