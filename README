@@ -1,3 +1,5 @@
+The leading developers of Sprinter are currently Kliment and caru, though many others contribute with their patches.
+
 This is a firmware for RAMPS and other reprap single-processor electronics setups. It supports printing from SD card, active heatbed control, and ATmega internal pullups.
 
 This work is licensed under the GNU GPL v3 or (at the user's discretion) any later version.
