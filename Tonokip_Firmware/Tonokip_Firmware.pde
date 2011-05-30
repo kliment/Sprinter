@@ -267,6 +267,11 @@ void setup()
   initsd();
 
 #endif
+
+  #ifdef CUSTOM_SETUP
+    CUSTOM_SETUP();
+  #endif
+
 }
 
 
@@ -299,6 +304,11 @@ void loop()
   //check heater every n milliseconds
       manage_heater();
       manage_inactivity(1);
+ 
+  #ifdef CUSTOM_LOOP
+    CUSTOM_LOOP();
+  #endif
+
   }
 
 
