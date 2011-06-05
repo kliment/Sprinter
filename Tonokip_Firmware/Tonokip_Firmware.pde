@@ -449,7 +449,7 @@ inline void process_commands()
     {
       case 0: // G0 -> G1
       case 1: // G1
-        #ifdef DISABLE_CHECK_DURING_ACC || DISABLE_CHECK_DURING_MOVE
+        #ifdef DISABLE_CHECK_DURING_ACC || DISABLE_CHECK_DURING_MOVE || DISABLE_CHECK_DURING_TRAVEL
           manage_heater();
         #endif
         get_coordinates(); // For X Y Z E F
