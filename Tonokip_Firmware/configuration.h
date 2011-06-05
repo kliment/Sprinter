@@ -89,6 +89,7 @@ bool axis_relative_modes[] = {false, false, false, false};
 float axis_steps_per_unit[] = {80.376,80.376,3200/1.25,16};
 float max_feedrate[] = {200000, 200000, 240, 500000}; //mmm, acceleration!
 
+//For SAE Prusa mendeel float z_steps_per_unit = should be 3200/1.411 for 5/16-18 rod and 3200/1.058 for 5/16-24
 //float x_steps_per_unit = 10.047;
 //float y_steps_per_unit = 10.047;
 //float z_steps_per_unit = 833.398;
