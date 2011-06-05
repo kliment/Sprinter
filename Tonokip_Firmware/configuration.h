@@ -28,8 +28,8 @@
 #ifdef RAMP_ACCELERATION
 //X, Y, Z, E maximum start speed for accelerated moves. E default values are good for skeinforge 40+, for older versions raise them a lot.
 float max_start_speed_units_per_second[] = {25.0,25.0,0.2,10.0};
-long max_acceleration_units_per_sq_second[] = {3000,3000,50,10000}; // X, Y, Z and E max acceleration in mm/s^2 for printing moves or retracts
-long max_travel_acceleration_units_per_sq_second[] = {1500,1500,50}; // X, Y, Z max acceleration in mm/s^2 for travel moves
+long max_acceleration_units_per_sq_second[] = {1000,1000,50,10000}; // X, Y, Z and E max acceleration in mm/s^2 for printing moves or retracts
+long max_travel_acceleration_units_per_sq_second[] = {500,500,50}; // X, Y, Z max acceleration in mm/s^2 for travel moves
 #endif
 #ifdef EXP_ACCELERATION
 float full_velocity_units = 10; // the units between minimum and G1 move feedrate
@@ -160,10 +160,11 @@ const int Z_MAX_LENGTH = 100;
 //Uncomment the following line to enable debugging. You can better control debugging below the following line
 //#define DEBUG
 #ifdef DEBUG
-  #define DEBUG_PREPARE_MOVE //Enable this to debug prepare_move() function
-  #define DEBUG_BRESENHAM //Enable this to debug the Bresenham algorithm
-  #define DEBUG_RAMP_ACCELERATION //Enable this to debug all constant acceleration info
-  #define DEBUG_MOVE_TIME //Enable this to time each move and print the result
+  //#define DEBUG_PREPARE_MOVE //Enable this to debug prepare_move() function
+  //#define DEBUG_BRESENHAM //Enable this to debug the Bresenham algorithm
+  //#define DEBUG_RAMP_ACCELERATION //Enable this to debug all constant acceleration info
+  //#define DEBUG_MOVE_TIME //Enable this to time each move and print the result
+  //#define DEBUG_HEAT_MGMT
 #endif
 
 #endif

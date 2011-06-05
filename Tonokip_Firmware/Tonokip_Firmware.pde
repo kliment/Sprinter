@@ -277,6 +277,7 @@ void setup()
   initsd();
 
 #endif
+
 }
 
 
@@ -1255,6 +1256,10 @@ inline void manage_heater()
   previous_millis_heater = millis();
   #ifdef HEATER_USES_THERMISTOR
     current_raw = analogRead(TEMP_0_PIN); 
+    #ifdef DEBUG_HEAT_MGMT
+      log_int("_HEAT_MGMT - analogRead(TEMP_0_PIN)", current_raw);
+      log_int("_HEAT_MGMT - NUMTEMPS", NUMTEMPS);
+    #endif
     // When using thermistor, when the heater is colder than targer temp, we get a higher analog reading than target, 
     // this switches it up so that the reading appears lower than target for the control logic.
     current_raw = 1023 - current_raw;
@@ -1317,7 +1322,11 @@ inline void manage_heater()
   
   #ifdef BED_USES_THERMISTOR
   
-    current_bed_raw = analogRead(TEMP_1_PIN);                  
+    current_bed_raw = analogRead(TEMP_1_PIN);   
+    #ifdef DEBUG_HEAT_MGMT
+      log_int("_HEAT_MGMT - analogRead(TEMP_1_PIN)", current_bed_raw);
+      log_int("_HEAT_MGMT - BNUMTEMPS", BNUMTEMPS);
+    #endif               
   
     // If using thermistor, when the heater is colder than targer temp, we get a higher analog reading than target, 
     // this switches it up so that the reading appears lower than target for the control logic.
