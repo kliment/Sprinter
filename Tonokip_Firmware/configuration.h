@@ -87,14 +87,9 @@ long max_travel_acceleration_units_per_sq_second[] = {500,500,50}; // X, Y, Z ma
 const int NUM_AXIS = 4; // The axis order in all axis related arrays is X, Y, Z, E
 bool axis_relative_modes[] = {false, false, false, false};
 float axis_steps_per_unit[] = {80.376,80.376,3200/1.25,16};
-float max_feedrate[] = {200000, 200000, 240, 500000}; //mmm, acceleration!
-
 //For SAE Prusa mendeel float z_steps_per_unit = should be 3200/1.411 for 5/16-18 rod and 3200/1.058 for 5/16-24
-//float x_steps_per_unit = 10.047;
-//float y_steps_per_unit = 10.047;
-//float z_steps_per_unit = 833.398;
-//float e_steps_per_unit = 0.706;
-//float max_feedrate = 3000;
+//float axis_steps_per_unit[] = {10.047,10.047,833.398,0.706};
+float max_feedrate[] = {200000, 200000, 240, 500000}; //mmm, acceleration!
 
 //For Inverting Stepper Enable Pins (Active Low) use 0, Non Inverting (Active High) use 1
 const bool X_ENABLE_ON = 0;
