@@ -62,6 +62,8 @@ float min_constant_speed_units = 2; // the minimum units of an accelerated move 
   //Uncomment the following line to disable heat management during the move
   //#define DISABLE_CHECK_DURING_MOVE
 #endif
+//Comment the following line to disable heat management during travel moves. Probably this should be commented if using PID.
+#define DISABLE_CHECK_DURING_TRAVEL
 
 //Experimental temperature smoothing - only uncomment this if your temp readings are noisy
 //#define SMOOTHING 1

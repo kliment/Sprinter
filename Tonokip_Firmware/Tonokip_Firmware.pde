@@ -1058,14 +1058,20 @@ void linear_move(unsigned long axis_steps_remaining[]) // make linear move with 
     #ifdef DISABLE_CHECK_DURING_ACC
       if(!accelerating && !decelerating) {
         //If more that HEATER_CHECK_INTERVAL ms have passed since previous heating check, adjust temp
-        manage_heater();
+        #ifdef DISABLE_CHECK_DURING_TRAVEL
+          if(delta[3] > 0)
+        #endif
+            manage_heater();
       }
     #else
       #ifdef DISABLE_CHECK_DURING_MOVE
         {} //Do nothing
       #else
         //If more that HEATER_CHECK_INTERVAL ms have passed since previous heating check, adjust temp
-        manage_heater();
+        #ifdef DISABLE_CHECK_DURING_TRAVEL
+          if(delta[3] > 0)
+        #endif
+            manage_heater();
       #endif
     #endif
     #ifdef RAMP_ACCELERATION
