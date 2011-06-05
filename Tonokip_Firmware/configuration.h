@@ -49,7 +49,7 @@ long max_travel_acceleration_units_per_sq_second[] = {500,500,50}; // X, Y, Z ma
   //Uncomment the following line to disable heat management during the move
   //#define DISABLE_CHECK_DURING_MOVE
 #endif
-//Comment the following line to disable heat management during travel moves. Probably this should be commented if using PID.
+//Comment the following line to enable heat management during travel moves. Probably this should be commented if using PID.
 #define DISABLE_CHECK_DURING_TRAVEL
 
 //Experimental temperature smoothing - only uncomment this if your temp readings are noisy
