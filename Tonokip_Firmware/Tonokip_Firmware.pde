@@ -78,16 +78,6 @@ unsigned long move_steps_to_take[NUM_AXIS];
         max_travel_acceleration_units_per_sq_second[3] * axis_steps_per_unit[3]};
   unsigned long steps_per_sqr_second, plateau_steps;
 #endif
-#ifdef EXP_ACCELERATION
-  unsigned long axis_virtual_full_velocity_steps[] = {full_velocity_units * axis_steps_per_unit[0], full_velocity_units * axis_steps_per_unit[1]};
-  unsigned long axis_travel_virtual_full_velocity_steps[] = {travel_move_full_velocity_units * axis_steps_per_unit[0],
-        travel_move_full_velocity_units * axis_steps_per_unit[1]};
-  unsigned long axis_max_interval[] = {100000000.0 / (max_start_speed_units_per_second[0] * axis_steps_per_unit[0]),
-        100000000.0 / (max_start_speed_units_per_second[1] * axis_steps_per_unit[1])};
-  unsigned long max_interval;
-  unsigned long axis_min_constant_speed_steps[] = {min_constant_speed_units * axis_steps_per_unit[0], min_constant_speed_units * axis_steps_per_unit[1]};
-  unsigned long min_constant_speed_steps;
-#endif
 boolean acceleration_enabled = false, accelerating = false;
 unsigned long interval;
 float destination[NUM_AXIS] = {0.0, 0.0, 0.0, 0.0};
@@ -1011,15 +1001,6 @@ void linear_move(unsigned long axis_steps_remaining[]) // make linear move with 
       log_ulong_array("_RAMP_ACCELERATION - Actual step intervals at move start", new_axis_max_intervals, NUM_AXIS);
     #endif
   #endif
-  #ifdef EXP_ACCELERATION
-    unsigned long virtual_full_velocity_steps;
-    unsigned long full_velocity_steps;
-    if(move_steps_to_take[3] > 0) virtual_full_velocity_steps = axis_virtual_full_velocity_steps[primary_axis];
-    else virtual_full_velocity_steps = axis_travel_virtual_full_velocity_steps[primary_axis];
-    full_velocity_steps = min(virtual_full_velocity_steps, (delta[primary_axis] - axis_min_constant_speed_steps[primary_axis]) / 2);
-    max_interval = axis_max_interval[primary_axis];
-    min_constant_speed_steps = axis_min_constant_speed_steps[primary_axis];
-  #endif
   
   unsigned long steps_done = 0;
   #ifdef RAMP_ACCELERATION
@@ -1028,20 +1009,6 @@ void linear_move(unsigned long axis_steps_remaining[]) // make linear move with 
   long full_interval = interval;
   if(interval > max_interval) acceleration_enabled = false;
   boolean decelerating = false;
-  #endif
-  #ifdef EXP_ACCELERATION
-  acceleration_enabled = true;
-  if(full_velocity_steps == 0) full_velocity_steps++;
-  if(interval > max_interval) acceleration_enabled = false;
-  unsigned long full_interval = interval;
-  if(min_constant_speed_steps >= steps_to_take) {
-    acceleration_enabled = false;
-    full_interval = max(max_interval, interval); // choose the min speed between feedrate and acceleration start speed
-  }
-  if(full_velocity_steps < virtual_full_velocity_steps && acceleration_enabled) full_interval = max(interval,
-      max_interval - ((max_interval - full_interval) * full_velocity_steps / virtual_full_velocity_steps)); // choose the min speed between feedrate and speed at full steps
-  unsigned int steps_acceleration_check = 1;
-  accelerating = acceleration_enabled;
   #endif
   
   unsigned long start_move_micros = micros();
@@ -1103,29 +1070,6 @@ void linear_move(unsigned long axis_steps_remaining[]) // make linear move with 
       if (interval > max_interval)
 	interval = max_interval;
     } else {
-      //Else, we are just use the full speed interval as current interval
-      interval = full_interval;
-      accelerating = false;
-    }
-    #endif
-    #ifdef EXP_ACCELERATION
-    //If acceleration is enabled on this move and we are in the acceleration segment, calculate the current interval
-    // TODO: is this any useful? -> steps_done % steps_acceleration_check == 0
-    if (acceleration_enabled && steps_done < full_velocity_steps && steps_done / full_velocity_steps < 1 && (steps_done % steps_acceleration_check == 0)) {
-      if(steps_done == 0) {
-        interval = max_interval;
-      } else {
-        interval = max_interval - ((max_interval - full_interval) * steps_done / virtual_full_velocity_steps);
-      }
-    } else if (acceleration_enabled && steps_remaining < full_velocity_steps) {
-      //Else, if acceleration is enabled on this move and we are in the deceleration segment, calculate the current interval
-      if(steps_remaining == 0) {
-        interval = max_interval;
-      } else {
-        interval = max_interval - ((max_interval - full_interval) * steps_remaining / virtual_full_velocity_steps);
-      }
-      accelerating = true;
-    } else if (steps_done - full_velocity_steps >= 1 || !acceleration_enabled){
       //Else, we are just use the full speed interval as current interval
       interval = full_interval;
       accelerating = false;

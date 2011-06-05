@@ -19,25 +19,12 @@
 //Comment this to disable ramp acceleration
 #define RAMP_ACCELERATION 1
 
-//Uncomment this to enable exponential acceleration. WARNING!! This is not supported in the current version, and will be fixed before
-// merging it to the stable branch.
-// TODO: fix exp acceleration to correctly perform N bresenham.
-//#define EXP_ACCELERATION 1
-
 //Acceleration settings
 #ifdef RAMP_ACCELERATION
 //X, Y, Z, E maximum start speed for accelerated moves. E default values are good for skeinforge 40+, for older versions raise them a lot.
 float max_start_speed_units_per_second[] = {25.0,25.0,0.2,10.0};
 long max_acceleration_units_per_sq_second[] = {1000,1000,50,10000}; // X, Y, Z and E max acceleration in mm/s^2 for printing moves or retracts
 long max_travel_acceleration_units_per_sq_second[] = {500,500,50}; // X, Y, Z max acceleration in mm/s^2 for travel moves
-#endif
-#ifdef EXP_ACCELERATION
-float full_velocity_units = 10; // the units between minimum and G1 move feedrate
-float travel_move_full_velocity_units = 10; // used for travel moves
-float min_units_per_second = 35.0; // the minimum feedrate
-float min_constant_speed_units = 2; // the minimum units of an accelerated move that must be done at constant speed
-                                    // Note that if the move is shorter than this value, acceleration won't be perfomed,
-                                    // but will be done at the minimum between min_units_per_seconds and move feedrate speeds.
 #endif
 
 // AD595 THERMOCOUPLE SUPPORT UNTESTED... USE WITH CAUTION!!!!
