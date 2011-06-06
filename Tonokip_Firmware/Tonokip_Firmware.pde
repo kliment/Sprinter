@@ -947,6 +947,7 @@ void linear_move(unsigned long axis_steps_remaining[]) // make linear move with 
   unsigned long steps_to_take = steps_remaining;
   for(int i=0; i < NUM_AXIS; i++) if(i != primary_axis) axis_error[i] = delta[primary_axis] / 2;
   interval = axis_interval[primary_axis];
+  bool is_print_move = delta[3] > 0;
   #ifdef DEBUG_BRESENHAM
     log_int("_BRESENHAM - Primary axis", primary_axis);
     log_int("_BRESENHAM - Primary axis full speed interval", interval);
@@ -986,7 +987,7 @@ void linear_move(unsigned long axis_steps_remaining[]) // make linear move with 
     float slowest_axis_plateau_time = 0;
     for(int i=0; i < NUM_AXIS ; i++) {
       if(axis_steps_remaining[i] > 0) {
-        if(move_steps_to_take[3] > 0 && axis_steps_remaining[i] > 0) slowest_axis_plateau_time = max(slowest_axis_plateau_time,
+        if(is_print_move && axis_steps_remaining[i] > 0) slowest_axis_plateau_time = max(slowest_axis_plateau_time,
               (100000000.0 / axis_interval[i] - 100000000.0 / new_axis_max_intervals[i]) / (float) axis_steps_per_sqr_second[i]);
         else if(axis_steps_remaining[i] > 0) slowest_axis_plateau_time = max(slowest_axis_plateau_time,
               (100000000.0 / axis_interval[i] - 100000000.0 / new_axis_max_intervals[i]) / (float) axis_travel_steps_per_sqr_second[i]);
@@ -1026,7 +1027,7 @@ void linear_move(unsigned long axis_steps_remaining[]) // make linear move with 
       if(!accelerating && !decelerating) {
         //If more that HEATER_CHECK_INTERVAL ms have passed since previous heating check, adjust temp
         #ifdef DISABLE_CHECK_DURING_TRAVEL
-          if(delta[3] > 0)
+          if(is_print_move)
         #endif
             manage_heater();
       }
@@ -1036,7 +1037,7 @@ void linear_move(unsigned long axis_steps_remaining[]) // make linear move with 
       #else
         //If more that HEATER_CHECK_INTERVAL ms have passed since previous heating check, adjust temp
         #ifdef DISABLE_CHECK_DURING_TRAVEL
-          if(delta[3] > 0)
+          if(is_print_move)
         #endif
             manage_heater();
       #endif
