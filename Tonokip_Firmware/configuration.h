@@ -150,7 +150,7 @@ const int Z_MAX_LENGTH = 100;
   //#define DEBUG_BRESENHAM //Enable this to debug the Bresenham algorithm
   //#define DEBUG_RAMP_ACCELERATION //Enable this to debug all constant acceleration info
   //#define DEBUG_MOVE_TIME //Enable this to time each move and print the result
-  //#define DEBUG_HEAT_MGMT
+  //#define DEBUG_HEAT_MGMT //Enable this to debug heat management. WARNING, this will cause axes to jitter!
 #endif
 
 #endif
