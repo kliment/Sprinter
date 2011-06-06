@@ -1017,6 +1017,15 @@ void linear_move(unsigned long axis_steps_remaining[]) // make linear move with 
     axis_previous_micros[i] = start_move_micros * 100;
   }
 
+  #ifdef DISABLE_CHECK_DURING_TRAVEL
+    //If the move time is more than allowed in DISABLE_CHECK_DURING_TRAVEL, let's
+    // consider this a print move and perform heat management during it
+    if(time_for_move / 1000 > DISABLE_CHECK_DURING_TRAVEL) is_print_move = true;
+    #ifdef DEBUG_DISABLE_CHECK_DURING_TRAVEL
+      log_bool("_DISABLE_CHECK_DURING_TRAVEL - is_print_move", is_print_move);
+    #endif
+  #endif
+
   #ifdef DEBUG_MOVE_TIME
     unsigned long startmove = micros();
   #endif
@@ -1457,6 +1466,10 @@ if( (millis()-previous_millis_cmd) >  stepper_inactive_time ) if(stepper_inactiv
 #ifdef DEBUG
 void log_message(char*   message) {
   Serial.print("DEBUG"); Serial.println(message);
+}
+
+void log_bool(char* message, bool value) {
+  Serial.print("DEBUG"); Serial.print(message); Serial.print(": "); Serial.println(value);
 }
 
 void log_int(char* message, int value) {

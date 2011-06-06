@@ -51,7 +51,8 @@ long max_travel_acceleration_units_per_sq_second[] = {500,500,50}; // X, Y, Z ma
 #endif
 //Uncomment the following line to disable heat management during travel moves, strongly recommended if you are missing steps mid print.
 //Probably this should remain commented if are using PID.
-#define DISABLE_CHECK_DURING_TRAVEL
+//It also defines the max milliseconds interval after which a travel move is not considered so for the sake of this feature.
+#define DISABLE_CHECK_DURING_TRAVEL 1000
 
 //Experimental temperature smoothing - only uncomment this if your temp readings are noisy
 //#define SMOOTHING 1
@@ -151,6 +152,7 @@ const int Z_MAX_LENGTH = 100;
   //#define DEBUG_RAMP_ACCELERATION //Enable this to debug all constant acceleration info
   //#define DEBUG_MOVE_TIME //Enable this to time each move and print the result
   //#define DEBUG_HEAT_MGMT //Enable this to debug heat management. WARNING, this will cause axes to jitter!
+  //#define DEBUG_DISABLE_CHECK_DURING_TRAVEL //Debug the namesake feature, see above in this file
 #endif
 
 #endif
