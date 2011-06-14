@@ -679,14 +679,13 @@ inline void process_commands()
           bt = analog2tempBed(current_bed_raw);
         #endif
         #if (TEMP_0_PIN > -1) || defined (HEATER_USES_MAX6675)
-          Serial.print("T:");
-          Serial.println(tt); 
-          #if TEMP_1_PIN > -1
-        
             Serial.print("ok T:");
             Serial.print(tt); 
+          #if TEMP_1_PIN > -1
             Serial.print(" B:");
             Serial.println(bt); 
+          #else
+            Serial.println();
           #endif
         #else
           Serial.println("No thermistors - no temp");
