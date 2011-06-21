@@ -3,10 +3,11 @@
 
 // NO RS485/EXTRUDER CONTROLLER SUPPORT
 // PLEASE VERIFY PIN ASSIGNMENTS FOR YOUR CONFIGURATION!!!!!!!
-#define MOTHERBOARD 3 // ATMEGA168 = 0, SANGUINO = 1, MOTHERBOARD = 2, MEGA/RAMPS = 3, ATMEGA328 = 4, Gen6 = 5, Sanguinololu = 6
+#define MOTHERBOARD 3 // ATMEGA168 = 0, SANGUINO = 1, MOTHERBOARD = 2, MEGA/RAMPS = 3, ATMEGA328 = 4, Gen6 = 5, Sanguinololu = 6 
 
 //Comment out to disable SD support
-#define SDSUPPORT 1
+#define SDSUPPORT 0
+#define FANCY_LCD
 
 //Min step delay in microseconds. If you are experiencing missing steps, try to raise the delay microseconds, but be aware this
 // If you enable this, make sure STEP_DELAY_RATIO is disabled.
@@ -24,9 +25,9 @@
 
 //Acceleration settings
 #ifdef RAMP_ACCELERATION
-float min_units_per_second = 35.0; // the minimum feedrate
-long max_acceleration_units_per_sq_second = 750; // Max acceleration in mm/s^2 for printing moves
-long max_travel_acceleration_units_per_sq_second = 1500; // Max acceleration in mm/s^2 for travel moves
+float min_units_per_second = 20.0; // the minimum feedrate
+long max_acceleration_units_per_sq_second = 10; // Max acceleration in mm/s^2 for printing moves
+long max_travel_acceleration_units_per_sq_second = 10; // Max acceleration in mm/s^2 for travel moves
 #endif
 #ifdef EXP_ACCELERATION
 float full_velocity_units = 10; // the units between minimum and G1 move feedrate
@@ -69,11 +70,11 @@ float min_constant_speed_units = 2; // the minimum units of an accelerated move 
 //When temperature exceeds max temp, your bot will halt.
 //This feature exists to protect your hotend from overheating accidentally, but *NOT* from thermistor short/failure!
 //You should use MINTEMP for thermistor short/failure protection.
-//#define MAXTEMP 275
+#define MAXTEMP 275
 
 // Select one of these only to define how the nozzle temp is read.
-#define HEATER_USES_THERMISTOR
-//#define HEATER_USES_AD595
+//#define HEATER_USES_THERMISTOR
+#define HEATER_USES_AD595
 //#define HEATER_USES_MAX6675
 
 // Select one of these only to define how the bed temp is read.
@@ -86,12 +87,12 @@ float min_constant_speed_units = 2; // the minimum units of an accelerated move 
 // units are in millimeters or whatever length unit you prefer: inches,football-fields,parsecs etc
 
 //Calibration variables
-float x_steps_per_unit = 80.376;
-float y_steps_per_unit = 80.376;
-float z_steps_per_unit = 3200/1.25;
-float e_steps_per_unit = 16;
-float max_feedrate = 200000; //mmm, acceleration!
-float max_z_feedrate = 120;
+float x_steps_per_unit = 79.87220447;
+float y_steps_per_unit = 79.87220447;
+float z_steps_per_unit = 200*8/3.;
+float e_steps_per_unit = 14;
+float max_feedrate = 5000; //mmm, acceleration!
+float max_z_feedrate = 350;
 
 //For SAE Prusa mendeel float z_steps_per_unit = should be 3200/1.411 for 5/16-18 rod and 3200/1.058 for 5/16-24
 //float x_steps_per_unit = 10.047;
@@ -101,15 +102,15 @@ float max_z_feedrate = 120;
 //float max_feedrate = 3000;
 
 //For Inverting Stepper Enable Pins (Active Low) use 0, Non Inverting (Active High) use 1
-const bool X_ENABLE_ON = 0;
-const bool Y_ENABLE_ON = 0;
-const bool Z_ENABLE_ON = 0;
-const bool E_ENABLE_ON = 0;
+const bool X_ENABLE_ON = 1;
+const bool Y_ENABLE_ON = 1;
+const bool Z_ENABLE_ON = 1;
+const bool E_ENABLE_ON = 1;
 
 //Disables axis when it's not being used.
 const bool DISABLE_X = false;
 const bool DISABLE_Y = false;
-const bool DISABLE_Z = true;
+const bool DISABLE_Z = false;
 const bool DISABLE_E = false;
 
 const bool INVERT_X_DIR = false;
@@ -144,7 +145,7 @@ const int Z_HOME_DIR = -1;
 #define ENDSTOPPULLUPS 1
 const bool ENDSTOPS_INVERTING = false;
 const bool min_software_endstops = false; //If true, axis won't move to coordinates less than zero.
-const bool max_software_endstops = true;  //If true, axis won't move to coordinates greater than the defined lengths below.
+const bool max_software_endstops = false;  //If true, axis won't move to coordinates greater than the defined lengths below.
 const int X_MAX_LENGTH = 220;
 const int Y_MAX_LENGTH = 220;
 const int Z_MAX_LENGTH = 100;
