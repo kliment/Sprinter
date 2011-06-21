@@ -85,6 +85,7 @@ float destination_x = 0.0, destination_y = 0.0, destination_z = 0.0, destination
 float current_x = 0.0, current_y = 0.0, current_z = 0.0, current_e = 0.0;
 long x_interval, y_interval, z_interval, e_interval; // for speed delay
 float feedrate = 1500, next_feedrate, z_feedrate, saved_feedrate;
+bool home_all_axis = true;
 float time_for_move;
 long gcode_N, gcode_LastN;
 bool relative_mode = false;  //Determines Absolute or Relative Coordinates
@@ -477,60 +478,67 @@ inline void process_commands()
         destination_e = 0;
         current_e = 0;
         feedrate = 0;
+        
+        home_all_axis = !((code_seen('X')) || (code_seen('Y')) || (code_seen('Z')));
 
-    
-        if((X_MIN_PIN > -1 && X_HOME_DIR==-1) || (X_MAX_PIN > -1 && X_HOME_DIR==1)) {
-          current_x = 0;
-          destination_x = 1.5 * X_MAX_LENGTH * X_HOME_DIR;
-          feedrate = min_units_per_second * 60;
-          prepare_move();
-          
-          current_x = 0;
-          destination_x = -1 * X_HOME_DIR;
-          prepare_move();
-          
-          destination_x = 10 * X_HOME_DIR;
-          prepare_move();
-          
-          current_x = 0;
-          destination_x = 0;
-          feedrate = 0;
+        if((home_all_axis) || (code_seen('X'))) {
+          if((X_MIN_PIN > -1 && X_HOME_DIR==-1) || (X_MAX_PIN > -1 && X_HOME_DIR==1)) {
+            current_x = 0;
+            destination_x = 1.5 * X_MAX_LENGTH * X_HOME_DIR;
+            feedrate = min_units_per_second * 60;
+            prepare_move();
+            
+            current_x = 0;
+            destination_x = -1 * X_HOME_DIR;
+            prepare_move();
+            
+            destination_x = 10 * X_HOME_DIR;
+            prepare_move();
+            
+            current_x = 0;
+            destination_x = 0;
+            feedrate = 0;
+          }
         }
         
-        if((Y_MIN_PIN > -1 && Y_HOME_DIR==-1) || (Y_MAX_PIN > -1 && Y_HOME_DIR==1)) {
-          current_y = 0;
-          destination_y = 1.5 * Y_MAX_LENGTH * Y_HOME_DIR;
-          feedrate = min_units_per_second * 60;
-          prepare_move();
-          
-          current_y = 0;
-          destination_y = -1 * Y_HOME_DIR;
-          prepare_move();
-          
-          destination_y = 10 * Y_HOME_DIR;
-          prepare_move();
-          
-          current_y = 0;
-          destination_y = 0;
-          feedrate = 0;
+        if((home_all_axis) || (code_seen('Y'))) {
+          if((Y_MIN_PIN > -1 && Y_HOME_DIR==-1) || (Y_MAX_PIN > -1 && Y_HOME_DIR==1)) {
+            current_y = 0;
+            destination_y = 1.5 * Y_MAX_LENGTH * Y_HOME_DIR;
+            feedrate = min_units_per_second * 60;
+            prepare_move();
+            
+            current_y = 0;
+            destination_y = -1 * Y_HOME_DIR;
+            prepare_move();
+            
+            destination_y = 10 * Y_HOME_DIR;
+            prepare_move();
+            
+            current_y = 0;
+            destination_y = 0;
+            feedrate = 0;
+          }
         }
         
-        if((Z_MIN_PIN > -1 && Z_HOME_DIR==-1) || (Z_MAX_PIN > -1 && Z_HOME_DIR==1)) {
-          current_z = 0;
-          destination_z = 1.5 * Z_MAX_LENGTH * Z_HOME_DIR;
-          feedrate = max_z_feedrate/2;
-          prepare_move();
-          
-          current_z = 0;
-          destination_z = -1 * Z_HOME_DIR;
-          prepare_move();
-          
-          destination_z = 10 * Z_HOME_DIR;
-          prepare_move();
-          
-          current_z = 0;
-          destination_z = 0;
-          feedrate = 0;
+        if((home_all_axis) || (code_seen('Z'))) {
+          if((Z_MIN_PIN > -1 && Z_HOME_DIR==-1) || (Z_MAX_PIN > -1 && Z_HOME_DIR==1)) {
+            current_z = 0;
+            destination_z = 1.5 * Z_MAX_LENGTH * Z_HOME_DIR;
+            feedrate = max_z_feedrate/2;
+            prepare_move();
+            
+            current_z = 0;
+            destination_z = -1 * Z_HOME_DIR;
+            prepare_move();
+            
+            destination_z = 10 * Z_HOME_DIR;
+            prepare_move();
+            
+            current_z = 0;
+            destination_z = 0;
+            feedrate = 0;
+          }
         }
         
         feedrate = saved_feedrate;
