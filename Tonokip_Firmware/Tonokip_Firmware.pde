@@ -5,6 +5,8 @@
 #include "configuration.h"
 #include "pins.h"
 
+#include "lcd.h"
+
 #ifdef SDSUPPORT
 #include "SdFat.h"
 #endif
@@ -201,6 +203,7 @@ unsigned long stepper_inactive_time = 0;
 #endif
 
 
+
 void setup()
 { 
   Serial.begin(BAUDRATE);
@@ -268,14 +271,20 @@ void setup()
   initsd();
 
 #endif
+  lcd_init();
+  memset(cmdbuffer,0,BUFSIZE*MAX_CMD_SIZE);
 }
 
 
 void loop()
 {
   if(buflen<3)
-	get_command();
-  
+    get_command();
+#ifdef FANCY_LCD
+  static int cnter=0;
+  if((cnter++)%10000==0) lcd_status();
+#endif
+        
   if(buflen){
 #ifdef SDSUPPORT
     if(savetosd){
@@ -300,7 +309,8 @@ void loop()
   //check heater every n milliseconds
       manage_heater();
       manage_inactivity(1);
-  }
+		
+}
 
 
 inline void get_command() 
@@ -480,7 +490,6 @@ inline void process_commands()
         feedrate = 0;
         
         home_all_axis = !((code_seen('X')) || (code_seen('Y')) || (code_seen('Z')));
-
         if((home_all_axis) || (code_seen('X'))) {
           if((X_MIN_PIN > -1 && X_HOME_DIR==-1) || (X_MAX_PIN > -1 && X_HOME_DIR==1)) {
             current_x = 0;
@@ -670,13 +679,13 @@ inline void process_commands()
         if (code_seen('S')) target_bed_raw = temp2analogBed(code_value());
         break;
       case 105: // M105
-        #if (TEMP_0_PIN > -1) || defined (HEATER_USES_MAX6675)
+        #if (TEMP_0_PIN > -1) || defined (HEATER_USES_MAX6675) || defined (HEATER_USES_AD595)
           tt = analog2temp(current_raw);
         #endif
         #if TEMP_1_PIN > -1
           bt = analog2tempBed(current_bed_raw);
         #endif
-        #if (TEMP_0_PIN > -1) || defined (HEATER_USES_MAX6675)
+        #if (TEMP_0_PIN > -1) || defined (HEATER_USES_MAX6675) || defined (HEATER_USES_AD595)
             Serial.print("ok T:");
             Serial.print(tt); 
           #if TEMP_1_PIN > -1
@@ -706,7 +715,7 @@ inline void process_commands()
           {
             Serial.print("T:");
             Serial.println( analog2temp(current_raw) ); 
-            codenum = millis(); 
+            codenum = millis();
           }
           manage_heater();
         }
@@ -937,7 +946,7 @@ inline void prepare_move()
     Serial.print("current_e: "); Serial.println(current_e); 
     Serial.print("e_steps_to_take: "); Serial.println(e_steps_to_take); 
     Serial.print("E_TIME_FOR_MVE: "); Serial.println(E_TIME_FOR_MOVE); 
-    Serial.print("e_interval: "); Serial.println(e_interval); 
+    Serial.print("e_interval: "); Serial.println(e_interval);
     Serial.println("");
   }
   #endif
@@ -956,7 +965,7 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
   else digitalWrite(Z_DIR_PIN,INVERT_Z_DIR);
   if (destination_e > current_e) digitalWrite(E_DIR_PIN,!INVERT_E_DIR);
   else digitalWrite(E_DIR_PIN,INVERT_E_DIR);
-  
+ 
   if(X_MIN_PIN > -1) if(!direction_x) if(digitalRead(X_MIN_PIN) != ENDSTOPS_INVERTING) x_steps_remaining=0;
   if(Y_MIN_PIN > -1) if(!direction_y) if(digitalRead(Y_MIN_PIN) != ENDSTOPS_INVERTING) y_steps_remaining=0;
   if(Z_MIN_PIN > -1) if(!direction_z) if(digitalRead(Z_MIN_PIN) != ENDSTOPS_INVERTING) z_steps_remaining=0;
@@ -964,7 +973,7 @@ void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remainin
   if(Y_MAX_PIN > -1) if(direction_y) if(digitalRead(Y_MAX_PIN) != ENDSTOPS_INVERTING) y_steps_remaining=0;
   if(Z_MAX_PIN > -1) if(direction_z) if(digitalRead(Z_MAX_PIN) != ENDSTOPS_INVERTING) z_steps_remaining=0;
   
-  
+
   //Only enable axis that are moving. If the axis doesn't need to move then it can stay disabled depending on configuration.
   if(x_steps_remaining) enable_x();
   if(y_steps_remaining) enable_y();
