@@ -49,7 +49,7 @@ long max_travel_acceleration_units_per_sq_second[] = {500,500,50}; // X, Y, Z ma
   //Uncomment the following line to disable heat management during the move
   //#define DISABLE_CHECK_DURING_MOVE
 #endif
-//Uncomment the following line to disable heat management during travel moves, strongly recommended if you are missing steps mid print.
+//Uncomment the following line to disable heat management during travel moves (and extruder-only moves, eg: retracts), strongly recommended if you are missing steps mid print.
 //Probably this should remain commented if are using PID.
 //It also defines the max milliseconds interval after which a travel move is not considered so for the sake of this feature.
 #define DISABLE_CHECK_DURING_TRAVEL 1000

@@ -1021,6 +1021,8 @@ void linear_move(unsigned long axis_steps_remaining[]) // make linear move with 
     //If the move time is more than allowed in DISABLE_CHECK_DURING_TRAVEL, let's
     // consider this a print move and perform heat management during it
     if(time_for_move / 1000 > DISABLE_CHECK_DURING_TRAVEL) is_print_move = true;
+    //else, if the move is a retract, consider it as a travel move for the sake of this feature
+    else if(delta[3]>0 && delta[0] + delta[1] + delta[2] == 0) is_print_move = false;
     #ifdef DEBUG_DISABLE_CHECK_DURING_TRAVEL
       log_bool("_DISABLE_CHECK_DURING_TRAVEL - is_print_move", is_print_move);
     #endif
