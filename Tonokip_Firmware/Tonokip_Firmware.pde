@@ -83,6 +83,7 @@ unsigned long interval;
 float destination[NUM_AXIS] = {0.0, 0.0, 0.0, 0.0};
 float current_position[NUM_AXIS] = {0.0, 0.0, 0.0, 0.0};
 long axis_interval[NUM_AXIS]; // for speed delay
+bool home_all_axis = true;
 float feedrate = 1500, next_feedrate, saved_feedrate;
 float time_for_move;
 long gcode_N, gcode_LastN;
