@@ -10,7 +10,7 @@
 
 //Min step delay in microseconds. If you are experiencing missing steps, try to raise the delay microseconds, but be aware this
 // If you enable this, make sure STEP_DELAY_RATIO is disabled.
-#define STEP_DELAY_MICROS 1
+//#define STEP_DELAY_MICROS 1
 
 //Step delay over interval ratio. If you are still experiencing missing steps, try to uncomment the following line, but be aware this
 //If you enable this, make sure STEP_DELAY_MICROS is disabled.
@@ -19,22 +19,12 @@
 //Comment this to disable ramp acceleration
 #define RAMP_ACCELERATION 1
 
-//Uncomment this to enable exponential acceleration
-//#define EXP_ACCELERATION 1
-
 //Acceleration settings
 #ifdef RAMP_ACCELERATION
-float min_units_per_second = 35.0; // the minimum feedrate
-long max_acceleration_units_per_sq_second = 750; // Max acceleration in mm/s^2 for printing moves
-long max_travel_acceleration_units_per_sq_second = 1500; // Max acceleration in mm/s^2 for travel moves
-#endif
-#ifdef EXP_ACCELERATION
-float full_velocity_units = 10; // the units between minimum and G1 move feedrate
-float travel_move_full_velocity_units = 10; // used for travel moves
-float min_units_per_second = 35.0; // the minimum feedrate
-float min_constant_speed_units = 2; // the minimum units of an accelerated move that must be done at constant speed
-                                    // Note that if the move is shorter than this value, acceleration won't be perfomed,
-                                    // but will be done at the minimum between min_units_per_seconds and move feedrate speeds.
+//X, Y, Z, E maximum start speed for accelerated moves. E default values are good for skeinforge 40+, for older versions raise them a lot.
+float max_start_speed_units_per_second[] = {25.0,25.0,0.2,10.0};
+long max_acceleration_units_per_sq_second[] = {1000,1000,50,10000}; // X, Y, Z and E max acceleration in mm/s^2 for printing moves or retracts
+long max_travel_acceleration_units_per_sq_second[] = {500,500,50}; // X, Y, Z max acceleration in mm/s^2 for travel moves
 #endif
 
 // AD595 THERMOCOUPLE SUPPORT UNTESTED... USE WITH CAUTION!!!!
@@ -51,8 +41,18 @@ float min_constant_speed_units = 2; // the minimum units of an accelerated move 
 #endif
 
 //How often should the heater check for new temp readings, in milliseconds
-#define HEATER_CHECK_INTERVAL 50
+#define HEATER_CHECK_INTERVAL 500
 #define BED_CHECK_INTERVAL 5000
+//Comment the following line to enable heat management during acceleration
+#define DISABLE_CHECK_DURING_ACC
+#ifndef DISABLE_CHECK_DURING_ACC
+  //Uncomment the following line to disable heat management during the move
+  //#define DISABLE_CHECK_DURING_MOVE
+#endif
+//Uncomment the following line to disable heat management during travel moves (and extruder-only moves, eg: retracts), strongly recommended if you are missing steps mid print.
+//Probably this should remain commented if are using PID.
+//It also defines the max milliseconds interval after which a travel move is not considered so for the sake of this feature.
+#define DISABLE_CHECK_DURING_TRAVEL 1000
 
 //Experimental temperature smoothing - only uncomment this if your temp readings are noisy
 //#define SMOOTHING 1
@@ -86,19 +86,12 @@ float min_constant_speed_units = 2; // the minimum units of an accelerated move 
 // units are in millimeters or whatever length unit you prefer: inches,football-fields,parsecs etc
 
 //Calibration variables
-float x_steps_per_unit = 80.376;
-float y_steps_per_unit = 80.376;
-float z_steps_per_unit = 3200/1.25;
-float e_steps_per_unit = 16;
-float max_feedrate = 200000; //mmm, acceleration!
-float max_z_feedrate = 120;
-
+const int NUM_AXIS = 4; // The axis order in all axis related arrays is X, Y, Z, E
+bool axis_relative_modes[] = {false, false, false, false};
+float axis_steps_per_unit[] = {80.376,80.376,3200/1.25,16}; // {X steps per unit, Y steps per unit, Z steps per unit, E steps per unit}
 //For SAE Prusa mendeel float z_steps_per_unit = should be 3200/1.411 for 5/16-18 rod and 3200/1.058 for 5/16-24
-//float x_steps_per_unit = 10.047;
-//float y_steps_per_unit = 10.047;
-//float z_steps_per_unit = 833.398;
-//float e_steps_per_unit = 0.706;
-//float max_feedrate = 3000;
+//float axis_steps_per_unit[] = {10.047,10.047,833.398,0.706};
+float max_feedrate[] = {200000, 200000, 240, 500000}; //mmm, acceleration!
 
 //For Inverting Stepper Enable Pins (Active Low) use 0, Non Inverting (Active High) use 1
 const bool X_ENABLE_ON = 0;
@@ -151,6 +144,15 @@ const int Z_MAX_LENGTH = 100;
 
 #define BAUDRATE 115200
 
-
+//Uncomment the following line to enable debugging. You can better control debugging below the following line
+//#define DEBUG
+#ifdef DEBUG
+  //#define DEBUG_PREPARE_MOVE //Enable this to debug prepare_move() function
+  //#define DEBUG_BRESENHAM //Enable this to debug the Bresenham algorithm
+  //#define DEBUG_RAMP_ACCELERATION //Enable this to debug all constant acceleration info
+  //#define DEBUG_MOVE_TIME //Enable this to time each move and print the result
+  //#define DEBUG_HEAT_MGMT //Enable this to debug heat management. WARNING, this will cause axes to jitter!
+  //#define DEBUG_DISABLE_CHECK_DURING_TRAVEL //Debug the namesake feature, see above in this file
+#endif
 
 #endif

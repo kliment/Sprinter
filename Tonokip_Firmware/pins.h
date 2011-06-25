@@ -206,55 +206,11 @@
  #endif
 #endif
 
-// uncomment one of the following lines for RAMPS v1.3 or v1.0, comment both for v1.2 or 1.1
-// #define RAMPS_V_1_3
-// #define RAMPS_V_1_0
-
-
-#ifdef RAMPS_V_1_3
-
-#define X_STEP_PIN         54
-#define X_DIR_PIN          55
-#define X_ENABLE_PIN       38
-#define X_MIN_PIN           3
-#define X_MAX_PIN          -1   //2 //Max endstops default to disabled "-1", set to commented value to enable.
-
-#define Y_STEP_PIN         60
-#define Y_DIR_PIN          61
-#define Y_ENABLE_PIN       56
-#define Y_MIN_PIN          14
-#define Y_MAX_PIN          -1   //15
-
-#define Z_STEP_PIN         46
-#define Z_DIR_PIN          48
-#define Z_ENABLE_PIN       62
-#define Z_MIN_PIN          18
-#define Z_MAX_PIN          -1   //19
-
-#define E_STEP_PIN         26
-#define E_DIR_PIN          28
-#define E_ENABLE_PIN       24
-
-#define SDPOWER            -1
-#define SDSS               53
-#define LED_PIN            13
-#define FAN_PIN            9
-#define PS_ON_PIN          12
-#define KILL_PIN           -1
-
-#define HEATER_0_PIN       10
-#define HEATER_1_PIN       8
-#define TEMP_0_PIN         13   // ANALOG NUMBERING
-#define TEMP_1_PIN         14   // ANALOG NUMBERING
-
-
-#else // RAMPS_V_1_1 or RAMPS_V_1_2 as default
-
 #define X_STEP_PIN         26
 #define X_DIR_PIN          28
 #define X_ENABLE_PIN       24
 #define X_MIN_PIN           3
-#define X_MAX_PIN          -1    //2
+#define X_MAX_PIN          -2    //2
 
 #define Y_STEP_PIN         38
 #define Y_DIR_PIN          40
@@ -275,25 +231,28 @@
 #define SDPOWER            48
 #define SDSS               53
 #define LED_PIN            13
+
 #define PS_ON_PIN          -1
 #define KILL_PIN           -1
 
+// uncomment the following line for RAMPS V1.0
+// #define RAMPS_V_1_0 
 
-
-#ifdef RAMPS_V_1_0 // RAMPS_V_1_0
+#ifdef RAMPS_V_1_0
   #define HEATER_0_PIN     12    // RAMPS 1.0
   #define HEATER_1_PIN     -1    // RAMPS 1.0
+
   #define FAN_PIN          11    // RAMPS 1.0
 
-#else // RAMPS_V_1_1 or RAMPS_V_1_2
+#else // RAMPS_V_1_1 as default
   #define HEATER_0_PIN     10    // RAMPS 1.1
   #define HEATER_1_PIN      8    // RAMPS 1.1
+
   #define FAN_PIN           9    // RAMPS 1.1
 #endif
 
 #define TEMP_0_PIN          2    // MUST USE ANALOG INPUT NUMBERING NOT DIGITAL OUTPUT NUMBERING!!!!!!!!!
 #define TEMP_1_PIN          1    // MUST USE ANALOG INPUT NUMBERING NOT DIGITAL OUTPUT NUMBERING!!!!!!!!!
-#endif
 
 // SPI for Max6675 Thermocouple 
 
@@ -393,7 +352,7 @@
     
     
     #define SDPOWER          -1
-    #define SDSS          -1
+    #define SDSS          	17
     #define LED_PIN         -1    //changed @ rkoeppl 20110410
     #define TEMP_1_PIN      -1    //changed @ rkoeppl 20110410
     #define FAN_PIN         -1    //changed @ rkoeppl 20110410
@@ -406,6 +365,16 @@
     #define TX_ENABLE_PIN	12
     #define RX_ENABLE_PIN	13
 
+    #ifndef SDSUPPORT
+// these pins are defined in the SD library if building with SD support  
+  #define SCK_PIN          7
+  #define MISO_PIN         6
+  #define MOSI_PIN         5
+  #define MAX6675_SS       -1
+#else
+  #define MAX6675_SS       -1
+#endif
+
 
 /****************************************************************************************
 * Sanguinololu pin assignment
@@ -415,10 +384,6 @@
 #ifndef __AVR_ATmega644P__
 #error Oops!  Make sure you have 'Sanguino' selected from the 'Tools -> Boards' menu.
 #endif
-
-// uncomment the following line for Sanguinololu v1.2, comment for 1.1 or earlier.
-// #define SANGUINOLOLU_V_1_2 
-
 
 #define X_STEP_PIN         15
 #define X_DIR_PIN          21
@@ -434,7 +399,7 @@
 
 #define Z_STEP_PIN         3
 #define Z_DIR_PIN          2
-// zenable defined by platform below
+#define Z_ENABLE_PIN       -1
 #define Z_MIN_PIN          20
 #define Z_MAX_PIN          -1 //19
 
@@ -449,24 +414,11 @@
 #define PS_ON_PIN          -1
 #define KILL_PIN           -1
 
-#define HEATER_0_PIN       13 // THIS LINE FOR V1.0+ (extruder)
-
-#ifdef SANGUINOLOLU_V_1_2
-
-#define HEATER_1_PIN       12 // (bed)
-#define Z_ENABLE_PIN       26
-
-#else
-
-#define HEATER_1_PIN       14  // (bed)
-#define Z_ENABLE_PIN       -1
-
-#endif
+#define HEATER_0_PIN       13 // THIS LINE FOR V1.0 (extruder)
+#define HEATER_1_PIN       14 // THIS LINE FOR V1.0 (bed)
 
 #define TEMP_0_PIN          7   // MUST USE ANALOG INPUT NUMBERING NOT DIGITAL OUTPUT NUMBERING!!!!!!!!! (pin 33 extruder)
 #define TEMP_1_PIN          6   // MUST USE ANALOG INPUT NUMBERING NOT DIGITAL OUTPUT NUMBERING!!!!!!!!! (pin 34 bed)
-#define SDPOWER          -1
-#define SDSS          31
 
 #else
 
