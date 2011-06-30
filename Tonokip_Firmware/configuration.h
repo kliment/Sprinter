@@ -153,4 +153,43 @@ const int Z_MAX_LENGTH = 100;
 
 
 
+
+//=========================================================
+// custom setup example
+//
+// Using the CUSTOM_SETUP and CUSTOM_LOOP macros, one
+// can define custom setup and loop code to run in the 
+// firmware, without modifying the core code of the 
+// firmware. 
+// It's a very nice way to have a customized firmware
+// that is also easy to update to the latest git code.
+//=========================================================
+
+//#define USING_CUSTOM_CODE
+#ifdef USING_CUSTOM_CODE
+  #define CUSTOM_SETUP setupMicrostepping
+  #define CUSTOM_LOOP  helloWord
+  
+  // custom code to set pololu microstepping using
+  // some custom ports on arduino mega
+  void setupMicrostepping()
+  {
+    #define MS1_PIN 22
+    #define MS2_PIN 24
+    #define MS3_PIN 23
+    pinMode( MS1_PIN,OUTPUT);
+    pinMode( MS2_PIN,OUTPUT);
+    pinMode( MS3_PIN,OUTPUT);
+    digitalWrite(MS1_PIN,HIGH);
+    digitalWrite(MS2_PIN,HIGH);
+    digitalWrite(MS3_PIN,HIGH);
+    Serial.println("Custom Setup code initialized pololu drivers to 16 microsteps.");
+  }
+  
+  void helloWord()
+  {
+        Serial.println("Custom Loop code saying: Hello World!");
+  }
+#endif
+//=========================================================
 #endif
