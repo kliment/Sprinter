@@ -1,7 +1,7 @@
 // Tonokip RepRap firmware rewrite based off of Hydra-mmm firmware.
 // Licence: GPL
 
-#include "Tonokip_Firmware.h"
+#include "Sprinter.h"
 #include "configuration.h"
 #include "pins.h"
 
