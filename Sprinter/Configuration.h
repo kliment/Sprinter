@@ -1,12 +1,86 @@
-#ifndef PARAMETERS_H
-#define PARAMETERS_H
+#ifndef CONFIGURATION_H
+#define CONFIGURATION_H
 
-// NO RS485/EXTRUDER CONTROLLER SUPPORT
-// PLEASE VERIFY PIN ASSIGNMENTS FOR YOUR CONFIGURATION!!!!!!!
-#define MOTHERBOARD 3 // ATMEGA168 = 0, SANGUINO = 1, MOTHERBOARD = 2, MEGA/RAMPS = 3, ATMEGA328 = 4, Gen6 = 5, Sanguinololu = 6
 
-//Comment out to disable SD support
+//BASIC SETTINGS: select your board type, thermistor type, axis scaling, and endstop configuration
+
+// The following define selects which electronics board you have. Please choose the one that matches your setup
+// MEGA/RAMPS up to 1.2  = 3,
+// RAMPS 1.3 = 63
+// Gen6 = 5, 
+// Sanguinololu up to 1.1 = 6
+// Sanguinololu 1.2 and above = 62
+#define MOTHERBOARD 3 
+
+//Thermistor settings:
+// 1 is 100k thermistor
+// 2 is 200k thermistor
+// 3 is mendel-parts thermistor
+#define THERMISTORHEATER 1
+#define THERMISTORBED 1
+
+
+//Calibration variables
+//X, Y, Z, E steps per unit - Metric Prusa Mendel with Wade extruder:
+float axis_steps_per_unit[] = {80, 80, 3200/1.25,700}; 
+//Metric Prusa Mendel with Makergear geared stepper extruder:
+//float axis_steps_per_unit[] = {80,80,3200/1.25,1380}; 
+
+
+////Endstop Settings
+#define ENDSTOPPULLUPS 1 // Comment this out (using // at the start of the line) to disable the endstop pullup resistors
+//The pullups are needed if you directly connect a mechanical endswitch between the signal and ground pins.
+const bool ENDSTOPS_INVERTING = false; //set to true to invert the logic of the endstops
+
+//This determines the communication speed of the printer
+#define BAUDRATE 115200
+
+//Comment out (using // at the start of the line) to disable SD support:
 #define SDSUPPORT 1
+
+
+
+
+
+//ADVANCED SETTINGS - to tweak parameters
+
+#include "thermistortables.h"
+
+//For Inverting Stepper Enable Pins (Active Low) use 0, Non Inverting (Active High) use 1
+const bool X_ENABLE_ON = 0;
+const bool Y_ENABLE_ON = 0;
+const bool Z_ENABLE_ON = 0;
+const bool E_ENABLE_ON = 0;
+
+//Disables axis when it's not being used.
+const bool DISABLE_X = false;
+const bool DISABLE_Y = false;
+const bool DISABLE_Z = true;
+const bool DISABLE_E = false;
+
+const bool INVERT_X_DIR = false;
+const bool INVERT_Y_DIR = false;
+const bool INVERT_Z_DIR = true;
+const bool INVERT_E_DIR = false;
+
+//ENDSTOP SETTINGS:
+// Sets direction of endstops when homing; 1=MAX, -1=MIN
+const int X_HOME_DIR = -1;
+const int Y_HOME_DIR = -1;
+const int Z_HOME_DIR = -1;
+
+const bool min_software_endstops = false; //If true, axis won't move to coordinates less than zero.
+const bool max_software_endstops = true;  //If true, axis won't move to coordinates greater than the defined lengths below.
+const int X_MAX_LENGTH = 200;
+const int Y_MAX_LENGTH = 200;
+const int Z_MAX_LENGTH = 100;
+
+
+//MOVEMENT SETTINGS
+const int NUM_AXIS = 4; // The axis order in all axis related arrays is X, Y, Z, E
+float max_feedrate[] = {200000, 200000, 240, 500000};
+bool axis_relative_modes[] = {false, false, false, false};
+
 
 //Min step delay in microseconds. If you are experiencing missing steps, try to raise the delay microseconds, but be aware this
 // If you enable this, make sure STEP_DELAY_RATIO is disabled.
@@ -63,13 +137,13 @@ long max_travel_acceleration_units_per_sq_second[] = {500,500,50}; // X, Y, Z ma
 //If the temperature has not increased at the end of that period, the target temperature is set to zero. It can be reset with another M104/M109
 //#define WATCHPERIOD 5000 //5 seconds
 //The minimal temperature defines the temperature below which the heater will not be enabled
-//#define MINTEMP 
+#define MINTEMP 5
 
 //Experimental max temp
 //When temperature exceeds max temp, your bot will halt.
 //This feature exists to protect your hotend from overheating accidentally, but *NOT* from thermistor short/failure!
 //You should use MINTEMP for thermistor short/failure protection.
-//#define MAXTEMP 275
+#define MAXTEMP 275
 
 // Select one of these only to define how the nozzle temp is read.
 #define HEATER_USES_THERMISTOR
@@ -80,69 +154,7 @@ long max_travel_acceleration_units_per_sq_second[] = {500,500,50}; // X, Y, Z ma
 #define BED_USES_THERMISTOR
 //#define BED_USES_AD595
 
-// Calibration formulas
-// e_extruded_steps_per_mm = e_feedstock_steps_per_mm * (desired_extrusion_diameter^2 / feedstock_diameter^2)
-// new_axis_steps_per_mm = previous_axis_steps_per_mm * (test_distance_instructed/test_distance_traveled)
-// units are in millimeters or whatever length unit you prefer: inches,football-fields,parsecs etc
 
-//Calibration variables
-const int NUM_AXIS = 4; // The axis order in all axis related arrays is X, Y, Z, E
-bool axis_relative_modes[] = {false, false, false, false};
-float axis_steps_per_unit[] = {80.376,80.376,3200/1.25,16}; // {X steps per unit, Y steps per unit, Z steps per unit, E steps per unit}
-//For SAE Prusa mendeel float z_steps_per_unit = should be 3200/1.411 for 5/16-18 rod and 3200/1.058 for 5/16-24
-//float axis_steps_per_unit[] = {10.047,10.047,833.398,0.706};
-float max_feedrate[] = {200000, 200000, 240, 500000}; //mmm, acceleration!
-
-//For Inverting Stepper Enable Pins (Active Low) use 0, Non Inverting (Active High) use 1
-const bool X_ENABLE_ON = 0;
-const bool Y_ENABLE_ON = 0;
-const bool Z_ENABLE_ON = 0;
-const bool E_ENABLE_ON = 0;
-
-//Disables axis when it's not being used.
-const bool DISABLE_X = false;
-const bool DISABLE_Y = false;
-const bool DISABLE_Z = true;
-const bool DISABLE_E = false;
-
-const bool INVERT_X_DIR = false;
-const bool INVERT_Y_DIR = false;
-const bool INVERT_Z_DIR = true;
-const bool INVERT_E_DIR = false;
-
-// Sets direction of endstops when homing; 1=MAX, -1=MIN
-const int X_HOME_DIR = -1;
-const int Y_HOME_DIR = -1;
-const int Z_HOME_DIR = -1;
-
-
-//Thermistor settings:
-
-//Uncomment for 100k thermistor
-//#include "ThermistorTable_100k.h"
-//#include "BedThermistorTable_100k.h"
-
-//Uncomment for 200k thermistor
-//#include "ThermistorTable_200k.h"
-//#include "BedThermistorTable_200k.h"
-
-//Identical thermistors on heater and bed - use this if you have no heated bed or if the thermistors are the same on both:
-#include "ThermistorTable_200k.h"
-//#include "ThermistorTable_100k.h"
-//#include "ThermistorTable_mendelparts.h"
-#define BNUMTEMPS NUMTEMPS
-#define bedtemptable temptable
-
-//Endstop Settings
-#define ENDSTOPPULLUPS 1
-const bool ENDSTOPS_INVERTING = false;
-const bool min_software_endstops = false; //If true, axis won't move to coordinates less than zero.
-const bool max_software_endstops = true;  //If true, axis won't move to coordinates greater than the defined lengths below.
-const int X_MAX_LENGTH = 220;
-const int Y_MAX_LENGTH = 220;
-const int Z_MAX_LENGTH = 100;
-
-#define BAUDRATE 115200
 
 //Uncomment the following line to enable debugging. You can better control debugging below the following line
 //#define DEBUG

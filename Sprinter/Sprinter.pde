@@ -2,7 +2,7 @@
 // Licence: GPL
 
 #include "Sprinter.h"
-#include "configuration.h"
+#include "Configuration.h"
 #include "pins.h"
 
 #ifdef SDSUPPORT
