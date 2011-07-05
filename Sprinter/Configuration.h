@@ -6,7 +6,7 @@
 
 // The following define selects which electronics board you have. Please choose the one that matches your setup
 // MEGA/RAMPS up to 1.2  = 3,
-// RAMPS 1.3 = 63
+// RAMPS 1.3 = 33
 // Gen6 = 5, 
 // Sanguinololu up to 1.1 = 6
 // Sanguinololu 1.2 and above = 62
