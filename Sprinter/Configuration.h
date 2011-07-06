@@ -80,7 +80,7 @@ bool axis_relative_modes[] = {false, false, false, false};
 //#define STEP_DELAY_MICROS 1
 
 // Step delay over interval ratio. If you are still experiencing missing steps, try to uncomment the following line, but be aware this
-// If you enable this, make sure STEP_DELAY_MICROS is disabled.
+// If you enable this, make sure STEP_DELAY_MICROS is disabled. (except for Gen6: both need to be enabled.)
 //#define STEP_DELAY_RATIO 0.25
 
 // Comment this to disable ramp acceleration
@@ -121,7 +121,7 @@ long max_travel_acceleration_units_per_sq_second[] = {500,500,50}; // X, Y, Z ma
 // It also defines the max milliseconds interval after which a travel move is not considered so for the sake of this feature.
 #define DISABLE_CHECK_DURING_TRAVEL 1000
 
-//// Temperature smoothing - only uncomment this if your temp readings are noisy
+//// Temperature smoothing - only uncomment this if your temp readings are noisy (Gen6 without EvdZ's 5V hack)
 //#define SMOOTHING 1
 //#define SMOOTHFACTOR 16 //best to use a power of two here - determines how many values are averaged together by the smoothing algorithm
 
