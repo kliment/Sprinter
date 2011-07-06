@@ -1347,10 +1347,10 @@ int temp2analogu(int celsius, const short table[][2], int numtemps, int source) 
     }
   #elif defined (HEATER_USES_AD595) || defined (BED_USES_AD595)
     if(source==2)
-        return celsius * (1024.0 / (5.0 * 100.0) );
+        return celsius * 1024 / (500);
   #elif defined (HEATER_USES_MAX6675) || defined (BED_USES_MAX6675)
     if(source==3)
-        return celsius * 4.0;
+        return celsius * 4;
   #endif
   return -1;
 }
@@ -1383,10 +1383,10 @@ int analog2tempu(int raw,const short table[][2], int numtemps, int source) {
     }
   #elif defined (HEATER_USES_AD595) || defined (BED_USES_AD595)
     if(source==2)
-        return raw * ((5.0 * 100.0) / 1024.0);
+        return raw * 500 / 1024;
   #elif defined (HEATER_USES_MAX6675) || defined (BED_USES_MAX6675)
     if(source==3)
-        return raw * 0.25;
+        return raw / 4;
   #endif
   return -1;
 }
