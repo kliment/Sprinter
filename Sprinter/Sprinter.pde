@@ -57,6 +57,7 @@
 
 
 //Stepper Movement Variables
+
 char axis_codes[NUM_AXIS] = {'X', 'Y', 'Z', 'E'};
 bool move_direction[NUM_AXIS];
 const int STEP_PIN[NUM_AXIS] = {X_STEP_PIN, Y_STEP_PIN, Z_STEP_PIN, E_STEP_PIN};
@@ -64,19 +65,11 @@ unsigned long axis_previous_micros[NUM_AXIS];
 unsigned long previous_micros = 0, previous_millis_heater, previous_millis_bed_heater;
 unsigned long move_steps_to_take[NUM_AXIS];
 #ifdef RAMP_ACCELERATION
-  unsigned long axis_max_interval[] = {100000000.0 / (max_start_speed_units_per_second[0] * axis_steps_per_unit[0]),
-      100000000.0 / (max_start_speed_units_per_second[1] * axis_steps_per_unit[1]),
-      100000000.0 / (max_start_speed_units_per_second[2] * axis_steps_per_unit[2]),
-      100000000.0 / (max_start_speed_units_per_second[3] * axis_steps_per_unit[3])}; //TODO: refactor all things like this in a function, or move to setup()
-                                                                                     // in a for loop
-  unsigned long max_interval;
-  unsigned long axis_steps_per_sqr_second[] = {max_acceleration_units_per_sq_second[0] * axis_steps_per_unit[0],
-        max_acceleration_units_per_sq_second[1] * axis_steps_per_unit[1], max_acceleration_units_per_sq_second[2] * axis_steps_per_unit[2],
-        max_acceleration_units_per_sq_second[3] * axis_steps_per_unit[3]};
-  unsigned long axis_travel_steps_per_sqr_second[] = {max_travel_acceleration_units_per_sq_second[0] * axis_steps_per_unit[0],
-        max_travel_acceleration_units_per_sq_second[1] * axis_steps_per_unit[1], max_travel_acceleration_units_per_sq_second[2] * axis_steps_per_unit[2],
-        max_travel_acceleration_units_per_sq_second[3] * axis_steps_per_unit[3]};
-  unsigned long steps_per_sqr_second, plateau_steps;
+unsigned long axis_max_interval[NUM_AXIS];
+unsigned long axis_steps_per_sqr_second[NUM_AXIS];
+unsigned long axis_travel_steps_per_sqr_second[NUM_AXIS];
+unsigned long max_interval;
+unsigned long steps_per_sqr_second, plateau_steps;  
 #endif
 boolean acceleration_enabled = false, accelerating = false;
 unsigned long interval;
@@ -211,51 +204,116 @@ void setup()
       fromsd[i] = false;
   }
 
-  //Initialize Step Pins
-  for(int i=0; i < NUM_AXIS; i++) if(STEP_PIN[i] > -1) pinMode(STEP_PIN[i],OUTPUT);
   
   //Initialize Dir Pins
-  if(X_DIR_PIN > -1) pinMode(X_DIR_PIN,OUTPUT);
-  if(Y_DIR_PIN > -1) pinMode(Y_DIR_PIN,OUTPUT);
-  if(Z_DIR_PIN > -1) pinMode(Z_DIR_PIN,OUTPUT);
-  if(E_DIR_PIN > -1) pinMode(E_DIR_PIN,OUTPUT);
-
-  //Steppers default to disabled.
-  if(X_ENABLE_PIN > -1) if(!X_ENABLE_ON) digitalWrite(X_ENABLE_PIN,HIGH);
-  if(Y_ENABLE_PIN > -1) if(!Y_ENABLE_ON) digitalWrite(Y_ENABLE_PIN,HIGH);
-  if(Z_ENABLE_PIN > -1) if(!Z_ENABLE_ON) digitalWrite(Z_ENABLE_PIN,HIGH);
-  if(E_ENABLE_PIN > -1) if(!E_ENABLE_ON) digitalWrite(E_ENABLE_PIN,HIGH);
-
-  //endstop pullups
-  #ifdef ENDSTOPPULLUPS
-    if(X_MIN_PIN > -1) { pinMode(X_MIN_PIN,INPUT); digitalWrite(X_MIN_PIN,HIGH);}
-    if(Y_MIN_PIN > -1) { pinMode(Y_MIN_PIN,INPUT); digitalWrite(Y_MIN_PIN,HIGH);}
-    if(Z_MIN_PIN > -1) { pinMode(Z_MIN_PIN,INPUT); digitalWrite(Z_MIN_PIN,HIGH);}
-    if(X_MAX_PIN > -1) { pinMode(X_MAX_PIN,INPUT); digitalWrite(X_MAX_PIN,HIGH);}
-    if(Y_MAX_PIN > -1) { pinMode(Y_MAX_PIN,INPUT); digitalWrite(Y_MAX_PIN,HIGH);}
-    if(Z_MAX_PIN > -1) { pinMode(Z_MAX_PIN,INPUT); digitalWrite(Z_MAX_PIN,HIGH);}
+  #if X_DIR_PIN > -1
+    pinMode(X_DIR_PIN,OUTPUT);
   #endif
-  //Initialize Enable Pins
-  if(X_ENABLE_PIN > -1) pinMode(X_ENABLE_PIN,OUTPUT);
-  if(Y_ENABLE_PIN > -1) pinMode(Y_ENABLE_PIN,OUTPUT);
-  if(Z_ENABLE_PIN > -1) pinMode(Z_ENABLE_PIN,OUTPUT);
-  if(E_ENABLE_PIN > -1) pinMode(E_ENABLE_PIN,OUTPUT);
-
-  if(HEATER_0_PIN > -1) pinMode(HEATER_0_PIN,OUTPUT);
-  if(HEATER_1_PIN > -1) pinMode(HEATER_1_PIN,OUTPUT);
+  #if Y_DIR_PIN > -1 
+    pinMode(Y_DIR_PIN,OUTPUT);
+  #endif
+  #if Z_DIR_PIN > -1 
+    pinMode(Z_DIR_PIN,OUTPUT);
+  #endif
+  #if E_DIR_PIN > -1 
+    pinMode(E_DIR_PIN,OUTPUT);
+  #endif
+  
+  //Initialize Enable Pins - steppers default to disabled.
+  
+  #if (X_ENABLE_PIN > -1)
+  pinMode(X_ENABLE_PIN,OUTPUT);
+  if(!X_ENABLE_ON) digitalWrite(X_ENABLE_PIN,HIGH);
+  #endif
+  #if (Y_ENABLE_PIN > -1)
+  pinMode(Y_ENABLE_PIN,OUTPUT);
+  if(!Y_ENABLE_ON) digitalWrite(Y_ENABLE_PIN,HIGH);
+  #endif
+  #if (Z_ENABLE_PIN > -1)
+  pinMode(Z_ENABLE_PIN,OUTPUT);
+  if(!Z_ENABLE_ON) digitalWrite(Z_ENABLE_PIN,HIGH);
+  #endif
+  #if (E_ENABLE_PIN > -1)
+  pinMode(E_ENABLE_PIN,OUTPUT);
+  if(!E_ENABLE_ON) digitalWrite(E_ENABLE_PIN,HIGH);
+  #endif
+  
+  //endstops and pullups
+  #ifdef ENDSTOPPULLUPS
+  #if X_MIN_PIN > -1
+    pinMode(X_MIN_PIN,INPUT); 
+    digitalWrite(X_MIN_PIN,HIGH);
+  #endif
+  #if X_MAX_PIN > -1
+    pinMode(X_MAX_PIN,INPUT); 
+    digitalWrite(X_MAX_PIN,HIGH);
+  #endif
+  #if Y_MIN_PIN > -1
+    pinMode(Y_MIN_PIN,INPUT); 
+    digitalWrite(Y_MIN_PIN,HIGH);
+  #endif
+  #if Y_MAX_PIN > -1
+    pinMode(Y_MAX_PIN,INPUT); 
+    digitalWrite(Y_MAX_PIN,HIGH);
+  #endif
+  #if Z_MIN_PIN > -1
+    pinMode(Z_MIN_PIN,INPUT); 
+    digitalWrite(Z_MIN_PIN,HIGH);
+  #endif
+  #if Z_MAX_PIN > -1
+    pinMode(Z_MAX_PIN,INPUT); 
+    digitalWrite(Z_MAX_PIN,HIGH);
+  #endif
+  #else
+  #if X_MIN_PIN > -1
+    pinMode(X_MIN_PIN,INPUT); 
+  #endif
+  #if X_MAX_PIN > -1
+    pinMode(X_MAX_PIN,INPUT); 
+  #endif
+  #if Y_MIN_PIN > -1
+    pinMode(Y_MIN_PIN,INPUT); 
+  #endif
+  #if Y_MAX_PIN > -1
+    pinMode(Y_MAX_PIN,INPUT); 
+  #endif
+  #if Z_MIN_PIN > -1
+    pinMode(Z_MIN_PIN,INPUT); 
+  #endif
+  #if Z_MAX_PIN > -1
+    pinMode(Z_MAX_PIN,INPUT); 
+  #endif
+  #endif
+  
+  #if (HEATER_0_PIN > -1) 
+    pinMode(HEATER_0_PIN,OUTPUT);
+  #endif  
+  #if (HEATER_1_PIN > -1) 
+    pinMode(HEATER_1_PIN,OUTPUT);
+  #endif  
+  
+//Initialize Step Pins
+  for(int i=0; i < NUM_AXIS; i++){
+       if(STEP_PIN[i] > -1) pinMode(STEP_PIN[i],OUTPUT);
+    #ifdef RAMP_ACCELERATION
+        axis_max_interval[i] = 100000000.0 / (max_start_speed_units_per_second[i] * axis_steps_per_unit[i]);
+        axis_steps_per_sqr_second[i] = max_acceleration_units_per_sq_second[i] * axis_steps_per_unit[i];
+        axis_travel_steps_per_sqr_second[i] = max_travel_acceleration_units_per_sq_second[i] * axis_steps_per_unit[i];
+    #endif
+    }
   
 #ifdef HEATER_USES_MAX6675
-  digitalWrite(SCK_PIN,0);
   pinMode(SCK_PIN,OUTPUT);
-
-  digitalWrite(MOSI_PIN,1);
+  digitalWrite(SCK_PIN,0);
+  
   pinMode(MOSI_PIN,OUTPUT);
-
-  digitalWrite(MISO_PIN,1);
+  digitalWrite(MOSI_PIN,1);
+  
   pinMode(MISO_PIN,INPUT);
-
-  digitalWrite(MAX6675_SS,1);
+  digitalWrite(MISO_PIN,1);
+  
   pinMode(MAX6675_SS,OUTPUT);
+  digitalWrite(MAX6675_SS,1);
 #endif  
  
 #ifdef SDSUPPORT
@@ -682,7 +740,7 @@ inline void process_commands()
             Serial.println();
           #endif
         #else
-          Serial.println("No thermistors - no temp");
+          #error No temperature source available
         #endif
         return;
         //break;
@@ -1149,15 +1207,6 @@ inline void do_step(int axis) {
   digitalWrite(STEP_PIN[axis], HIGH);
   digitalWrite(STEP_PIN[axis], LOW);
 }
-
-inline void disable_x() { if(X_ENABLE_PIN > -1) digitalWrite(X_ENABLE_PIN,!X_ENABLE_ON); }
-inline void disable_y() { if(Y_ENABLE_PIN > -1) digitalWrite(Y_ENABLE_PIN,!Y_ENABLE_ON); }
-inline void disable_z() { if(Z_ENABLE_PIN > -1) digitalWrite(Z_ENABLE_PIN,!Z_ENABLE_ON); }
-inline void disable_e() { if(E_ENABLE_PIN > -1) digitalWrite(E_ENABLE_PIN,!E_ENABLE_ON); }
-inline void  enable_x() { if(X_ENABLE_PIN > -1) digitalWrite(X_ENABLE_PIN, X_ENABLE_ON); }
-inline void  enable_y() { if(Y_ENABLE_PIN > -1) digitalWrite(Y_ENABLE_PIN, Y_ENABLE_ON); }
-inline void  enable_z() { if(Z_ENABLE_PIN > -1) digitalWrite(Z_ENABLE_PIN, Z_ENABLE_ON); }
-inline void  enable_e() { if(E_ENABLE_PIN > -1) digitalWrite(E_ENABLE_PIN, E_ENABLE_ON); }
 
 #define HEAT_INTERVAL 250
 #ifdef HEATER_USES_MAX6675
