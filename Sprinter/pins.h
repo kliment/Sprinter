@@ -435,9 +435,6 @@
 #error Oops!  Make sure you have 'Sanguino' selected from the 'Tools -> Boards' menu.
 #endif
 
-// comment the following line for Sanguinololu v1.1 or earlier.
-
-
 #define X_STEP_PIN         15
 #define X_DIR_PIN          21
 #define X_MIN_PIN          18
