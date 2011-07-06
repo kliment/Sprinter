@@ -427,7 +427,7 @@
 ****************************************************************************************/
 #if MOTHERBOARD == 62
 #define MOTHERBOARD 6
-#define 
+#define SANGUINOLOLU_V_1_2 
 #endif
 #if MOTHERBOARD == 6
 #define KNOWN_BOARD 1
@@ -436,7 +436,6 @@
 #endif
 
 // comment the following line for Sanguinololu v1.1 or earlier.
-#define SANGUINOLOLU_V_1_2 
 
 
 #define X_STEP_PIN         15
