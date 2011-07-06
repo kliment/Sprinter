@@ -1,9 +1,9 @@
 // Tonokip RepRap firmware rewrite based off of Hydra-mmm firmware.
 // Licence: GPL
 
-#include "Sprinter.h"
 #include "Configuration.h"
 #include "pins.h"
+#include "Sprinter.h"
 
 #ifdef SDSUPPORT
 #include "SdFat.h"
@@ -140,10 +140,10 @@ float tt = 0, bt = 0;
   unsigned long watchmillis = 0;
 #endif
 #ifdef MINTEMP
-  int minttemp = temp2analog(MINTEMP);
+  int minttemp = temp2analogh(MINTEMP);
 #endif
 #ifdef MAXTEMP
-int maxttemp = temp2analog(MAXTEMP);
+int maxttemp = temp2analogh(MAXTEMP);
 #endif
         
 //Inactivity shutdown variables
@@ -652,7 +652,7 @@ inline void process_commands()
         break;
 #endif
       case 104: // M104
-        if (code_seen('S')) target_raw = temp2analog(code_value());
+        if (code_seen('S')) target_raw = temp2analogh(code_value());
         #ifdef WATCHPERIOD
             if(target_raw > current_raw){
                 watchmillis = max(1,millis());
@@ -687,7 +687,7 @@ inline void process_commands()
         return;
         //break;
       case 109: // M109 - Wait for extruder heater to reach target.
-        if (code_seen('S')) target_raw = temp2analog(code_value());
+        if (code_seen('S')) target_raw = temp2analogh(code_value());
         #ifdef WATCHPERIOD
             if(target_raw>current_raw){
                 watchmillis = max(1,millis());
@@ -709,15 +709,13 @@ inline void process_commands()
         break;
       case 190: // M190 - Wait bed for heater to reach target.
       #if TEMP_1_PIN > -1
-        if (code_seen('S')) target_bed_raw = temp2analog(code_value());
+        if (code_seen('S')) target_bed_raw = temp2analogh(code_value());
         codenum = millis(); 
         while(current_bed_raw < target_bed_raw) {
           if( (millis()-codenum) > 1000 ) //Print Temp Reading every 1 second while heating up.
           {
             tt=analog2temp(current_raw);
             Serial.print("T:");
-            Serial.println( tt );
-            Serial.print("ok T:");
             Serial.print( tt ); 
             Serial.print(" B:");
             Serial.println( analog2temp(current_bed_raw) ); 
@@ -1288,6 +1286,12 @@ inline void manage_heater()
   if(millis() - previous_millis_bed_heater < BED_CHECK_INTERVAL)
     return;
   previous_millis_bed_heater = millis();
+  #ifndef TEMP_1_PIN
+    return;
+  #endif
+  #if TEMP_1_PIN == -1
+    return;
+  #endif
   
   #ifdef BED_USES_THERMISTOR
   
@@ -1306,7 +1310,6 @@ inline void manage_heater()
   #endif
   
   
-  #if TEMP_1_PIN > -1
     if(current_bed_raw >= target_bed_raw)
     {
       digitalWrite(HEATER_1_PIN,LOW);
@@ -1315,138 +1318,79 @@ inline void manage_heater()
     {
       digitalWrite(HEATER_1_PIN,HIGH);
     }
-  #endif
 }
 
-// Takes hot end temperature value as input and returns corresponding raw value. 
-// For a thermistor, it uses the RepRap thermistor temp table.
-// This is needed because PID in hydra firmware hovers around a given analog value, not a temp value.
-// This function is derived from inversing the logic from a portion of getTemperature() in FiveD RepRap firmware.
-float temp2analog(int celsius) {
-  #ifdef HEATER_USES_THERMISTOR
+
+int temp2analogu(int celsius, const short table[][2], int numtemps, int source) {
+  #if defined (HEATER_USES_THERMISTOR) || defined (BED_USES_THERMISTOR)
+  if(source==1){
     int raw = 0;
     byte i;
     
-    for (i=1; i<NUMTEMPS; i++)
+    for (i=1; i<numtemps; i++)
     {
-      if (temptable[i][1] < celsius)
+      if (table[i][1] < celsius)
       {
-        raw = temptable[i-1][0] + 
-          (celsius - temptable[i-1][1]) * 
-          (temptable[i][0] - temptable[i-1][0]) /
-          (temptable[i][1] - temptable[i-1][1]);
+        raw = table[i-1][0] + 
+          (celsius - table[i-1][1]) * 
+          (table[i][0] - table[i-1][0]) /
+          (table[i][1] - table[i-1][1]);
       
         break;
       }
     }
 
     // Overflow: Set to last value in the table
-    if (i == NUMTEMPS) raw = temptable[i-1][0];
+    if (i == numtemps) raw = table[i-1][0];
 
     return 1023 - raw;
-  #elif defined HEATER_USES_AD595
-    return celsius * (1024.0 / (5.0 * 100.0) );
-  #elif defined HEATER_USES_MAX6675
-    return celsius * 4.0;
-  #endif
-}
-
-// Takes bed temperature value as input and returns corresponding raw value. 
-// For a thermistor, it uses the RepRap thermistor temp table.
-// This is needed because PID in hydra firmware hovers around a given analog value, not a temp value.
-// This function is derived from inversing the logic from a portion of getTemperature() in FiveD RepRap firmware.
-float temp2analogBed(int celsius) {
-  #ifdef BED_USES_THERMISTOR
-
-    int raw = 0;
-    byte i;
-    
-    for (i=1; i<BNUMTEMPS; i++)
-    {
-      if (bedtemptable[i][1] < celsius)
-      {
-        raw = bedtemptable[i-1][0] + 
-          (celsius - bedtemptable[i-1][1]) * 
-          (bedtemptable[i][0] - bedtemptable[i-1][0]) /
-          (bedtemptable[i][1] - bedtemptable[i-1][1]);
-      
-        break;
-      }
     }
-
-    // Overflow: Set to last value in the table
-    if (i == BNUMTEMPS) raw = bedtemptable[i-1][0];
-
-    return 1023 - raw;
-  #elif defined BED_USES_AD595
-    return celsius * (1024.0 / (5.0 * 100.0) );
+  #elif defined (HEATER_USES_AD595) || defined (BED_USES_AD595)
+    if(source==2)
+        return celsius * (1024.0 / (5.0 * 100.0) );
+  #elif defined (HEATER_USES_MAX6675) || defined (BED_USES_MAX6675)
+    if(source==3)
+        return celsius * 4.0;
   #endif
+  return -1;
 }
 
-// Derived from RepRap FiveD extruder::getTemperature()
-// For hot end temperature measurement.
-float analog2temp(int raw) {
-  #ifdef HEATER_USES_THERMISTOR
+int analog2tempu(int raw,const short table[][2], int numtemps, int source) {
+  #if defined (HEATER_USES_THERMISTOR) || defined (BED_USES_THERMISTOR)
+    if(source==1){
     int celsius = 0;
     byte i;
     
     raw = 1023 - raw;
 
-    for (i=1; i<NUMTEMPS; i++)
+    for (i=1; i<numtemps; i++)
     {
-      if (temptable[i][0] > raw)
+      if (table[i][0] > raw)
       {
-        celsius  = temptable[i-1][1] + 
-          (raw - temptable[i-1][0]) * 
-          (temptable[i][1] - temptable[i-1][1]) /
-          (temptable[i][0] - temptable[i-1][0]);
+        celsius  = table[i-1][1] + 
+          (raw - table[i-1][0]) * 
+          (table[i][1] - table[i-1][1]) /
+          (table[i][0] - table[i-1][0]);
 
         break;
       }
     }
 
     // Overflow: Set to last value in the table
-    if (i == NUMTEMPS) celsius = temptable[i-1][1];
+    if (i == numtemps) celsius = table[i-1][1];
 
     return celsius;
-  #elif defined HEATER_USES_AD595
-    return raw * ((5.0 * 100.0) / 1024.0);
-  #elif defined HEATER_USES_MAX6675
-    return raw * 0.25;
-  #endif
-}
-
-// Derived from RepRap FiveD extruder::getTemperature()
-// For bed temperature measurement.
-float analog2tempBed(int raw) {
-  #ifdef BED_USES_THERMISTOR
-    int celsius = 0;
-    byte i;
-
-    raw = 1023 - raw;
-
-    for (i=1; i<NUMTEMPS; i++)
-    {
-      if (bedtemptable[i][0] > raw)
-      {
-        celsius  = bedtemptable[i-1][1] + 
-          (raw - bedtemptable[i-1][0]) * 
-          (bedtemptable[i][1] - bedtemptable[i-1][1]) /
-          (bedtemptable[i][0] - bedtemptable[i-1][0]);
-
-        break;
-      }
     }
-
-    // Overflow: Set to last value in the table
-    if (i == NUMTEMPS) celsius = bedtemptable[i-1][1];
-
-    return celsius;
-    
-  #elif defined BED_USES_AD595
-    return raw * ((5.0 * 100.0) / 1024.0);
+  #elif defined (HEATER_USES_AD595) || defined (BED_USES_AD595)
+    if(source==2)
+        return raw * ((5.0 * 100.0) / 1024.0);
+  #elif defined (HEATER_USES_MAX6675) || defined (BED_USES_MAX6675)
+    if(source==3)
+        return raw * 0.25;
   #endif
+  return -1;
 }
+
 
 inline void kill()
 {

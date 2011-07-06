@@ -8,10 +8,31 @@ void process_commands();
 void manage_inactivity(byte debug);
 
 void manage_heater();
-float temp2analog(int celsius);
-float temp2analogBed(int celsius);
-float analog2temp(int raw);
-float analog2tempBed(int raw);
+int temp2analogu(int celsius, const short table[][2], int numtemps, int source);
+int analog2tempu(int raw, const short table[][2], int numtemps, int source);
+#ifdef HEATER_USES_THERMISTOR
+    #define HEATERSOURCE 1
+#endif
+#ifdef HEATER_USES_AD595
+    #define HEATERSOURCE 2
+#endif
+#ifdef HEATER_USES_MAX6675
+    #define HEATERSOURCE 3
+#endif
+#ifdef BED_USES_THERMISTOR
+    #define BEDSOURCE 1
+#endif
+#ifdef BED_USES_AD595
+    #define BEDSOURCE 2
+#endif
+#ifdef BED_USES_MAX6675
+    #define BEDSOURCE 3
+#endif
+
+#define temp2analogh( c ) temp2analogu((c),temptable,NUMTEMPS,HEATERSOURCE)
+#define temp2analogBed( c ) temp2analogu((c),bedtemptable,BNUMTEMPS,BEDSOURCE)
+#define analog2temp( c ) analog2tempu((c),temptable,NUMTEMPS,HEATERSOURCE)
+#define analog2tempBed( c ) analog2tempu((c),bedtemptable,BNUMTEMPS,BEDSOURCE)
 
 void FlushSerialRequestResend();
 void ClearToSend();
