@@ -1,10 +1,9 @@
 #ifndef CONFIGURATION_H
 #define CONFIGURATION_H
 
+// BASIC SETTINGS: select your board type, thermistor type, axis scaling, and endstop configuration
 
-//BASIC SETTINGS: select your board type, thermistor type, axis scaling, and endstop configuration
-
-// The following define selects which electronics board you have. Please choose the one that matches your setup
+//// The following define selects which electronics board you have. Please choose the one that matches your setup
 // MEGA/RAMPS up to 1.2  = 3,
 // RAMPS 1.3 = 33
 // Gen6 = 5, 
@@ -12,58 +11,54 @@
 // Sanguinololu 1.2 and above = 62
 #define MOTHERBOARD 3 
 
-//Thermistor settings:
+//// Thermistor settings:
 // 1 is 100k thermistor
 // 2 is 200k thermistor
 // 3 is mendel-parts thermistor
 #define THERMISTORHEATER 1
 #define THERMISTORBED 1
 
-
-//Calibration variables
-//X, Y, Z, E steps per unit - Metric Prusa Mendel with Wade extruder:
+//// Calibration variables
+// X, Y, Z, E steps per unit - Metric Prusa Mendel with Wade extruder:
 float axis_steps_per_unit[] = {80, 80, 3200/1.25,700}; 
-//Metric Prusa Mendel with Makergear geared stepper extruder:
+// Metric Prusa Mendel with Makergear geared stepper extruder:
 //float axis_steps_per_unit[] = {80,80,3200/1.25,1380}; 
 
-
-////Endstop Settings
+//// Endstop Settings
 #define ENDSTOPPULLUPS 1 // Comment this out (using // at the start of the line) to disable the endstop pullup resistors
-//The pullups are needed if you directly connect a mechanical endswitch between the signal and ground pins.
+// The pullups are needed if you directly connect a mechanical endswitch between the signal and ground pins.
 const bool ENDSTOPS_INVERTING = false; //set to true to invert the logic of the endstops
 
-//This determines the communication speed of the printer
+// This determines the communication speed of the printer
 #define BAUDRATE 115200
 
-//Comment out (using // at the start of the line) to disable SD support:
+// Comment out (using // at the start of the line) to disable SD support:
 #define SDSUPPORT 1
 
 
-
-
-
-//ADVANCED SETTINGS - to tweak parameters
+//// ADVANCED SETTINGS - to tweak parameters
 
 #include "thermistortables.h"
 
-//For Inverting Stepper Enable Pins (Active Low) use 0, Non Inverting (Active High) use 1
+// For Inverting Stepper Enable Pins (Active Low) use 0, Non Inverting (Active High) use 1
 const bool X_ENABLE_ON = 0;
 const bool Y_ENABLE_ON = 0;
 const bool Z_ENABLE_ON = 0;
 const bool E_ENABLE_ON = 0;
 
-//Disables axis when it's not being used.
+// Disables axis when it's not being used.
 const bool DISABLE_X = false;
 const bool DISABLE_Y = false;
 const bool DISABLE_Z = true;
 const bool DISABLE_E = false;
 
+// Inverting axis direction
 const bool INVERT_X_DIR = false;
 const bool INVERT_Y_DIR = false;
 const bool INVERT_Z_DIR = true;
 const bool INVERT_E_DIR = false;
 
-//ENDSTOP SETTINGS:
+//// ENDSTOP SETTINGS:
 // Sets direction of endstops when homing; 1=MAX, -1=MIN
 const int X_HOME_DIR = -1;
 const int Y_HOME_DIR = -1;
@@ -75,36 +70,34 @@ const int X_MAX_LENGTH = 200;
 const int Y_MAX_LENGTH = 200;
 const int Z_MAX_LENGTH = 100;
 
-
-//MOVEMENT SETTINGS
+//// MOVEMENT SETTINGS
 const int NUM_AXIS = 4; // The axis order in all axis related arrays is X, Y, Z, E
 float max_feedrate[] = {200000, 200000, 240, 500000};
 bool axis_relative_modes[] = {false, false, false, false};
 
-
-//Min step delay in microseconds. If you are experiencing missing steps, try to raise the delay microseconds, but be aware this
+// Min step delay in microseconds. If you are experiencing missing steps, try to raise the delay microseconds, but be aware this
 // If you enable this, make sure STEP_DELAY_RATIO is disabled.
 //#define STEP_DELAY_MICROS 1
 
-//Step delay over interval ratio. If you are still experiencing missing steps, try to uncomment the following line, but be aware this
-//If you enable this, make sure STEP_DELAY_MICROS is disabled.
+// Step delay over interval ratio. If you are still experiencing missing steps, try to uncomment the following line, but be aware this
+// If you enable this, make sure STEP_DELAY_MICROS is disabled.
 //#define STEP_DELAY_RATIO 0.25
 
-//Comment this to disable ramp acceleration
+// Comment this to disable ramp acceleration
 #define RAMP_ACCELERATION 1
 
-//Acceleration settings
+//// Acceleration settings
 #ifdef RAMP_ACCELERATION
-//X, Y, Z, E maximum start speed for accelerated moves. E default values are good for skeinforge 40+, for older versions raise them a lot.
+// X, Y, Z, E maximum start speed for accelerated moves. E default values are good for skeinforge 40+, for older versions raise them a lot.
 float max_start_speed_units_per_second[] = {25.0,25.0,0.2,10.0};
 long max_acceleration_units_per_sq_second[] = {1000,1000,50,10000}; // X, Y, Z and E max acceleration in mm/s^2 for printing moves or retracts
 long max_travel_acceleration_units_per_sq_second[] = {500,500,50}; // X, Y, Z max acceleration in mm/s^2 for travel moves
 #endif
 
-// AD595 THERMOCOUPLE SUPPORT UNTESTED... USE WITH CAUTION!!!!
+//// AD595 THERMOCOUPLE SUPPORT UNTESTED... USE WITH CAUTION!!!!
 
-//PID settings:
-//Uncomment the following line to enable PID support. This is untested and could be disastrous. Be careful.
+//// PID settings:
+// Uncomment the following line to enable PID support. This is untested and could be disastrous. Be careful.
 //#define PIDTEMP 1
 #ifdef PIDTEMP
 #define PID_MAX 255 // limits current to nozzle
@@ -114,35 +107,36 @@ long max_travel_acceleration_units_per_sq_second[] = {500,500,50}; // X, Y, Z ma
 #define PID_DGAIN 100 //100 is 1.0
 #endif
 
-//How often should the heater check for new temp readings, in milliseconds
+// How often should the heater check for new temp readings, in milliseconds
 #define HEATER_CHECK_INTERVAL 500
 #define BED_CHECK_INTERVAL 5000
-//Comment the following line to enable heat management during acceleration
+// Comment the following line to enable heat management during acceleration
 #define DISABLE_CHECK_DURING_ACC
 #ifndef DISABLE_CHECK_DURING_ACC
-  //Uncomment the following line to disable heat management during the move
+  // Uncomment the following line to disable heat management during moves
   //#define DISABLE_CHECK_DURING_MOVE
 #endif
-//Uncomment the following line to disable heat management during travel moves (and extruder-only moves, eg: retracts), strongly recommended if you are missing steps mid print.
-//Probably this should remain commented if are using PID.
-//It also defines the max milliseconds interval after which a travel move is not considered so for the sake of this feature.
+// Uncomment the following line to disable heat management during travel moves (and extruder-only moves, eg: retracts), strongly recommended if you are missing steps mid print.
+// Probably this should remain commented if are using PID.
+// It also defines the max milliseconds interval after which a travel move is not considered so for the sake of this feature.
 #define DISABLE_CHECK_DURING_TRAVEL 1000
 
-//Experimental temperature smoothing - only uncomment this if your temp readings are noisy
+//// Temperature smoothing - only uncomment this if your temp readings are noisy
 //#define SMOOTHING 1
 //#define SMOOTHFACTOR 16 //best to use a power of two here - determines how many values are averaged together by the smoothing algorithm
 
-//Experimental watchdog and minimal temp
-//The watchdog waits for the watchperiod in milliseconds whenever an M104 or M109 increases the target temperature
-//If the temperature has not increased at the end of that period, the target temperature is set to zero. It can be reset with another M104/M109
+//// Experimental watchdog and minimal temp
+// The watchdog waits for the watchperiod in milliseconds whenever an M104 or M109 increases the target temperature
+// If the temperature has not increased at the end of that period, the target temperature is set to zero. It can be reset with another M104/M109
 //#define WATCHPERIOD 5000 //5 seconds
-//The minimal temperature defines the temperature below which the heater will not be enabled
+
+//// The minimal temperature defines the temperature below which the heater will not be enabled
 #define MINTEMP 5
 
-//Experimental max temp
-//When temperature exceeds max temp, your bot will halt.
-//This feature exists to protect your hotend from overheating accidentally, but *NOT* from thermistor short/failure!
-//You should use MINTEMP for thermistor short/failure protection.
+//// Experimental max temp
+// When temperature exceeds max temp, your heater will be switched off.
+// This feature exists to protect your hotend from overheating accidentally, but *NOT* from thermistor short/failure!
+// You should use MINTEMP for thermistor short/failure protection.
 #define MAXTEMP 275
 
 // Select one of these only to define how the nozzle temp is read.
@@ -154,9 +148,7 @@ long max_travel_acceleration_units_per_sq_second[] = {500,500,50}; // X, Y, Z ma
 #define BED_USES_THERMISTOR
 //#define BED_USES_AD595
 
-
-
-//Uncomment the following line to enable debugging. You can better control debugging below the following line
+// Uncomment the following line to enable debugging. You can better control debugging below the following line
 //#define DEBUG
 #ifdef DEBUG
   //#define DEBUG_PREPARE_MOVE //Enable this to debug prepare_move() function
