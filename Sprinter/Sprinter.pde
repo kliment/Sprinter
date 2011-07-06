@@ -716,7 +716,7 @@ inline void process_commands()
           {
             tt=analog2temp(current_raw);
             Serial.print("T:");
-            Serial.print( tt ); 
+            Serial.print( tt );
             Serial.print(" B:");
             Serial.println( analog2temp(current_bed_raw) ); 
             codenum = millis(); 
