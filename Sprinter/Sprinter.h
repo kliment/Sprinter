@@ -70,5 +70,6 @@ void prepare_move();
 void linear_move(unsigned long steps_remaining[]);
 void do_step_update_micros(int axis);
 void do_step(int axis);
+void do_step_update_micros(int axis);
 void kill(byte debug);
 
