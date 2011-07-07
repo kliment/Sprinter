@@ -1,6 +1,8 @@
 // Tonokip RepRap firmware rewrite based off of Hydra-mmm firmware.
 // Licence: GPL
 #include <WProgram.h>
+extern "C" void __cxa_pure_virtual();
+void __cxa_pure_virtual() {};
 
 void get_command();
 void process_commands();

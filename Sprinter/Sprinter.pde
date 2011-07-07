@@ -1001,7 +1001,7 @@ void linear_move(unsigned long axis_steps_remaining[]) // make linear move with 
     //Define variables that are needed for the Bresenham algorithm. Please note that  Z is not currently included in the Bresenham algorithm.
   unsigned long delta[] = {axis_steps_remaining[0], axis_steps_remaining[1], axis_steps_remaining[2], axis_steps_remaining[3]}; //TODO: implement a "for" to support N axes
   long axis_error[NUM_AXIS];
-  unsigned int primary_axis;
+  int primary_axis;
   if(delta[1] > delta[0] && delta[1] > delta[2] && delta[1] > delta[3]) primary_axis = 1;
   else if (delta[0] >= delta[1] && delta[0] > delta[2] && delta[0] > delta[3]) primary_axis = 0;
   else if (delta[2] >= delta[0] && delta[2] >= delta[1] && delta[2] > delta[3]) primary_axis = 2;
@@ -1070,7 +1070,7 @@ void linear_move(unsigned long axis_steps_remaining[]) // make linear move with 
   #ifdef RAMP_ACCELERATION
   plateau_steps *= 1.01; // This is to compensate we use discrete intervals
   acceleration_enabled = true;
-  long full_interval = interval;
+  unsigned long full_interval = interval;
   if(interval > max_interval) acceleration_enabled = false;
   boolean decelerating = false;
   #endif
