@@ -75,9 +75,10 @@ boolean acceleration_enabled = false, accelerating = false;
 unsigned long interval;
 float destination[NUM_AXIS] = {0.0, 0.0, 0.0, 0.0};
 float current_position[NUM_AXIS] = {0.0, 0.0, 0.0, 0.0};
+unsigned long steps_taken[NUM_AXIS];
 long axis_interval[NUM_AXIS]; // for speed delay
 bool home_all_axis = true;
-float feedrate = 1500, next_feedrate, saved_feedrate;
+int feedrate = 1500, next_feedrate, saved_feedrate;
 float time_for_move;
 long gcode_N, gcode_LastN;
 bool relative_mode = false;  //Determines Absolute or Relative Coordinates
@@ -113,7 +114,7 @@ int target_raw = 0;
 int current_raw = 0;
 int target_bed_raw = 0;
 int current_bed_raw = 0;
-float tt = 0, bt = 0;
+int tt = 0, bt = 0;
 #ifdef PIDTEMP
   int temp_iState = 0;
   int temp_dState = 0;
@@ -930,17 +931,29 @@ inline void prepare_move()
   
   //Feedrate calc based on XYZ travel distance
   float xy_d;
-  if(abs(axis_diff[0]) > 0 || abs(axis_diff[1]) > 0 || abs(axis_diff[2])) {
+  //Check for cases where only one axis is moving - handle those without float sqrt
+  if(abs(axis_diff[0]) > 0 && abs(axis_diff[1]) == 0 && abs(axis_diff[2])==0)
+    d=abs(axis_diff[0]);
+  else if(abs(axis_diff[0]) == 0 && abs(axis_diff[1]) > 0 && abs(axis_diff[2])==0)
+    d=abs(axis_diff[1]);
+  else if(abs(axis_diff[0]) == 0 && abs(axis_diff[1]) == 0 && abs(axis_diff[2])>0)
+    d=abs(axis_diff[2]);
+  //two or three XYZ axes moving
+  else if(abs(axis_diff[0]) > 0 || abs(axis_diff[1]) > 0) { //X or Y or both
     xy_d = sqrt(axis_diff[0] * axis_diff[0] + axis_diff[1] * axis_diff[1]);
-    d = sqrt(xy_d * xy_d + axis_diff[2] * axis_diff[2]);
+    //check if Z involved - if so interpolate that too
+    d = (abs(axis_diff[2]>0))?sqrt(xy_d * xy_d + axis_diff[2] * axis_diff[2]):xy_d;
   }
   else if(abs(axis_diff[3]) > 0)
     d = abs(axis_diff[3]);
+  else{ //zero length move
   #ifdef DEBUG_PREPARE_MOVE
-    else {
+    
       log_message("_PREPARE_MOVE - No steps to take!");
-    }
+    
   #endif
+    return;
+    }
   time_for_move = (d / (feedrate / 60000000.0) );
   //Check max feedrate for each axis is not violated, update time_for_move if necessary
   for(int i = 0; i < NUM_AXIS; i++) {
@@ -956,7 +969,7 @@ inline void prepare_move()
   #ifdef DEBUG_PREPARE_MOVE
     log_float("_PREPARE_MOVE - Move distance on the XY plane", xy_d);
     log_float("_PREPARE_MOVE - Move distance on the XYZ space", d);
-    log_float("_PREPARE_MOVE - Commanded feedrate", feedrate);
+    log_int("_PREPARE_MOVE - Commanded feedrate", feedrate);
     log_float("_PREPARE_MOVE - Constant full speed move time", time_for_move);
     log_float_array("_PREPARE_MOVE - Destination", destination, NUM_AXIS);
     log_float_array("_PREPARE_MOVE - Current position", current_position, NUM_AXIS);
@@ -981,7 +994,6 @@ void linear_move(unsigned long axis_steps_remaining[]) // make linear move with 
   else digitalWrite(Z_DIR_PIN,INVERT_Z_DIR);
   if (destination[3] > current_position[3]) digitalWrite(E_DIR_PIN,!INVERT_E_DIR);
   else digitalWrite(E_DIR_PIN,INVERT_E_DIR);
-  
   if(X_MIN_PIN > -1) if(!move_direction[0]) if(digitalRead(X_MIN_PIN) != ENDSTOPS_INVERTING) axis_steps_remaining[0]=0;
   if(Y_MIN_PIN > -1) if(!move_direction[1]) if(digitalRead(Y_MIN_PIN) != ENDSTOPS_INVERTING) axis_steps_remaining[1]=0;
   if(Z_MIN_PIN > -1) if(!move_direction[2]) if(digitalRead(Z_MIN_PIN) != ENDSTOPS_INVERTING) axis_steps_remaining[2]=0;
@@ -1008,7 +1020,10 @@ void linear_move(unsigned long axis_steps_remaining[]) // make linear move with 
   else primary_axis = 3;
   unsigned long steps_remaining = delta[primary_axis];
   unsigned long steps_to_take = steps_remaining;
-  for(int i=0; i < NUM_AXIS; i++) if(i != primary_axis) axis_error[i] = delta[primary_axis] / 2;
+  for(int i=0; i < NUM_AXIS; i++){
+       if(i != primary_axis) axis_error[i] = delta[primary_axis] / 2;
+       steps_taken[i]=0;
+    }
   interval = axis_interval[primary_axis];
   bool is_print_move = delta[3] > 0;
   #ifdef DEBUG_BRESENHAM
@@ -1033,8 +1048,9 @@ void linear_move(unsigned long axis_steps_remaining[]) // make linear move with 
     int slowest_start_axis = primary_axis;
     unsigned long slowest_start_axis_max_interval = max_interval;
     for(int i = 0; i < NUM_AXIS; i++)
-      if (axis_steps_remaining[i] >0 && i != primary_axis && axis_max_interval[i] * axis_steps_remaining[i]
-              / axis_steps_remaining[slowest_start_axis] > slowest_start_axis_max_interval) {
+      if (axis_steps_remaining[i] >0 && 
+            i != primary_axis && 
+            axis_max_interval[i] * axis_steps_remaining[i]/ axis_steps_remaining[slowest_start_axis] > slowest_start_axis_max_interval) {
         slowest_start_axis = i;
         slowest_start_axis_max_interval = axis_max_interval[i];
       }
@@ -1160,7 +1176,11 @@ void linear_move(unsigned long axis_steps_remaining[]) // make linear move with 
       if(Z_MIN_PIN > -1) if(!move_direction[2]) if(digitalRead(Z_MIN_PIN) != ENDSTOPS_INVERTING) break;
       if(Z_MAX_PIN > -1) if(move_direction[2]) if(digitalRead(Z_MAX_PIN) != ENDSTOPS_INVERTING) break;
       timediff = micros() * 100 - axis_previous_micros[primary_axis];
-      while(timediff >= interval && axis_steps_remaining[primary_axis] > 0) {
+      if(timediff<0){//check for overflow
+        axis_previous_micros[primary_axis]=micros()*100;
+        timediff=interval/2; //approximation
+      }
+      while(((unsigned long)timediff) >= interval && axis_steps_remaining[primary_axis] > 0) {
         steps_done++;
         steps_remaining--;
         axis_steps_remaining[primary_axis]--; timediff -= interval;
@@ -1192,20 +1212,22 @@ void linear_move(unsigned long axis_steps_remaining[]) // make linear move with 
   
   // Update current position partly based on direction, we probably can combine this with the direction code above...
   for(int i=0; i < NUM_AXIS; i++) {
-    if (destination[i] > current_position[i]) current_position[i] = current_position[i] + move_steps_to_take[i] /  axis_steps_per_unit[i];
-    else current_position[i] = current_position[i] - move_steps_to_take[i] / axis_steps_per_unit[i];
+    if (destination[i] > current_position[i]) current_position[i] = current_position[i] + steps_taken[i] /  axis_steps_per_unit[i];
+    else current_position[i] = current_position[i] - steps_taken[i] / axis_steps_per_unit[i];
   }
 }
 
-inline void do_step_update_micros(int axis) {
+void do_step_update_micros(int axis) {
   digitalWrite(STEP_PIN[axis], HIGH);
   axis_previous_micros[axis] += interval;
   digitalWrite(STEP_PIN[axis], LOW);
+  steps_taken[axis]+=1;
 }
 
-inline void do_step(int axis) {
+void do_step(int axis) {
   digitalWrite(STEP_PIN[axis], HIGH);
   digitalWrite(STEP_PIN[axis], LOW);
+  steps_taken[axis]+=1;
 }
 
 #define HEAT_INTERVAL 250
@@ -1213,7 +1235,7 @@ inline void do_step(int axis) {
 unsigned long max6675_previous_millis = 0;
 int max6675_temp = 2000;
 
-inline int read_max6675()
+int read_max6675()
 {
   if (millis() - max6675_previous_millis < HEAT_INTERVAL) 
     return max6675_temp;
@@ -1265,7 +1287,7 @@ inline int read_max6675()
 #endif
 
 
-inline void manage_heater()
+void manage_heater()
 {
   if((millis() - previous_millis_heater) < HEATER_CHECK_INTERVAL )
     return;
