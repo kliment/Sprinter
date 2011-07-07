@@ -18,7 +18,8 @@ void ClearToSend();
 
 void get_coordinates();
 void prepare_move();
-void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remaining, unsigned long z_steps_remaining, unsigned long e_steps_remaining);
+void linear_move(unsigned long steps_remaining[]);
+void do_step_update_micros(int axis);
 void disable_x();
 void disable_y();
 void disable_z();
