@@ -54,7 +54,7 @@ SRC =  $(ARDUINO)/pins_arduino.c $(ARDUINO)/wiring.c \
 $(ARDUINO)/wiring_analog.c $(ARDUINO)/wiring_digital.c \
 $(ARDUINO)/wiring_pulse.c \
 $(ARDUINO)/wiring_shift.c $(ARDUINO)/WInterrupts.c
-CXXSRC = $(ARDUINO)/HardwareSerial.cpp $(ARDUINO)/WMath.cpp \
+CXXSRC = $(ARDUINO)/HardwareSerial.cpp $(ARDUINO)/WMath.cpp $(ARDUINO)/WString.cpp\
 $(ARDUINO)/Print.cpp ./SdFile.cpp ./SdVolume.cpp ./Sd2Card.cpp
 FORMAT = ihex
 
