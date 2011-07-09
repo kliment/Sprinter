@@ -1,6 +1,7 @@
 // Tonokip RepRap firmware rewrite based off of Hydra-mmm firmware.
 // Licence: GPL
 
+#include "fastio.h"
 #include "Configuration.h"
 #include "pins.h"
 #include "Sprinter.h"
@@ -60,7 +61,6 @@
 
 char axis_codes[NUM_AXIS] = {'X', 'Y', 'Z', 'E'};
 bool move_direction[NUM_AXIS];
-const int STEP_PIN[NUM_AXIS] = {X_STEP_PIN, Y_STEP_PIN, Z_STEP_PIN, E_STEP_PIN};
 unsigned long axis_previous_micros[NUM_AXIS];
 unsigned long previous_micros = 0, previous_millis_heater, previous_millis_bed_heater;
 unsigned long move_steps_to_take[NUM_AXIS];
@@ -795,25 +795,29 @@ inline void process_commands()
         }
       #endif
       break;
+      #if FAN_PIN > -1
       case 106: //M106 Fan On
         if (code_seen('S')){
-            digitalWrite(FAN_PIN, HIGH);
+            WRITE(FAN_PIN, HIGH);
             analogWrite(FAN_PIN, constrain(code_value(),0,255) );
         }
         else
-            digitalWrite(FAN_PIN, HIGH);
+            WRITE(FAN_PIN, HIGH);
         break;
       case 107: //M107 Fan Off
         analogWrite(FAN_PIN, 0);
         
-        digitalWrite(FAN_PIN, LOW);
+        WRITE(FAN_PIN, LOW);
         break;
+      #endif
+      #if (PS_ON_PIN > -1)
       case 80: // M81 - ATX Power On
-        if(PS_ON_PIN > -1) pinMode(PS_ON_PIN,OUTPUT); //GND
+        SET_OUTPUT(PS_ON_PIN); //GND
         break;
       case 81: // M81 - ATX Power Off
-        if(PS_ON_PIN > -1) pinMode(PS_ON_PIN,INPUT); //Floating
+        SET_INPUT(PS_ON_PIN); //Floating
         break;
+      #endif
       case 82:
         axis_relative_modes[3] = false;
         break;
@@ -997,14 +1001,14 @@ inline void prepare_move()
 void linear_move(unsigned long axis_steps_remaining[]) // make linear move with preset speeds and destinations, see G0 and G1
 {
   //Determine direction of movement
-  if (destination[0] > current_position[0]) digitalWrite(X_DIR_PIN,!INVERT_X_DIR);
-  else digitalWrite(X_DIR_PIN,INVERT_X_DIR);
-  if (destination[1] > current_position[1]) digitalWrite(Y_DIR_PIN,!INVERT_Y_DIR);
-  else digitalWrite(Y_DIR_PIN,INVERT_Y_DIR);
-  if (destination[2] > current_position[2]) digitalWrite(Z_DIR_PIN,!INVERT_Z_DIR);
-  else digitalWrite(Z_DIR_PIN,INVERT_Z_DIR);
-  if (destination[3] > current_position[3]) digitalWrite(E_DIR_PIN,!INVERT_E_DIR);
-  else digitalWrite(E_DIR_PIN,INVERT_E_DIR);
+  if (destination[0] > current_position[0]) WRITE(X_DIR_PIN,!INVERT_X_DIR);
+  else WRITE(X_DIR_PIN,INVERT_X_DIR);
+  if (destination[1] > current_position[1]) WRITE(Y_DIR_PIN,!INVERT_Y_DIR);
+  else WRITE(Y_DIR_PIN,INVERT_Y_DIR);
+  if (destination[2] > current_position[2]) WRITE(Z_DIR_PIN,!INVERT_Z_DIR);
+  else WRITE(Z_DIR_PIN,INVERT_Z_DIR);
+  if (destination[3] > current_position[3]) WRITE(E_DIR_PIN,!INVERT_E_DIR);
+  else WRITE(E_DIR_PIN,INVERT_E_DIR);
   if(X_MIN_PIN > -1) if(!move_direction[0]) if(digitalRead(X_MIN_PIN) != ENDSTOPS_INVERTING) axis_steps_remaining[0]=0;
   if(Y_MIN_PIN > -1) if(!move_direction[1]) if(digitalRead(Y_MIN_PIN) != ENDSTOPS_INVERTING) axis_steps_remaining[1]=0;
   if(Z_MIN_PIN > -1) if(!move_direction[2]) if(digitalRead(Z_MIN_PIN) != ENDSTOPS_INVERTING) axis_steps_remaining[2]=0;
