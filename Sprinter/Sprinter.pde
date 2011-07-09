@@ -1195,7 +1195,8 @@ void linear_move(unsigned long axis_steps_remaining[]) // make linear move with 
         steps_done++;
         steps_remaining--;
         axis_steps_remaining[primary_axis]--; timediff -= interval;
-        do_step_update_micros(primary_axis);
+        do_step(primary_axis);
+        axis_previous_micros[primary_axis] += interval;
         for(int i=0; i < NUM_AXIS; i++) if(i != primary_axis && axis_steps_remaining[i] > 0) {
           axis_error[i] = axis_error[i] - delta[i];
           if(axis_error[i] < 0) {
