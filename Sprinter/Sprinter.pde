@@ -538,14 +538,14 @@ inline void process_commands()
         home_all_axis = !((code_seen(axis_codes[0])) || (code_seen(axis_codes[1])) || (code_seen(axis_codes[2])));
 
         if((home_all_axis) || (code_seen('X'))) {
-          if((X_MIN_PIN > -1 && X_HOME_DIR==-1) || (X_MAX_PIN > -1 && X_HOME_DIR==1)) {
+          #if ((X_MIN_PIN > -1 && X_HOME_DIR==-1) || (X_MAX_PIN > -1 && X_HOME_DIR==1))
             current_position[0] = 0;
             destination[0] = 1.5 * X_MAX_LENGTH * X_HOME_DIR;
             feedrate = max_start_speed_units_per_second[0] * 60;
             prepare_move();
           
             current_position[0] = 0;
-            destination[0] = -1 * X_HOME_DIR;
+            destination[0] = -5 * X_HOME_DIR;
             prepare_move();
           
             destination[0] = 10 * X_HOME_DIR;
@@ -554,18 +554,18 @@ inline void process_commands()
             current_position[0] = 0;
             destination[0] = 0;
             feedrate = 0;
-          }
+          #endif
         }
         
         if((home_all_axis) || (code_seen('X'))) {
-          if((Y_MIN_PIN > -1 && Y_HOME_DIR==-1) || (Y_MAX_PIN > -1 && Y_HOME_DIR==1)) {
+          #if ((Y_MIN_PIN > -1 && Y_HOME_DIR==-1) || (Y_MAX_PIN > -1 && Y_HOME_DIR==1)) 
             current_position[1] = 0;
             destination[1] = 1.5 * Y_MAX_LENGTH * Y_HOME_DIR;
             feedrate = max_start_speed_units_per_second[1] * 60;
             prepare_move();
           
             current_position[1] = 0;
-            destination[1] = -1 * Y_HOME_DIR;
+            destination[1] = -5 * Y_HOME_DIR;
             prepare_move();
           
             destination[1] = 10 * Y_HOME_DIR;
@@ -574,18 +574,18 @@ inline void process_commands()
             current_position[1] = 0;
             destination[1] = 0;
             feedrate = 0;
-          }
+          #endif
         }
         
         if((home_all_axis) || (code_seen('X'))) {
-          if((Z_MIN_PIN > -1 && Z_HOME_DIR==-1) || (Z_MAX_PIN > -1 && Z_HOME_DIR==1)) {
+          #if ((Z_MIN_PIN > -1 && Z_HOME_DIR==-1) || (Z_MAX_PIN > -1 && Z_HOME_DIR==1)) 
             current_position[2] = 0;
             destination[2] = 1.5 * Z_MAX_LENGTH * Z_HOME_DIR;
             feedrate = max_feedrate[2]/2;
             prepare_move();
           
             current_position[2] = 0;
-            destination[2] = -1 * Z_HOME_DIR;
+            destination[2] = -5 * Z_HOME_DIR;
             prepare_move();
           
             destination[2] = 10 * Z_HOME_DIR;
@@ -594,7 +594,7 @@ inline void process_commands()
             current_position[2] = 0;
             destination[2] = 0;
             feedrate = 0;
-          }
+          #endif
         }
         
         feedrate = saved_feedrate;
