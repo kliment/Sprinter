@@ -208,121 +208,132 @@ void setup()
   
   //Initialize Dir Pins
   #if X_DIR_PIN > -1
-    pinMode(X_DIR_PIN,OUTPUT);
+    SET_OUTPUT(X_DIR_PIN);
   #endif
   #if Y_DIR_PIN > -1 
-    pinMode(Y_DIR_PIN,OUTPUT);
+    SET_OUTPUT(Y_DIR_PIN);
   #endif
   #if Z_DIR_PIN > -1 
-    pinMode(Z_DIR_PIN,OUTPUT);
+    SET_OUTPUT(Z_DIR_PIN);
   #endif
   #if E_DIR_PIN > -1 
-    pinMode(E_DIR_PIN,OUTPUT);
+    SET_OUTPUT(E_DIR_PIN);
   #endif
   
   //Initialize Enable Pins - steppers default to disabled.
   
   #if (X_ENABLE_PIN > -1)
-  pinMode(X_ENABLE_PIN,OUTPUT);
-  if(!X_ENABLE_ON) digitalWrite(X_ENABLE_PIN,HIGH);
+    SET_OUTPUT(X_ENABLE_PIN);
+  if(!X_ENABLE_ON) WRITE(X_ENABLE_PIN,HIGH);
   #endif
   #if (Y_ENABLE_PIN > -1)
-  pinMode(Y_ENABLE_PIN,OUTPUT);
-  if(!Y_ENABLE_ON) digitalWrite(Y_ENABLE_PIN,HIGH);
+    SET_OUTPUT(Y_ENABLE_PIN);
+  if(!Y_ENABLE_ON) WRITE(Y_ENABLE_PIN,HIGH);
   #endif
   #if (Z_ENABLE_PIN > -1)
-  pinMode(Z_ENABLE_PIN,OUTPUT);
-  if(!Z_ENABLE_ON) digitalWrite(Z_ENABLE_PIN,HIGH);
+    SET_OUTPUT(Z_ENABLE_PIN);
+  if(!Z_ENABLE_ON) WRITE(Z_ENABLE_PIN,HIGH);
   #endif
   #if (E_ENABLE_PIN > -1)
-  pinMode(E_ENABLE_PIN,OUTPUT);
-  if(!E_ENABLE_ON) digitalWrite(E_ENABLE_PIN,HIGH);
+    SET_OUTPUT(E_ENABLE_PIN);
+  if(!E_ENABLE_ON) WRITE(E_ENABLE_PIN,HIGH);
   #endif
   
   //endstops and pullups
   #ifdef ENDSTOPPULLUPS
   #if X_MIN_PIN > -1
-    pinMode(X_MIN_PIN,INPUT); 
-    digitalWrite(X_MIN_PIN,HIGH);
+    SET_INPUT(X_MIN_PIN); 
+    WRITE(X_MIN_PIN,HIGH);
   #endif
   #if X_MAX_PIN > -1
-    pinMode(X_MAX_PIN,INPUT); 
-    digitalWrite(X_MAX_PIN,HIGH);
+    SET_INPUT(X_MAX_PIN); 
+    WRITE(X_MAX_PIN,HIGH);
   #endif
   #if Y_MIN_PIN > -1
-    pinMode(Y_MIN_PIN,INPUT); 
-    digitalWrite(Y_MIN_PIN,HIGH);
+    SET_INPUT(Y_MIN_PIN); 
+    WRITE(Y_MIN_PIN,HIGH);
   #endif
   #if Y_MAX_PIN > -1
-    pinMode(Y_MAX_PIN,INPUT); 
-    digitalWrite(Y_MAX_PIN,HIGH);
+    SET_INPUT(Y_MAX_PIN); 
+    WRITE(Y_MAX_PIN,HIGH);
   #endif
   #if Z_MIN_PIN > -1
-    pinMode(Z_MIN_PIN,INPUT); 
-    digitalWrite(Z_MIN_PIN,HIGH);
+    SET_INPUT(Z_MIN_PIN); 
+    WRITE(Z_MIN_PIN,HIGH);
   #endif
   #if Z_MAX_PIN > -1
-    pinMode(Z_MAX_PIN,INPUT); 
-    digitalWrite(Z_MAX_PIN,HIGH);
+    SET_INPUT(Z_MAX_PIN); 
+    WRITE(Z_MAX_PIN,HIGH);
   #endif
   #else
   #if X_MIN_PIN > -1
-    pinMode(X_MIN_PIN,INPUT); 
+    SET_INPUT(X_MIN_PIN); 
   #endif
   #if X_MAX_PIN > -1
-    pinMode(X_MAX_PIN,INPUT); 
+    SET_INPUT(X_MAX_PIN); 
   #endif
   #if Y_MIN_PIN > -1
-    pinMode(Y_MIN_PIN,INPUT); 
+    SET_INPUT(Y_MIN_PIN); 
   #endif
   #if Y_MAX_PIN > -1
-    pinMode(Y_MAX_PIN,INPUT); 
+    SET_INPUT(Y_MAX_PIN); 
   #endif
   #if Z_MIN_PIN > -1
-    pinMode(Z_MIN_PIN,INPUT); 
+    SET_INPUT(Z_MIN_PIN); 
   #endif
   #if Z_MAX_PIN > -1
-    pinMode(Z_MAX_PIN,INPUT); 
+    SET_INPUT(Z_MAX_PIN); 
   #endif
   #endif
   
   #if (HEATER_0_PIN > -1) 
-    pinMode(HEATER_0_PIN,OUTPUT);
+    SET_OUTPUT(HEATER_0_PIN);
   #endif  
   #if (HEATER_1_PIN > -1) 
-    pinMode(HEATER_1_PIN,OUTPUT);
+    SET_OUTPUT(HEATER_1_PIN);
   #endif  
   
 //Initialize Step Pins
+  #if (X_STEP_PIN > -1) 
+    SET_OUTPUT(X_STEP_PIN);
+  #endif  
+  #if (Y_STEP_PIN > -1) 
+    SET_OUTPUT(Y_STEP_PIN);
+  #endif  
+  #if (Z_STEP_PIN > -1) 
+    SET_OUTPUT(Z_STEP_PIN);
+  #endif  
+  #if (E_STEP_PIN > -1) 
+    SET_OUTPUT(E_STEP_PIN);
+  #endif  
+  #ifdef RAMP_ACCELERATION
   for(int i=0; i < NUM_AXIS; i++){
-       if(STEP_PIN[i] > -1) pinMode(STEP_PIN[i],OUTPUT);
-    #ifdef RAMP_ACCELERATION
         axis_max_interval[i] = 100000000.0 / (max_start_speed_units_per_second[i] * axis_steps_per_unit[i]);
         axis_steps_per_sqr_second[i] = max_acceleration_units_per_sq_second[i] * axis_steps_per_unit[i];
         axis_travel_steps_per_sqr_second[i] = max_travel_acceleration_units_per_sq_second[i] * axis_steps_per_unit[i];
-    #endif
     }
-  
+  #endif
+    
 #ifdef HEATER_USES_MAX6675
-  pinMode(SCK_PIN,OUTPUT);
-  digitalWrite(SCK_PIN,0);
+  SET_OUTPUT(SCK_PIN);
+  WRITE(SCK_PIN,0);
   
-  pinMode(MOSI_PIN,OUTPUT);
-  digitalWrite(MOSI_PIN,1);
+  SET_OUTPUT(MOSI_PIN);
+  WRITE(MOSI_PIN,1);
   
-  pinMode(MISO_PIN,INPUT);
-  digitalWrite(MISO_PIN,1);
+  SET_INPUT(MISO_PIN);
+  WRITE(MISO_PIN,1);
   
-  pinMode(MAX6675_SS,OUTPUT);
-  digitalWrite(MAX6675_SS,1);
+  SET_OUTPUT(MAX6675_SS);
+  WRITE(MAX6675_SS,1);
 #endif  
  
 #ifdef SDSUPPORT
 
   //power to SD reader
   #if SDPOWER > -1
-    pinMode(SDPOWER,OUTPUT); 
-    digitalWrite(SDPOWER,HIGH);
+    SET_OUTPUT(SDPOWER); 
+    WRITE(SDPOWER,HIGH);
   #endif
   initsd();
 
