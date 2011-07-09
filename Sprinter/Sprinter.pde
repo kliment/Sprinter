@@ -863,27 +863,27 @@ inline void process_commands()
       case 119: // M119
       	#if (X_MIN_PIN > -1)
       	Serial.print("x_min:");
-        Serial.print((digitalRead(X_MIN_PIN)^ENDSTOPS_INVERTING)?"H ":"L ");
+        Serial.print((READ(X_MIN_PIN)^ENDSTOPS_INVERTING)?"H ":"L ");
       	#endif
       	#if (X_MAX_PIN > -1)
       	Serial.print("x_max:");
-        Serial.print((digitalRead(X_MAX_PIN)^ENDSTOPS_INVERTING)?"H ":"L ");
+        Serial.print((READ(X_MAX_PIN)^ENDSTOPS_INVERTING)?"H ":"L ");
       	#endif
       	#if (Y_MIN_PIN > -1)
       	Serial.print("y_min:");
-        Serial.print((digitalRead(Y_MIN_PIN)^ENDSTOPS_INVERTING)?"H ":"L ");
+        Serial.print((READ(Y_MIN_PIN)^ENDSTOPS_INVERTING)?"H ":"L ");
       	#endif
       	#if (Y_MAX_PIN > -1)
       	Serial.print("y_max:");
-        Serial.print((digitalRead(Y_MAX_PIN)^ENDSTOPS_INVERTING)?"H ":"L ");
+        Serial.print((READ(Y_MAX_PIN)^ENDSTOPS_INVERTING)?"H ":"L ");
       	#endif
       	#if (Z_MIN_PIN > -1)
       	Serial.print("z_min:");
-        Serial.print((digitalRead(Z_MIN_PIN)^ENDSTOPS_INVERTING)?"H ":"L ");
+        Serial.print((READ(Z_MIN_PIN)^ENDSTOPS_INVERTING)?"H ":"L ");
       	#endif
       	#if (Z_MAX_PIN > -1)
       	Serial.print("z_max:");
-        Serial.print((digitalRead(Z_MAX_PIN)^ENDSTOPS_INVERTING)?"H ":"L ");
+        Serial.print((READ(Z_MAX_PIN)^ENDSTOPS_INVERTING)?"H ":"L ");
       	#endif
         Serial.println("");
       	break;
