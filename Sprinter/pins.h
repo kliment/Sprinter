@@ -23,6 +23,8 @@
 *                   +----+
 ****************************************************************************************/
 #if MOTHERBOARD == 0
+#define KNOWN_BOARD 1
+
 #ifndef __AVR_ATmega168__
 #error Oops!  Make sure you have 'Arduino Diecimila' selected from the boards menu.
 #endif
@@ -60,7 +62,7 @@
 #define TEMP_0_PIN          0    // MUST USE ANALOG INPUT NUMBERING NOT DIGITAL OUTPUT NUMBERING!!!!!!!!!
 
 
-
+#endif
 
 
 
@@ -93,7 +95,9 @@
 *                        +--------+
 *
 ****************************************************************************************/
-#elif MOTHERBOARD == 1
+#if MOTHERBOARD == 1
+#define KNOWN_BOARD 1
+
 #ifndef __AVR_ATmega644P__
 #error Oops!  Make sure you have 'Sanguino' selected from the 'Tools -> Boards' menu.
 #endif
@@ -134,14 +138,16 @@
 
 
 
-
+#endif
 
 
 /****************************************************************************************
 * RepRap Motherboard  ****---NOOOOOO RS485/EXTRUDER CONTROLLER!!!!!!!!!!!!!!!!!---*******
 *
 ****************************************************************************************/
-#elif MOTHERBOARD == 2
+#if MOTHERBOARD == 2
+#define KNOWN_BOARD 1
+
 #ifndef __AVR_ATmega644P__
 #error Oops!  Make sure you have 'Sanguino' selected from the 'Tools -> Boards' menu.
 #endif
@@ -192,13 +198,19 @@
 
 
 
-
+#endif
 
 /****************************************************************************************
 * Arduino Mega pin assignment
 *
 ****************************************************************************************/
-#elif MOTHERBOARD == 3
+#if MOTHERBOARD == 33
+#define MOTHERBOARD 3
+#define RAMPS_V_1_3
+#endif
+#if MOTHERBOARD == 3
+#define KNOWN_BOARD 1
+
 //////////////////FIX THIS//////////////
 #ifndef __AVR_ATmega1280__
  #ifndef __AVR_ATmega2560__
@@ -209,7 +221,6 @@
 // uncomment one of the following lines for RAMPS v1.3 or v1.0, comment both for v1.2 or 1.1
 // #define RAMPS_V_1_3
 // #define RAMPS_V_1_0
-
 
 #ifdef RAMPS_V_1_3
 
@@ -307,12 +318,14 @@
 #endif
 
 
-
+#endif
 /****************************************************************************************
 * Duemilanove w/ ATMega328P pin assignment
 *
 ****************************************************************************************/
-#elif MOTHERBOARD == 4
+#if MOTHERBOARD == 4
+#define KNOWN_BOARD 1
+
 #ifndef __AVR_ATmega328P__
 #error Oops!  Make sure you have 'Arduino Duemilanove w/ ATMega328' selected from the 'Tools -> Boards' menu.
 #endif
@@ -350,13 +363,14 @@
 #define TEMP_0_PIN          0    // MUST USE ANALOG INPUT NUMBERING NOT DIGITAL OUTPUT NUMBERING!!!!!!!!!
 
 
-
+#endif
 
 /****************************************************************************************
 * Gen6 pin assignment
 *
 ****************************************************************************************/
-#elif MOTHERBOARD == 5
+#if MOTHERBOARD == 5
+#define KNOWN_BOARD 1
 
 #ifndef __AVR_ATmega644P__
     #error Oops!  Make sure you have 'Sanguino' selected from the 'Tools -> Boards' menu.
@@ -393,7 +407,7 @@
     
     
     #define SDPOWER          -1
-    #define SDSS          -1
+    #define SDSS          17
     #define LED_PIN         -1    //changed @ rkoeppl 20110410
     #define TEMP_1_PIN      -1    //changed @ rkoeppl 20110410
     #define FAN_PIN         -1    //changed @ rkoeppl 20110410
@@ -406,60 +420,63 @@
     #define TX_ENABLE_PIN	12
     #define RX_ENABLE_PIN	13
 
-
+#endif
 /****************************************************************************************
 * Sanguinololu pin assignment
 *
 ****************************************************************************************/
-#elif MOTHERBOARD == 6
+#if MOTHERBOARD == 62
+#define MOTHERBOARD 6
+#define SANGUINOLOLU_V_1_2 
+#endif
+#if MOTHERBOARD == 6
+#define KNOWN_BOARD 1
 #ifndef __AVR_ATmega644P__
 #error Oops!  Make sure you have 'Sanguino' selected from the 'Tools -> Boards' menu.
 #endif
 
-// uncomment the following line for Sanguinololu v1.2, comment for 1.1 or earlier.
-// #define SANGUINOLOLU_V_1_2 
-
-
 #define X_STEP_PIN         15
 #define X_DIR_PIN          21
-#define X_ENABLE_PIN       -1
 #define X_MIN_PIN          18
-#define X_MAX_PIN           -2 //2
+#define X_MAX_PIN           -2
 
 #define Y_STEP_PIN         22
 #define Y_DIR_PIN          23
-#define Y_ENABLE_PIN       -1
 #define Y_MIN_PIN          19
-#define Y_MAX_PIN          -1 //17
+#define Y_MAX_PIN          -1
 
 #define Z_STEP_PIN         3
 #define Z_DIR_PIN          2
-// zenable defined by platform below
 #define Z_MIN_PIN          20
-#define Z_MAX_PIN          -1 //19
+#define Z_MAX_PIN          -1
 
 #define E_STEP_PIN         1
 #define E_DIR_PIN          0
-#define E_ENABLE_PIN       -1
 
 #define LED_PIN            -1
 
-#define FAN_PIN            -1 // THIS LINE FOR V1.0
+#define FAN_PIN            -1 
 
 #define PS_ON_PIN          -1
 #define KILL_PIN           -1
 
-#define HEATER_0_PIN       13 // THIS LINE FOR V1.0+ (extruder)
+#define HEATER_0_PIN       13 // (extruder)
 
 #ifdef SANGUINOLOLU_V_1_2
 
 #define HEATER_1_PIN       12 // (bed)
+#define X_ENABLE_PIN       14
+#define Y_ENABLE_PIN       14
 #define Z_ENABLE_PIN       26
+#define E_ENABLE_PIN       14
 
 #else
 
 #define HEATER_1_PIN       14  // (bed)
+#define X_ENABLE_PIN       -1
+#define Y_ENABLE_PIN       -1
 #define Z_ENABLE_PIN       -1
+#define E_ENABLE_PIN       -1
 
 #endif
 
@@ -468,9 +485,9 @@
 #define SDPOWER          -1
 #define SDSS          31
 
-#else
-
+#ifndef KNOWN_BOARD
 #error Unknown MOTHERBOARD value in configuration.h
+#endif
 
 #endif
 

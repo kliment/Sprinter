@@ -1,7 +1,8 @@
 // Tonokip RepRap firmware rewrite based off of Hydra-mmm firmware.
 // Licence: GPL
 #include <WProgram.h>
-
+extern "C" void __cxa_pure_virtual();
+void __cxa_pure_virtual(){};
 void get_command();
 void process_commands();
 
@@ -18,7 +19,8 @@ void ClearToSend();
 
 void get_coordinates();
 void prepare_move();
-void linear_move(unsigned long x_steps_remaining, unsigned long y_steps_remaining, unsigned long z_steps_remaining, unsigned long e_steps_remaining);
+void linear_move(unsigned long steps_remaining[]);
+void do_step_update_micros(int axis);
 void disable_x();
 void disable_y();
 void disable_z();
@@ -27,10 +29,7 @@ void enable_x();
 void enable_y();
 void enable_z();
 void enable_e();
-void do_x_step();
-void do_y_step();
-void do_z_step();
-void do_e_step();
+void do_step(int axis);
 
 void kill(byte debug);
 
