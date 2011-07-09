@@ -1392,7 +1392,9 @@ void manage_heater()
         if(watch_raw + 1 >= current_raw){
             target_raw = 0;
             WRITE(HEATER_0_PIN,LOW);
-            WRITE(LED_PIN,LOW);
+            #if LED_PIN>-1
+                WRITE(LED_PIN,LOW);
+            #endif
         }else{
             watchmillis = 0;
         }
@@ -1421,12 +1423,16 @@ void manage_heater()
       if(current_raw >= target_raw)
       {
         WRITE(HEATER_0_PIN,LOW);
-        WRITE(LED_PIN,LOW);
+        #if LED_PIN>-1
+            WRITE(LED_PIN,LOW);
+        #endif
       }
       else 
       {
         WRITE(HEATER_0_PIN,HIGH);
-        WRITE(LED_PIN,HIGH);
+        #if LED_PIN > -1
+            WRITE(LED_PIN,HIGH);
+        #endif
       }
     #endif
   #endif
@@ -1439,7 +1445,7 @@ void manage_heater()
   #endif
   #if TEMP_1_PIN == -1
     return;
-  #endif
+  #else
   
   #ifdef BED_USES_THERMISTOR
   
@@ -1466,6 +1472,7 @@ void manage_heater()
     {
       WRITE(HEATER_1_PIN,HIGH);
     }
+    #endif
 }
 
 
