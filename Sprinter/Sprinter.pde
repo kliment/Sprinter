@@ -1228,17 +1228,26 @@ void linear_move(unsigned long axis_steps_remaining[]) // make linear move with 
   }
 }
 
-void do_step_update_micros(int axis) {
-  digitalWrite(STEP_PIN[axis], HIGH);
-  axis_previous_micros[axis] += interval;
-  digitalWrite(STEP_PIN[axis], LOW);
-  steps_taken[axis]+=1;
-}
-
 void do_step(int axis) {
-  digitalWrite(STEP_PIN[axis], HIGH);
-  digitalWrite(STEP_PIN[axis], LOW);
+  switch(axis){
+  case 0:
+    WRITE(X_STEP_PIN, HIGH);
+    break;
+  case 1:
+    WRITE(Y_STEP_PIN, HIGH);
+    break;
+  case 2:
+    WRITE(Z_STEP_PIN, HIGH);
+    break;
+  case 3:
+    WRITE(E_STEP_PIN, HIGH);
+    break;
+  }
   steps_taken[axis]+=1;
+  WRITE(X_STEP_PIN, LOW);
+  WRITE(Y_STEP_PIN, LOW);
+  WRITE(Z_STEP_PIN, LOW);
+  WRITE(E_STEP_PIN, LOW);
 }
 
 #define HEAT_INTERVAL 250
@@ -1264,7 +1273,7 @@ int read_max6675()
   SPCR = (1<<MSTR) | (1<<SPE) | (1<<SPR0);
   
   // enable TT_MAX6675
-  digitalWrite(MAX6675_SS, 0);
+  WRITE(MAX6675_SS, 0);
   
   // ensure 100ns delay - a bit extra is fine
   delay(1);
@@ -1281,7 +1290,7 @@ int read_max6675()
   max6675_temp |= SPDR;
   
   // disable TT_MAX6675
-  digitalWrite(MAX6675_SS, 1);
+  WRITE(MAX6675_SS, 1);
 
   if (max6675_temp & 4) 
   {
@@ -1325,8 +1334,8 @@ void manage_heater()
     if(watchmillis && millis() - watchmillis > WATCHPERIOD){
         if(watch_raw + 1 >= current_raw){
             target_raw = 0;
-            digitalWrite(HEATER_0_PIN,LOW);
-            digitalWrite(LED_PIN,LOW);
+            WRITE(HEATER_0_PIN,LOW);
+            WRITE(LED_PIN,LOW);
         }else{
             watchmillis = 0;
         }
@@ -1354,13 +1363,13 @@ void manage_heater()
     #else
       if(current_raw >= target_raw)
       {
-        digitalWrite(HEATER_0_PIN,LOW);
-        digitalWrite(LED_PIN,LOW);
+        WRITE(HEATER_0_PIN,LOW);
+        WRITE(LED_PIN,LOW);
       }
       else 
       {
-        digitalWrite(HEATER_0_PIN,HIGH);
-        digitalWrite(LED_PIN,HIGH);
+        WRITE(HEATER_0_PIN,HIGH);
+        WRITE(LED_PIN,HIGH);
       }
     #endif
   #endif
@@ -1394,11 +1403,11 @@ void manage_heater()
   
     if(current_bed_raw >= target_bed_raw)
     {
-      digitalWrite(HEATER_1_PIN,LOW);
+      WRITE(HEATER_1_PIN,LOW);
     }
     else 
     {
-      digitalWrite(HEATER_1_PIN,HIGH);
+      WRITE(HEATER_1_PIN,HIGH);
     }
 }
 
@@ -1478,11 +1487,11 @@ inline void kill()
 {
   #if TEMP_0_PIN > -1
   target_raw=0;
-  digitalWrite(HEATER_0_PIN,LOW);
+  WRITE(HEATER_0_PIN,LOW);
   #endif
   #if TEMP_1_PIN > -1
   target_bed_raw=0;
-  if(HEATER_1_PIN > -1) digitalWrite(HEATER_1_PIN,LOW);
+  if(HEATER_1_PIN > -1) WRITE(HEATER_1_PIN,LOW);
   #endif
   disable_x();
   disable_y();
