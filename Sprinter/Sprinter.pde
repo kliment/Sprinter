@@ -885,6 +885,7 @@ inline void process_commands()
       	Serial.print("z_max:");
         Serial.print((digitalRead(Z_MAX_PIN)^ENDSTOPS_INVERTING)?"H ":"L ");
       	#endif
+        Serial.println("");
       	break;
       #ifdef RAMP_ACCELERATION
       //TODO: update for all axis, use for loop
