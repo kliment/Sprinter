@@ -1197,12 +1197,24 @@ void linear_move(unsigned long axis_steps_remaining[]) // make linear move with 
 
     //If there are x or y steps remaining, perform Bresenham algorithm
     if(axis_steps_remaining[primary_axis]) {
-      if(X_MIN_PIN > -1) if(!move_direction[0]) if(digitalRead(X_MIN_PIN) != ENDSTOPS_INVERTING) break;
-      if(Y_MIN_PIN > -1) if(!move_direction[1]) if(digitalRead(Y_MIN_PIN) != ENDSTOPS_INVERTING) break;
-      if(X_MAX_PIN > -1) if(move_direction[0]) if(digitalRead(X_MAX_PIN) != ENDSTOPS_INVERTING) break;
-      if(Y_MAX_PIN > -1) if(move_direction[1]) if(digitalRead(Y_MAX_PIN) != ENDSTOPS_INVERTING) break;
-      if(Z_MIN_PIN > -1) if(!move_direction[2]) if(digitalRead(Z_MIN_PIN) != ENDSTOPS_INVERTING) break;
-      if(Z_MAX_PIN > -1) if(move_direction[2]) if(digitalRead(Z_MAX_PIN) != ENDSTOPS_INVERTING) break;
+      #if (X_MIN_PIN > -1) 
+        if(!move_direction[0]) if(READ(X_MIN_PIN) != ENDSTOPS_INVERTING) break;
+      #endif
+      #if (Y_MIN_PIN > -1) 
+        if(!move_direction[1]) if(READ(Y_MIN_PIN) != ENDSTOPS_INVERTING) break;
+      #endif
+      #if (X_MAX_PIN > -1) 
+        if(move_direction[0]) if(READ(X_MAX_PIN) != ENDSTOPS_INVERTING) break;
+      #endif
+      #if (Y_MAX_PIN > -1) 
+        if(move_direction[1]) if(READ(Y_MAX_PIN) != ENDSTOPS_INVERTING) break;
+      #endif
+      #if (Z_MIN_PIN > -1) 
+        if(!move_direction[2]) if(READ(Z_MIN_PIN) != ENDSTOPS_INVERTING) break;
+      #endif
+      #if (Z_MAX_PIN > -1) 
+        if(move_direction[2]) if(READ(Z_MAX_PIN) != ENDSTOPS_INVERTING) break;
+      #endif
       timediff = micros() * 100 - axis_previous_micros[primary_axis];
       if(timediff<0){//check for overflow
         axis_previous_micros[primary_axis]=micros()*100;
