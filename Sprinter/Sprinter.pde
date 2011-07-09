@@ -912,7 +912,7 @@ inline void process_commands()
       
 }
 
-inline void FlushSerialRequestResend()
+void FlushSerialRequestResend()
 {
   //char cmdbuffer[bufindr][100]="Resend:";
   Serial.flush();
@@ -921,7 +921,7 @@ inline void FlushSerialRequestResend()
   ClearToSend();
 }
 
-inline void ClearToSend()
+void ClearToSend()
 {
   previous_millis_cmd = millis();
   #ifdef SDSUPPORT
@@ -943,7 +943,7 @@ inline void get_coordinates()
   }
 }
 
-inline void prepare_move()
+void prepare_move()
 {
   //Find direction
   for(int i=0; i < NUM_AXIS; i++) {
@@ -1025,7 +1025,7 @@ inline void prepare_move()
   linear_move(move_steps); // make the move
 }
 
-void linear_move(unsigned long axis_steps_remaining[]) // make linear move with preset speeds and destinations, see G0 and G1
+inline void linear_move(unsigned long axis_steps_remaining[]) // make linear move with preset speeds and destinations, see G0 and G1
 {
   //Determine direction of movement
   if (destination[0] > current_position[0]) WRITE(X_DIR_PIN,!INVERT_X_DIR);
