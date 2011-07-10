@@ -1225,22 +1225,22 @@ inline void linear_move(unsigned long axis_steps_remaining[]) // make linear mov
     //If there are x or y steps remaining, perform Bresenham algorithm
     if(axis_steps_remaining[primary_axis]) {
       #if (X_MIN_PIN > -1) 
-        if(!move_direction[0]) if(READ(X_MIN_PIN) != ENDSTOPS_INVERTING) if(primary_axis==0) break; else if(axis_step_remaining[0]) axis_step_remaining[0]=0;
+        if(!move_direction[0]) if(READ(X_MIN_PIN) != ENDSTOPS_INVERTING) if(primary_axis==0) break; else if(axis_steps_remaining[0]) axis_steps_remaining[0]=0;
       #endif
       #if (Y_MIN_PIN > -1) 
-        if(!move_direction[1]) if(READ(Y_MIN_PIN) != ENDSTOPS_INVERTING) if(primary_axis==1) break; else if(axis_step_remaining[1]) axis_step_remaining[1]=0;
+        if(!move_direction[1]) if(READ(Y_MIN_PIN) != ENDSTOPS_INVERTING) if(primary_axis==1) break; else if(axis_steps_remaining[1]) axis_steps_remaining[1]=0;
       #endif
       #if (X_MAX_PIN > -1) 
-        if(move_direction[0]) if(READ(X_MAX_PIN) != ENDSTOPS_INVERTING) if(primary_axis==0) break; else if(axis_step_remaining[0]) axis_step_remaining[0]=0;
+        if(move_direction[0]) if(READ(X_MAX_PIN) != ENDSTOPS_INVERTING) if(primary_axis==0) break; else if(axis_steps_remaining[0]) axis_steps_remaining[0]=0;
       #endif
       #if (Y_MAX_PIN > -1) 
-        if(move_direction[1]) if(READ(Y_MAX_PIN) != ENDSTOPS_INVERTING) if(primary_axis==1) break; else if(axis_step_remaining[1]) axis_step_remaining[1]=0;
+        if(move_direction[1]) if(READ(Y_MAX_PIN) != ENDSTOPS_INVERTING) if(primary_axis==1) break; else if(axis_steps_remaining[1]) axis_steps_remaining[1]=0;
       #endif
       #if (Z_MIN_PIN > -1) 
-        if(!move_direction[2]) if(READ(Z_MIN_PIN) != ENDSTOPS_INVERTING) if(primary_axis==2) break; else if(axis_step_remaining[2]) axis_step_remaining[2]=0;
+        if(!move_direction[2]) if(READ(Z_MIN_PIN) != ENDSTOPS_INVERTING) if(primary_axis==2) break; else if(axis_steps_remaining[2]) axis_steps_remaining[2]=0;
       #endif
       #if (Z_MAX_PIN > -1) 
-        if(move_direction[2]) if(READ(Z_MAX_PIN) != ENDSTOPS_INVERTING) if(primary_axis==2) break; else if(axis_step_remaining[2]) axis_step_remaining[2]=0;
+        if(move_direction[2]) if(READ(Z_MAX_PIN) != ENDSTOPS_INVERTING) if(primary_axis==2) break; else if(axis_steps_remaining[2]) axis_steps_remaining[2]=0;
       #endif
       timediff = micros() * 100 - axis_previous_micros[primary_axis];
       if(timediff<0){//check for overflow
