@@ -24,7 +24,7 @@
 */
 
 /// Read a pin
-#define		_READ(IO)					(DIO ## IO ## _RPORT & MASK(DIO ## IO ## _PIN))
+#define		_READ(IO)					((bool)(DIO ## IO ## _RPORT & MASK(DIO ## IO ## _PIN)))
 /// write to a pin
 #define		_WRITE(IO, v)			do { if (v) {DIO ##  IO ## _WPORT |= MASK(DIO ## IO ## _PIN); } else {DIO ##  IO ## _WPORT &= ~MASK(DIO ## IO ## _PIN); }; } while (0)
 /// toggle a pin
