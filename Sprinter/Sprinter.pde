@@ -737,16 +737,16 @@ inline void process_commands()
         if (code_seen('S')) target_bed_raw = temp2analogBed(code_value());
         break;
       case 105: // M105
-        #if (TEMP_0_PIN > -1) || defined (HEATER_USES_MAX6675)
+        #if (TEMP_0_PIN > -1) || defined (HEATER_USES_MAX6675)|| defined HEATER_USES_AD595
           tt = analog2temp(current_raw);
         #endif
-        #if TEMP_1_PIN > -1
+        #if TEMP_1_PIN > -1 || defined BED_USES_AD595
           bt = analog2tempBed(current_bed_raw);
         #endif
-        #if (TEMP_0_PIN > -1) || defined (HEATER_USES_MAX6675)
+        #if (TEMP_0_PIN > -1) || defined (HEATER_USES_MAX6675) || defined HEATER_USES_AD595
             Serial.print("ok T:");
             Serial.print(tt); 
-          #if TEMP_1_PIN > -1
+          #if TEMP_1_PIN > -1 || defined BED_USES_AD595
             Serial.print(" B:");
             Serial.println(bt); 
           #else
@@ -1410,7 +1410,7 @@ void manage_heater()
         target_raw = 0;
     }
   #endif
-  #if (TEMP_0_PIN > -1) || defined (HEATER_USES_MAX66675)
+  #if (TEMP_0_PIN > -1) || defined (HEATER_USES_MAX6675) || defined (HEATER_USES_AD595)
     #ifdef PIDTEMP
       error = target_raw - current_raw;
       pTerm = (PID_PGAIN * error) / 100;
