@@ -51,7 +51,7 @@ follow the sanguino's readme so that your arduino hardware folder looks like
 
 4. Clone the Sprinter git repository. 
    git clone https://github.com/kliment/Sprinter.git
-Optionally, swicht to the desired branch
+Optionally, switch to the desired branch
   git branch -a
   git checkout THE_BRANCH_YOU_WANT
   
@@ -61,7 +61,7 @@ Firmware compilation and upload
 5. Edit INSTALL_DIR inside Sprinter/Makefile (do not mind the default reference to arduino 0022)
 
 6. Run make. If everything goes well Sprinter/applet/Sprinter.cpp should have been created.
-You can safelly ignore the error message mentioning arduino-0018/hardware/arduino/cores/arduino/WString.o
+You can safely ignore the error message mentioning arduino-0018/hardware/arduino/cores/arduino/WString.o
 
 7. Connect your Sanguinololu to your computer
    http://reprap.org/wiki/Sanguinololu
@@ -94,9 +94,8 @@ If everything goes well you should see the message "Done uploading".
 
 Congratulations, you have just upgraded the firmware of your RepRap !
 
-You can use the pronterface to do some manual verifications by moving the printer's tip along 
+You can use pronterface.py to do some manual verifications by moving the printer's tip along 
 the axes and verifying that the physical displacements match the ones indicated on the interface. 
-
 
 
 
