@@ -85,6 +85,7 @@ also for the mentioned hardware setup
   const bool ENDSTOPS_INVERTING = false; //set to true to invert the logic of the endstops
   // false because the switch SIG signal is linked to the ground
   // "no touch == closed circuit == SIG connects to GND"
+  // see http://reprap.org/wiki/Sanguinololu#Endstops
 
 12. Click on the "play" button to compile. If everything goes well you should see a "Binary sketch size: " message.
 
