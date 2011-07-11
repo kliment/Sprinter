@@ -1287,7 +1287,7 @@ inline void manage_heater()
         target_raw = 0;
     }
   #endif
-  #if (TEMP_0_PIN > -1) || defined (HEATER_USES_MAX66675)
+  #if (TEMP_0_PIN > -1) || defined (HEATER_USES_MAX6675) || defined (HEATER_USES_AD595)
     #ifdef PIDTEMP
       error = target_raw - current_raw;
       pTerm = (PID_PGAIN * error) / 100;
