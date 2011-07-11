@@ -22,3 +22,85 @@ Then add a line pointing to your second thermistor table, for example:
 Finally, make sure that the nozzle thermistor table, inside ThermistorTable.h in this case, is defined as "temptable" and that the bed thermistor table is defined as "bedtemptable", and that the number of temps is defined as NUMTEMPS for the heater and BNUMTEMPS for the bed.
 
 There are examples of all these configurations in the configuration.h file. Please look at them before you change anything.
+
+
+Complete beginners guide
+=======================
+
+From a fresh Ubuntu install how to update the firmware of your Prusa Mendel ?
+(the specifics are for the Prusa Mendel built at the Bath RepRap masterclass.
+This version uses the http://reprap.org/wiki/Sanguinololu. 
+Some details may not fit your hardware, be sure to check what you are doing)
+
+Software installation
+----------------------
+
+1. Install the required packages (gcc-avr, avr-libc, etc.)
+  sudo apt-get install arduino-core
+
+2. Get the arduino software version 0018, uncompress it in a directory
+   http://www.arduino.cc/en/Main/Software
+
+3. Get the sanguino software, version 0018
+   http://sanguino.cc/softwareforlinux
+
+follow the sanguino's readme so that your arduino hardware folder looks like 
+  arduino-0018/hardware/arduino
+  arduino-0018/hardware/sanguino
+  arduino-0018/hardware/tools
+
+4. Clone the Sprinter git repository. 
+   git clone https://github.com/kliment/Sprinter.git
+Optionally, switch to the desired branch
+  git branch -a
+  git checkout THE_BRANCH_YOU_WANT
+  
+Firmware compilation and upload
+-------------------------------
+
+5. Edit INSTALL_DIR inside Sprinter/Makefile (do not mind the default reference to arduino 0022)
+
+6. Run make. If everything goes well Sprinter/applet/Sprinter.cpp should have been created.
+You can safely ignore the error message mentioning arduino-0018/hardware/arduino/cores/arduino/WString.o
+
+7. Connect your Sanguinololu to your computer
+   http://reprap.org/wiki/Sanguinololu
+
+8. Launch arduino-0018/arduino, open Sprinter/Sprinter.pde
+
+9. Go to Tools -> Serial Port, and select the relevant option
+
+10. Go to Tools -> Board, select Sanguino
+
+11. Go to the Configuration.h file and edit the following lines:
+   #define MOTHERBOARD 62
+62 indicates Sanguino 1.2 or superior
+
+  float axis_steps_per_unit[] 
+
+set values that match your hardware. For the special cast gears of the Bath Masterclass Prusa Mendel, these values are  
+  float axis_steps_per_unit[] = {91.42857, 91.42857, 3200/1.25,700}; 
+
+also for the mentioned hardware setup
+  const bool ENDSTOPS_INVERTING = false; //set to true to invert the logic of the endstops
+  // false because the switch SIG signal is linked to the ground
+  // "no touch == closed circuit == SIG connects to GND"
+  // see http://reprap.org/wiki/Sanguinololu#Endstops
+
+12. Click on the "play" button to compile. If everything goes well you should see a "Binary sketch size: " message.
+
+13. Click on "the arrow going to the right" button to upload (you had done steps 7,8,9 before, right ?). 
+If everything goes well you should see the message "Done uploading".
+
+Congratulations, you have just upgraded the firmware of your RepRap !
+
+You can use pronterface.py to do some manual verifications by moving the printer's tip along 
+the axes and verifying that the physical displacements match the ones indicated on the interface. 
+
+
+
+
+
+
+
+
