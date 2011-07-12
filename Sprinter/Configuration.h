@@ -15,6 +15,7 @@
 // 1 is 100k thermistor
 // 2 is 200k thermistor
 // 3 is mendel-parts thermistor
+// 4 is 10k thermistor
 #define THERMISTORHEATER 1
 #define THERMISTORBED 1
 
