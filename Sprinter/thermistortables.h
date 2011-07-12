@@ -130,6 +130,32 @@ const short temptable_3[NUMTEMPS_3][2] = {
 	};
 
 #endif
+#if (THERMISTORHEATER == 4) || (THERMISTORBED == 4) //10k thermistor
+
+#define NUMTEMPS_4 20
+short temptable_4[NUMTEMPS_4][2] = {
+   {1, 430},
+   {54, 137},
+   {107, 107},
+   {160, 91},
+   {213, 80},
+   {266, 71},
+   {319, 64},
+   {372, 57},
+   {425, 51},
+   {478, 46},
+   {531, 41},
+   {584, 35},
+   {637, 30},
+   {690, 25},
+   {743, 20},
+   {796, 14},
+   {849, 7},
+   {902, 0},
+   {955, -11},
+   {1008, -35}
+};
+#endif
 
 #if THERMISTORHEATER == 1
 #define NUMTEMPS NUMTEMPS_1
@@ -140,6 +166,9 @@ const short temptable_3[NUMTEMPS_3][2] = {
 #elif THERMISTORHEATER == 3
 #define NUMTEMPS NUMTEMPS_3
 #define temptable temptable_3
+#elif THERMISTORHEATER == 4
+#define NUMTEMPS NUMTEMPS_4
+#define temptable temptable_4
 #elif defined HEATER_USES_THERMISTOR
 #error No heater thermistor table specified
 #endif
@@ -152,6 +181,9 @@ const short temptable_3[NUMTEMPS_3][2] = {
 #elif THERMISTORBED == 3
 #define BNUMTEMPS NUMTEMPS_3
 #define bedtemptable temptable_3
+#elif THERMISTORBED == 4
+#define BNUMTEMPS NUMTEMPS_4
+#define bedtemptable temptable_4
 #elif defined BED_USES_THERMISTOR
 #error No bed thermistor table specified
 #endif
