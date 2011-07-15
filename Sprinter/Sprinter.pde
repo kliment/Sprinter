@@ -1170,8 +1170,10 @@ inline void linear_move(unsigned long axis_steps_remaining[]) // make linear mov
   #ifdef DEBUG_MOVE_TIME
     unsigned long startmove = micros();
   #endif
-  
-  //move until no more steps remain 
+  long long_steps_per_sqr_second=(long) steps_per_sqr_second;
+  long long_min_speed_steps_per_second=(long) min_speed_steps_per_second;
+  long long_max_speed_steps_per_second=(long) max_speed_steps_per_second;
+  //move until no more steps remain THERE SHOULD BE NO FLOAT CALCS INSIDE THIS LOOP
   while(axis_steps_remaining[0] + axis_steps_remaining[1] + axis_steps_remaining[2] + axis_steps_remaining[3] > 0) {
     #ifdef DISABLE_CHECK_DURING_ACC
       if(!accelerating && !decelerating) {
@@ -1197,8 +1199,7 @@ inline void linear_move(unsigned long axis_steps_remaining[]) // make linear mov
     if (acceleration_enabled && steps_done == 0) {
         interval = max_interval;
     } else if (acceleration_enabled && steps_done <= plateau_steps) {
-        long current_speed = (long) ((((long) steps_per_sqr_second) / 10000)
-	    * ((micros() - start_move_micros)  / 100) + (long) min_speed_steps_per_second);
+        long current_speed = (long_steps_per_sqr_second / 10000)* ((micros() - start_move_micros)  / 100) + long_min_speed_steps_per_second;
 	    interval = 100000000 / current_speed;
       if (interval < full_interval) {
         accelerating = false;
@@ -1215,8 +1216,7 @@ inline void linear_move(unsigned long axis_steps_remaining[]) // make linear mov
         accelerating = true;
         decelerating = true;
       }				
-      long current_speed = (long) ((long) max_speed_steps_per_second - ((((long) steps_per_sqr_second) / 10000)
-          * ((micros() - start_move_micros) / 100)));
+      long current_speed = long_max_speed_steps_per_second - (((long_steps_per_sqr_second / 10000) * ((micros() - start_move_micros) / 100)));
       interval = 100000000 / current_speed;
       if (interval > max_interval)
 	interval = max_interval;
