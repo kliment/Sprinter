@@ -471,8 +471,7 @@ inline void process_commands()
       case 28: //G28 Home all Axis one at a time
         saved_feedrate = feedrate;
         for(int i=0; i < NUM_AXIS; i++) {
-          destination[i] = 0;
-          current_position[i] = 0;
+          destination[i] = current_position[i];
         }
         feedrate = 0;
 
@@ -492,8 +491,8 @@ inline void process_commands()
             destination[0] = 10 * X_HOME_DIR;
             prepare_move();
           
-            current_position[0] = 0;
-            destination[0] = 0;
+            current_position[0] = (X_HOME_DIR == -1) ? 0 : X_MAX_LENGTH;
+            destination[0] = current_position[0];
             feedrate = 0;
           }
         }
@@ -512,8 +511,8 @@ inline void process_commands()
             destination[1] = 10 * Y_HOME_DIR;
             prepare_move();
           
-            current_position[1] = 0;
-            destination[1] = 0;
+            current_position[1] = (Y_HOME_DIR == -1) ? 0 : Y_MAX_LENGTH;
+            destination[1] = current_position[1];
             feedrate = 0;
           }
         }
@@ -532,8 +531,8 @@ inline void process_commands()
             destination[2] = 10 * Z_HOME_DIR;
             prepare_move();
           
-            current_position[2] = 0;
-            destination[2] = 0;
+            current_position[2] = (Z_HOME_DIR == -1) ? 0 : Z_MAX_LENGTH;
+            destination[2] = current_position[2];
             feedrate = 0;
           
         }
