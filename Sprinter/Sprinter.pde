@@ -127,7 +127,7 @@ int tt = 0, bt = 0;
   int temp_iState_max = 100 * PID_INTEGRAL_DRIVE_MAX / PID_IGAIN;
 #endif
 #ifdef SMOOTHING
-  uint32_t nma = SMOOTHFACTOR * analogRead(TEMP_0_PIN);
+  uint32_t nma = 0;
 #endif
 #ifdef WATCHPERIOD
   int watch_raw = -1000;
@@ -1389,6 +1389,7 @@ void manage_heater()
     current_raw = read_max6675();
   #endif
   #ifdef SMOOTHING
+  if (!nma) nma = SMOOTHFACTOR * current_raw;
   nma = (nma + current_raw) - (nma / SMOOTHFACTOR);
   current_raw = nma / SMOOTHFACTOR;
   #endif
