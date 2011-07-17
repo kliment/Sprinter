@@ -84,6 +84,7 @@ bool axis_relative_modes[] = {false, false, false, false};
 // If you enable this, make sure STEP_DELAY_MICROS is disabled. (except for Gen6: both need to be enabled.)
 //#define STEP_DELAY_RATIO 0.25
 
+float homing_feedrate[] = {1500,1500,120};
 // Comment this to disable ramp acceleration
 #define RAMP_ACCELERATION 1
 
