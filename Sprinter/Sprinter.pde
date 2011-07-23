@@ -10,6 +10,11 @@
 #include "SdFat.h"
 #endif
 
+#ifdef PIDACT
+#include "PID_v1.h"
+#endif
+
+
 // look here for descriptions of gcodes: http://linuxcnc.org/handbook/gcode/g-code.html
 // http://objects.reprap.org/wiki/Mendel_User_Manual:_RepRapGCodes
 
@@ -64,6 +69,7 @@ bool move_direction[NUM_AXIS];
 unsigned long axis_previous_micros[NUM_AXIS];
 unsigned long previous_micros = 0, previous_millis_heater, previous_millis_bed_heater;
 unsigned long move_steps_to_take[NUM_AXIS];
+
 #ifdef RAMP_ACCELERATION
 unsigned long axis_max_interval[NUM_AXIS];
 unsigned long axis_steps_per_sqr_second[NUM_AXIS];
@@ -71,6 +77,7 @@ unsigned long axis_travel_steps_per_sqr_second[NUM_AXIS];
 unsigned long max_interval;
 unsigned long steps_per_sqr_second, plateau_steps;  
 #endif
+
 boolean acceleration_enabled = false, accelerating = false;
 unsigned long interval;
 float destination[NUM_AXIS] = {0.0, 0.0, 0.0, 0.0};
@@ -84,9 +91,11 @@ long gcode_N, gcode_LastN;
 bool relative_mode = false;  //Determines Absolute or Relative Coordinates
 bool relative_mode_e = false;  //Determines Absolute or Relative E Codes while in Absolute Coordinates mode. E is always relative in Relative Coordinates mode.
 long timediff = 0;
+
 //experimental feedrate calc
 float d = 0;
 float axis_diff[NUM_AXIS] = {0, 0, 0, 0};
+
 #ifdef STEP_DELAY_RATIO
   long long_step_delay_ratio = STEP_DELAY_RATIO * 100;
 #endif
@@ -115,6 +124,7 @@ int current_raw = 0;
 int target_bed_raw = 0;
 int current_bed_raw = 0;
 int tt = 0, bt = 0;
+
 #ifdef PIDTEMP
   int temp_iState = 0;
   int temp_dState = 0;
@@ -126,8 +136,30 @@ int tt = 0, bt = 0;
   int temp_iState_min = 100 * -PID_INTEGRAL_DRIVE_MAX / PID_IGAIN;
   int temp_iState_max = 100 * PID_INTEGRAL_DRIVE_MAX / PID_IGAIN;
 #endif
+
+
+
+
+#ifdef PIDACT
+    //Define Variables we'll be connecting to
+    double Setpoint, Input, Output;
+    //Define the aggressive and conservative Tuning Parameters
+    double aggKp=4, aggKi=0.2, aggKd=1;
+    double consKp=1, consKi=0.05, consKd=0.25;
+    
+    //Specify the links and initial tuning parameters
+    PID myPID(&Input, &Output, &Setpoint, consKp, consKi, consKd, DIRECT);
+    
+#endif  
+
+
+
+
+
+
+#define PID_v1_h
 #ifdef SMOOTHING
-  uint32_t nma = 0;
+  uint32_t nma = 0;  
 #endif
 #ifdef WATCHPERIOD
   int watch_raw = -1000;
@@ -327,6 +359,16 @@ void setup()
   SET_OUTPUT(MAX6675_SS);
   WRITE(MAX6675_SS,1);
 #endif  
+
+#ifdef PIDACT
+  //initialize the variables we're linked to
+  Input = analogRead(0);
+  Setpoint = 100;
+
+  //turn the PID on
+  myPID.SetMode(AUTOMATIC);
+#endif  
+
  
 #ifdef SDSUPPORT
 
@@ -1389,6 +1431,7 @@ void manage_heater()
   #elif defined HEATER_USES_MAX6675
     current_raw = read_max6675();
   #endif
+  
   #ifdef SMOOTHING
   if (!nma) nma = SMOOTHFACTOR * current_raw;
   nma = (nma + current_raw) - (nma / SMOOTHFACTOR);
@@ -1407,26 +1450,47 @@ void manage_heater()
         }
     }
   #endif
+  
   #ifdef MINTEMP
     if(current_raw <= minttemp)
         target_raw = 0;
   #endif
+  
   #ifdef MAXTEMP
     if(current_raw >= maxttemp) {
         target_raw = 0;
     }
   #endif
+  
   #if (TEMP_0_PIN > -1) || defined (HEATER_USES_MAX6675) || defined (HEATER_USES_AD595)
     #ifdef PIDTEMP
-      error = target_raw - current_raw;
-      pTerm = (PID_PGAIN * error) / 100;
-      temp_iState += error;
-      temp_iState = constrain(temp_iState, temp_iState_min, temp_iState_max);
-      iTerm = (PID_IGAIN * temp_iState) / 100;
-      dTerm = (PID_DGAIN * (current_raw - temp_dState)) / 100;
-      temp_dState = current_raw;
-      analogWrite(HEATER_0_PIN, constrain(pTerm + iTerm - dTerm, 0, PID_MAX));
-    #else
+                error = target_raw - current_raw;
+                pTerm = (PID_PGAIN * error) / 100;
+                temp_iState += error;
+                temp_iState = constrain(temp_iState, temp_iState_min, temp_iState_max);
+                iTerm = (PID_IGAIN * temp_iState) / 100;
+                dTerm = (PID_DGAIN * (current_raw - temp_dState)) / 100;
+                temp_dState = current_raw;
+                analogWrite(HEATER_0_PIN, constrain(pTerm + iTerm - dTerm, 0, PID_MAX));
+           #ifdef  PIDACT
+             Input = current_raw;//ACT
+             Setpoint = target_raw;//ACT
+             
+                double gap = abs(Setpoint-Input); //distance away from setpoint
+                if(gap<10)
+                {  //we're close to setpoint, use conservative tuning parameters
+                  myPID.SetTunings(consKp, consKi, consKd);
+                }
+                else
+                {
+                   //we're far from setpoint, use aggressive tuning parameters
+                   myPID.SetTunings(aggKp, aggKi, aggKd);
+                }
+                
+                myPID.Compute();
+                analogWrite(3,Output);
+             #endif
+            #else
       if(current_raw >= target_raw)
       {
         WRITE(HEATER_0_PIN,LOW);

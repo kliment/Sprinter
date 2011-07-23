@@ -9,31 +9,31 @@
 // Gen6 = 5, 
 // Sanguinololu up to 1.1 = 6
 // Sanguinololu 1.2 and above = 62
-#define MOTHERBOARD 3 
+#define MOTHERBOARD 5 
 
 //// Thermistor settings:
 // 1 is 100k thermistor
 // 2 is 200k thermistor
 // 3 is mendel-parts thermistor
 // 4 is 10k thermistor
-#define THERMISTORHEATER 1
-#define THERMISTORBED 1
+#define THERMISTORHEATER 3
+#define THERMISTORBED 3
 
 //// Calibration variables
 // X, Y, Z, E steps per unit - Metric Prusa Mendel with Wade extruder:
-float axis_steps_per_unit[] = {80, 80, 3200/1.25,700}; 
+float axis_steps_per_unit[] = {40, 40, 3360,311}; 
 // Metric Prusa Mendel with Makergear geared stepper extruder:
 //float axis_steps_per_unit[] = {80,80,3200/1.25,1380}; 
 
 //// Endstop Settings
 #define ENDSTOPPULLUPS 1 // Comment this out (using // at the start of the line) to disable the endstop pullup resistors
 // The pullups are needed if you directly connect a mechanical endswitch between the signal and ground pins.
-const bool ENDSTOPS_INVERTING = false; //set to true to invert the logic of the endstops
+const bool ENDSTOPS_INVERTING = true; //set to true to invert the logic of the endstops
 //If your axes are only moving in one direction, make sure the endstops are connected properly.
 //If your axes move in one direction ONLY when the endstops are triggered, set ENDSTOPS_INVERTING to true here
 
 // This determines the communication speed of the printer
-#define BAUDRATE 115200
+#define BAUDRATE 250000
 
 // Comment out (using // at the start of the line) to disable SD support:
 #define SDSUPPORT 1
@@ -52,13 +52,13 @@ const bool ENDSTOPS_INVERTING = false; //set to true to invert the logic of the 
 // Disables axis when it's not being used.
 const bool DISABLE_X = false;
 const bool DISABLE_Y = false;
-const bool DISABLE_Z = true;
+const bool DISABLE_Z = false;
 const bool DISABLE_E = false;
 
 // Inverting axis direction
-const bool INVERT_X_DIR = false;
-const bool INVERT_Y_DIR = false;
-const bool INVERT_Z_DIR = true;
+const bool INVERT_X_DIR = true;
+const bool INVERT_Y_DIR = true;
+const bool INVERT_Z_DIR = false;
 const bool INVERT_E_DIR = false;
 
 //// ENDSTOP SETTINGS:
@@ -69,13 +69,13 @@ const bool INVERT_E_DIR = false;
 
 const bool min_software_endstops = false; //If true, axis won't move to coordinates less than zero.
 const bool max_software_endstops = true;  //If true, axis won't move to coordinates greater than the defined lengths below.
-const int X_MAX_LENGTH = 200;
-const int Y_MAX_LENGTH = 200;
+const int X_MAX_LENGTH = 230;
+const int Y_MAX_LENGTH = 230;
 const int Z_MAX_LENGTH = 100;
 
 //// MOVEMENT SETTINGS
 const int NUM_AXIS = 4; // The axis order in all axis related arrays is X, Y, Z, E
-float max_feedrate[] = {200000, 200000, 240, 500000};
+float max_feedrate[] = {200000, 200000, 130, 1300};
 float homing_feedrate[] = {1500,1500,120};
 bool axis_relative_modes[] = {false, false, false, false};
 
@@ -85,7 +85,7 @@ bool axis_relative_modes[] = {false, false, false, false};
 
 // Step delay over interval ratio. If you are still experiencing missing steps, try to uncomment the following line, but be aware this
 // If you enable this, make sure STEP_DELAY_MICROS is disabled. (except for Gen6: both need to be enabled.)
-//#define STEP_DELAY_RATIO 0.25
+//#define STEP_DELAY_RATIO 0.5
 
 // Comment this to disable ramp acceleration
 #define RAMP_ACCELERATION 1
@@ -93,9 +93,9 @@ bool axis_relative_modes[] = {false, false, false, false};
 //// Acceleration settings
 #ifdef RAMP_ACCELERATION
 // X, Y, Z, E maximum start speed for accelerated moves. E default values are good for skeinforge 40+, for older versions raise them a lot.
-float max_start_speed_units_per_second[] = {25.0,25.0,0.2,10.0};
-long max_acceleration_units_per_sq_second[] = {1000,1000,50,10000}; // X, Y, Z and E max acceleration in mm/s^2 for printing moves or retracts
-long max_travel_acceleration_units_per_sq_second[] = {500,500,50,500}; // X, Y, Z max acceleration in mm/s^2 for travel moves
+float max_start_speed_units_per_second[] = {24.0,24.0,9.0,5.46};
+long max_acceleration_units_per_sq_second[] = {1000,1000,585,370}; // X, Y, Z and E max acceleration in mm/s^2 for printing moves or retracts
+long max_travel_acceleration_units_per_sq_second[] = {500,500,242,185}; // X, Y, Z max acceleration in mm/s^2 for travel moves
 #endif
 
 //// AD595 THERMOCOUPLE SUPPORT UNTESTED... USE WITH CAUTION!!!!
@@ -103,12 +103,15 @@ long max_travel_acceleration_units_per_sq_second[] = {500,500,50,500}; // X, Y, 
 //// PID settings:
 // Uncomment the following line to enable PID support. This is untested and could be disastrous. Be careful.
 //#define PIDTEMP 1
+#define PIDACT 1 
+
+
 #ifdef PIDTEMP
 #define PID_MAX 255 // limits current to nozzle
-#define PID_INTEGRAL_DRIVE_MAX 220
-#define PID_PGAIN 180 //100 is 1.0
-#define PID_IGAIN 2 //100 is 1.0
-#define PID_DGAIN 100 //100 is 1.0
+#define PID_INTEGRAL_DRIVE_MAX 255
+#define PID_PGAIN 80 //100 is 1.0
+#define PID_IGAIN 65//100 is 1.0
+#define PID_DGAIN 40 //100 is 1.0
 #endif
 
 // How often should the heater check for new temp readings, in milliseconds
