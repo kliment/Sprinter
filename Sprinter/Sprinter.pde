@@ -1114,7 +1114,7 @@ inline void linear_move(unsigned long axis_steps_remaining[]) // make linear mov
       if(axis_steps_remaining[i] >0) {
         // multiplying slowest_start_axis_max_interval by axis_steps_remaining[slowest_start_axis]
         // could lead to overflows when we have long distance moves (say, 390625*390625 > sizeof(unsigned long))
-        float steps_remaining_ratio = axis_steps_remaining[slowest_start_axis] / axis_steps_remaining[i];
+        float steps_remaining_ratio = (float) axis_steps_remaining[slowest_start_axis] / axis_steps_remaining[i];
         new_axis_max_intervals[i] = slowest_start_axis_max_interval * steps_remaining_ratio;
         
         if(i == primary_axis) {
