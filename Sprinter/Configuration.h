@@ -15,6 +15,7 @@
 // 1 is 100k thermistor
 // 2 is 200k thermistor
 // 3 is mendel-parts thermistor
+// 4 is 10k thermistor
 #define THERMISTORHEATER 1
 #define THERMISTORBED 1
 
@@ -28,6 +29,8 @@ float axis_steps_per_unit[] = {80, 80, 3200/1.25,700};
 #define ENDSTOPPULLUPS 1 // Comment this out (using // at the start of the line) to disable the endstop pullup resistors
 // The pullups are needed if you directly connect a mechanical endswitch between the signal and ground pins.
 const bool ENDSTOPS_INVERTING = false; //set to true to invert the logic of the endstops
+//If your axes are only moving in one direction, make sure the endstops are connected properly.
+//If your axes move in one direction ONLY when the endstops are triggered, set ENDSTOPS_INVERTING to true here
 
 // This determines the communication speed of the printer
 #define BAUDRATE 115200
@@ -41,10 +44,10 @@ const bool ENDSTOPS_INVERTING = false; //set to true to invert the logic of the 
 #include "thermistortables.h"
 
 // For Inverting Stepper Enable Pins (Active Low) use 0, Non Inverting (Active High) use 1
-const bool X_ENABLE_ON = 0;
-const bool Y_ENABLE_ON = 0;
-const bool Z_ENABLE_ON = 0;
-const bool E_ENABLE_ON = 0;
+#define X_ENABLE_ON 0
+#define Y_ENABLE_ON 0
+#define Z_ENABLE_ON 0
+#define E_ENABLE_ON 0
 
 // Disables axis when it's not being used.
 const bool DISABLE_X = false;
@@ -60,9 +63,9 @@ const bool INVERT_E_DIR = false;
 
 //// ENDSTOP SETTINGS:
 // Sets direction of endstops when homing; 1=MAX, -1=MIN
-const int X_HOME_DIR = -1;
-const int Y_HOME_DIR = -1;
-const int Z_HOME_DIR = -1;
+#define X_HOME_DIR -1
+#define Y_HOME_DIR -1
+#define Z_HOME_DIR -1
 
 const bool min_software_endstops = false; //If true, axis won't move to coordinates less than zero.
 const bool max_software_endstops = true;  //If true, axis won't move to coordinates greater than the defined lengths below.
@@ -73,6 +76,7 @@ const int Z_MAX_LENGTH = 100;
 //// MOVEMENT SETTINGS
 const int NUM_AXIS = 4; // The axis order in all axis related arrays is X, Y, Z, E
 float max_feedrate[] = {200000, 200000, 240, 500000};
+float homing_feedrate[] = {1500,1500,120};
 bool axis_relative_modes[] = {false, false, false, false};
 
 // Min step delay in microseconds. If you are experiencing missing steps, try to raise the delay microseconds, but be aware this

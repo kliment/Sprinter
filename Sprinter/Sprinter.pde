@@ -127,7 +127,7 @@ int tt = 0, bt = 0;
   int temp_iState_max = 100 * PID_INTEGRAL_DRIVE_MAX / PID_IGAIN;
 #endif
 #ifdef SMOOTHING
-  uint32_t nma = SMOOTHFACTOR * analogRead(TEMP_0_PIN);
+  uint32_t nma = 0;
 #endif
 #ifdef WATCHPERIOD
   int watch_raw = -1000;
@@ -541,8 +541,7 @@ inline void process_commands()
       case 28: //G28 Home all Axis one at a time
         saved_feedrate = feedrate;
         for(int i=0; i < NUM_AXIS; i++) {
-          destination[i] = 0;
-          current_position[i] = 0;
+          destination[i] = current_position[i];
         }
         feedrate = 0;
 
@@ -552,7 +551,7 @@ inline void process_commands()
           if ((X_MIN_PIN > -1 && X_HOME_DIR==-1) || (X_MAX_PIN > -1 && X_HOME_DIR==1)){
             current_position[0] = 0;
             destination[0] = 1.5 * X_MAX_LENGTH * X_HOME_DIR;
-            feedrate = max_start_speed_units_per_second[0] * 60;
+            feedrate = homing_feedrate[0];
             prepare_move();
           
             current_position[0] = 0;
@@ -562,8 +561,8 @@ inline void process_commands()
             destination[0] = 10 * X_HOME_DIR;
             prepare_move();
           
-            current_position[0] = 0;
-            destination[0] = 0;
+            current_position[0] = (X_HOME_DIR == -1) ? 0 : X_MAX_LENGTH;
+            destination[0] = current_position[0];
             feedrate = 0;
           }
         }
@@ -572,7 +571,7 @@ inline void process_commands()
           if ((Y_MIN_PIN > -1 && Y_HOME_DIR==-1) || (Y_MAX_PIN > -1 && Y_HOME_DIR==1)){
             current_position[1] = 0;
             destination[1] = 1.5 * Y_MAX_LENGTH * Y_HOME_DIR;
-            feedrate = max_start_speed_units_per_second[1] * 60;
+            feedrate = homing_feedrate[1];
             prepare_move();
           
             current_position[1] = 0;
@@ -582,8 +581,8 @@ inline void process_commands()
             destination[1] = 10 * Y_HOME_DIR;
             prepare_move();
           
-            current_position[1] = 0;
-            destination[1] = 0;
+            current_position[1] = (Y_HOME_DIR == -1) ? 0 : Y_MAX_LENGTH;
+            destination[1] = current_position[1];
             feedrate = 0;
           }
         }
@@ -592,7 +591,7 @@ inline void process_commands()
           if ((Z_MIN_PIN > -1 && Z_HOME_DIR==-1) || (Z_MAX_PIN > -1 && Z_HOME_DIR==1)){
             current_position[2] = 0;
             destination[2] = 1.5 * Z_MAX_LENGTH * Z_HOME_DIR;
-            feedrate = max_feedrate[2]/2;
+            feedrate = homing_feedrate[2];
             prepare_move();
           
             current_position[2] = 0;
@@ -602,8 +601,8 @@ inline void process_commands()
             destination[2] = 10 * Z_HOME_DIR;
             prepare_move();
           
-            current_position[2] = 0;
-            destination[2] = 0;
+            current_position[2] = (Z_HOME_DIR == -1) ? 0 : Z_MAX_LENGTH;
+            destination[2] = current_position[2];
             feedrate = 0;
           
         }
@@ -734,7 +733,9 @@ inline void process_commands()
         #endif
         break;
       case 140: // M140 set bed temp
-        if (code_seen('S')) target_bed_raw = temp2analogBed(code_value());
+        #if TEMP_1_PIN > -1 || defined BED_USES_AD595
+            if (code_seen('S')) target_bed_raw = temp2analogBed(code_value());
+        #endif
         break;
       case 105: // M105
         #if (TEMP_0_PIN > -1) || defined (HEATER_USES_MAX6675)|| defined HEATER_USES_AD595
@@ -1389,6 +1390,7 @@ void manage_heater()
     current_raw = read_max6675();
   #endif
   #ifdef SMOOTHING
+  if (!nma) nma = SMOOTHFACTOR * current_raw;
   nma = (nma + current_raw) - (nma / SMOOTHFACTOR);
   current_raw = nma / SMOOTHFACTOR;
   #endif
