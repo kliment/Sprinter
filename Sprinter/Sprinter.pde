@@ -55,6 +55,8 @@
 // M190 - Wait for bed current temp to reach target temp.
 // M201 - Set max acceleration in units/s^2 for print moves (M201 X1000 Y1000)
 // M202 - Set max acceleration in units/s^2 for travel moves (M202 X1000 Y1000)
+// M206 - Nozzle light on
+// M207 - Nozzle light off
 
 
 //Stepper Movement Variables
@@ -313,6 +315,10 @@ void setup()
         axis_travel_steps_per_sqr_second[i] = max_travel_acceleration_units_per_sq_second[i] * axis_steps_per_unit[i];
     }
   #endif
+
+  #if (LIGHT_PIN > -1) 
+    SET_OUTPUT(LIGHT_PIN);
+  #endif  
     
 #ifdef HEATER_USES_MAX6675
   SET_OUTPUT(SCK_PIN);
@@ -810,6 +816,14 @@ inline void process_commands()
         analogWrite(FAN_PIN, 0);
         
         WRITE(FAN_PIN, LOW);
+        break;
+      #endif
+      #if LIGHT_PIN > -1
+      case 206: //M206 Nozzle Light On
+        WRITE(LIGHT_PIN, HIGH);
+        break;
+      case 207: //M207 Nozzle Light Off        
+        WRITE(LIGHT_PIN, LOW);
         break;
       #endif
       #if (PS_ON_PIN > -1)
