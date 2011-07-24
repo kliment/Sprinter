@@ -257,6 +257,8 @@
 #define PS_ON_PIN          12
 #define KILL_PIN           -1
 
+#define LIGHT_PIN          -1   //Pin to activate nozzle light
+
 #define HEATER_0_PIN       10
 #define HEATER_1_PIN       8
 #define TEMP_0_PIN         13   // ANALOG NUMBERING
@@ -292,6 +294,8 @@
 #define LED_PIN            13
 #define PS_ON_PIN          -1
 #define KILL_PIN           -1
+
+#define LIGHT_PIN          -1   //Pin to activate nozzle light
 
 
 
