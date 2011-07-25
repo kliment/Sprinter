@@ -143,6 +143,9 @@ char uuid[] = "00000000-0000-0000-0000-000000000000";
 // If the temperature has not increased at the end of that period, the target temperature is set to zero. It can be reset with another M104/M109
 //#define WATCHPERIOD 5000 //5 seconds
 
+// Wait this long after achieving target temperature on M109 before continuing with print (seconds)
+//#define TEMP_RESIDENCY_TIME 20
+
 //// The minimal temperature defines the temperature below which the heater will not be enabled
 #define MINTEMP 5
 
