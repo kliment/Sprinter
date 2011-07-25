@@ -24,6 +24,9 @@
 float axis_steps_per_unit[] = {80, 80, 3200/1.25,700}; 
 // Metric Prusa Mendel with Makergear geared stepper extruder:
 //float axis_steps_per_unit[] = {80,80,3200/1.25,1380}; 
+// MakerGear Hybrid Prusa Mendel:
+// Z axis value is for .9 stepper(if you have 1.8 steppers for Z, you need to use 2272.7272)
+//float axis_steps_per_unit[] = {104.987, 104.987, 4545.4544, 1487};
 
 //// Endstop Settings
 #define ENDSTOPPULLUPS 1 // Comment this out (using // at the start of the line) to disable the endstop pullup resistors
