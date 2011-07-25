@@ -778,6 +778,23 @@ inline void process_commands()
           }
           manage_heater();
         }
+        // wait extra time before letting the print continue
+        #ifdef TEMP_RESIDENCY_TIME
+        {
+          long residencyStart = millis();
+          codenum = millis();
+          while(millis()-residencyStart<(TEMP_RESIDENCY_TIME*1000)) {
+            if( (millis() - codenum) > 1000 ) //Print Temp Reading every 1 second while heating up.
+            {
+              Serial.print("T:");
+              Serial.println( analog2temp(current_raw) ); 
+              codenum = millis(); 
+            }
+            manage_heater();
+          }
+        }
+        #endif
+        
         break;
       case 190: // M190 - Wait bed for heater to reach target.
       #if TEMP_1_PIN > -1
