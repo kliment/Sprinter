@@ -113,12 +113,14 @@ char uuid[] = "00000000-0000-0000-0000-000000000000";
 // Uncomment the following line to enable PID support. This is untested and could be disastrous. Be careful.
 //#define PIDTEMP 1
 #ifdef PIDTEMP
-#define PID_MAX 255 // limits current to nozzle
 #define PID_INTEGRAL_DRIVE_MAX 220
 #define PID_PGAIN 180 //100 is 1.0
 #define PID_IGAIN 2 //100 is 1.0
 #define PID_DGAIN 100 //100 is 1.0
 #endif
+
+// Change this value (range 1-255) to limit the current to the nozzle
+#define HEATER_CURRENT 255
 
 // How often should the heater check for new temp readings, in milliseconds
 #define HEATER_CHECK_INTERVAL 500
