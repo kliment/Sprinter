@@ -126,6 +126,9 @@ int tt = 0, bt = 0;
   int temp_iState_min = 100 * -PID_INTEGRAL_DRIVE_MAX / PID_IGAIN;
   int temp_iState_max = 100 * PID_INTEGRAL_DRIVE_MAX / PID_IGAIN;
 #endif
+#ifndef HEATER_CURRENT
+  #define HEATER_CURRENT 255
+#endif
 #ifdef SMOOTHING
   uint32_t nma = 0;
 #endif
@@ -1444,7 +1447,7 @@ void manage_heater()
       iTerm = (PID_IGAIN * temp_iState) / 100;
       dTerm = (PID_DGAIN * (current_raw - temp_dState)) / 100;
       temp_dState = current_raw;
-      analogWrite(HEATER_0_PIN, constrain(pTerm + iTerm - dTerm, 0, PID_MAX));
+      analogWrite(HEATER_0_PIN, constrain(pTerm + iTerm - dTerm, 0, HEATER_CURRENT));
     #else
       if(current_raw >= target_raw)
       {
@@ -1456,6 +1459,7 @@ void manage_heater()
       else 
       {
         WRITE(HEATER_0_PIN,HIGH);
+        analogWrite(HEATER_0_PIN, HEATER_CURRENT);
         #if LED_PIN > -1
             WRITE(LED_PIN,HIGH);
         #endif
