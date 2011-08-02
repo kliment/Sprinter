@@ -1421,6 +1421,7 @@ void manage_heater()
         if(watch_raw + 1 >= current_raw){
             target_raw = 0;
             WRITE(HEATER_0_PIN,LOW);
+            analogWrite(HEATER_0_PIN, 0);
             #if LED_PIN>-1
                 WRITE(LED_PIN,LOW);
             #endif
@@ -1452,6 +1453,7 @@ void manage_heater()
       if(current_raw >= target_raw)
       {
         WRITE(HEATER_0_PIN,LOW);
+        analogWrite(HEATER_0_PIN, 0);
         #if LED_PIN>-1
             WRITE(LED_PIN,LOW);
         #endif
