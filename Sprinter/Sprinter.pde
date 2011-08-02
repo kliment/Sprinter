@@ -43,6 +43,7 @@
 // M27  - Report SD print status
 // M28  - Start SD write (M28 filename.g)
 // M29  - Stop SD write
+// M42 - Set output on free pins, on a non pwm pin (over pin 13 on an arduino mega) use S255 to turn it on and S0 to turn it off. Use P to decide the pin (M42 P23 S255) would turn pin 23 on
 // M81  - Turn off Power Supply
 // M82  - Set E codes absolute (default)
 // M83  - Set E codes relative while in Absolute Coordinates (G90) mode
@@ -724,6 +725,31 @@ inline void process_commands()
         //savetosd = false;
         break;
 #endif
+      case 42: //M42 -Change pin status via gcode
+        if (code_seen('S'))
+        {
+          int pin_status = code_value();
+          if (code_seen('P') && pin_status >= 0 && pin_status <= 255)
+          {
+            int pin_number = code_value();
+            for(int i = 0; i < sizeof(sensitive_pins); i++)
+            {
+              if (sensitive_pins[i] == pin_number)
+              {
+                pin_number = -1;
+                break;
+              }
+            }
+            
+            if (pin_number > -1)
+            {              
+              pinMode(pin_number, OUTPUT);
+              digitalWrite(pin_number, pin_status);
+              analogWrite(pin_number, pin_status);
+            }
+          }
+        }
+        break;
       case 104: // M104
         if (code_seen('S')) target_raw = temp2analogh(code_value());
         #ifdef WATCHPERIOD
@@ -1496,7 +1522,7 @@ void manage_heater()
   #endif
   
   
-    if(current_bed_raw >= target_bed_raw)
+    if(current_bed_raw >= target_bed_raw || current_bed_raw < minttemp)
     {
       WRITE(HEATER_1_PIN,LOW);
     }
