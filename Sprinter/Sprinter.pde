@@ -1498,7 +1498,7 @@ void manage_heater()
   #endif
   
   
-    if(current_bed_raw >= target_bed_raw)
+    if(current_bed_raw >= target_bed_raw || current_bed_raw < minttemp)
     {
       WRITE(HEATER_1_PIN,LOW);
     }
