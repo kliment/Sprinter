@@ -1499,12 +1499,22 @@ void manage_heater()
       int delta_temp = current_temp - prev_temp;
       prev_temp = current_temp;
       pTerm = ((long)PID_PGAIN * error) / 256;
-      temp_iState += error;
-      temp_iState = constrain(temp_iState, temp_iState_min, temp_iState_max);
-      iTerm = ((long)PID_IGAIN * temp_iState) / 256;
-      dTerm = ((long)PID_DGAIN * delta_temp) / 256;
       const int H0 = min(HEATER_DUTY_FOR_SETPOINT(target_temp),HEATER_CURRENT);
-      heater_duty = H0 + constrain(pTerm + iTerm - dTerm, -H0, HEATER_CURRENT-H0);
+      heater_duty = H0 + pTerm;
+      if(error < 20){
+        temp_iState += error;
+        temp_iState = constrain(temp_iState, temp_iState_min, temp_iState_max);
+        iTerm = ((long)PID_IGAIN * temp_iState) / 256;
+        heater_duty += iTerm;
+      }
+      int prev_error = abs(target_temp - prev_temp);
+      int log3 = 1; // discrete logarithm base 3, plus 1
+      if(prev_error > 81){ prev_error /= 81; log3 += 4; }
+      if(prev_error >  9){ prev_error /=  9; log3 += 2; }
+      if(prev_error >  3){ prev_error /=  3; log3 ++; }
+      dTerm = ((long)PID_DGAIN * delta_temp) / (256*log3);
+      heater_duty += dTerm;
+      heater_duty = constrain(heater_duty, 0, HEATER_CURRENT);
       analogWrite(HEATER_0_PIN, heater_duty);
       #if LED_PIN>-1
         analogWrite(LED_PIN, constrain(LED_PWM_FOR_BRIGHTNESS(heater_duty),0,255));
