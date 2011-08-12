@@ -798,16 +798,47 @@ inline void process_commands()
             }
         #endif
         codenum = millis(); 
-        #ifdef TEMP_RESIDENCY_TIME
-          long residencyStart;
-          residencyStart = -1;
-          /* continue to loop until we have reached the target temp 
-             _and_ until TEMP_RESIDENCY_TIME hasn't passed since we reached it */
-          while( current_raw < target_raw 
+        /* See if we are heating up or cooling down */
+        if( current_raw < target_raw )
+         /* We are heating up */
+          #ifdef TEMP_RESIDENCY_TIME
+            long residencyStart;
+            residencyStart = -1;
+            /* continue to loop until we have reached the target temp   
+               _and_ until TEMP_RESIDENCY_TIME hasn't passed since we reached it */
+            while( current_raw < target_raw
                 || (residencyStart > -1 && (millis() - residencyStart) < TEMP_RESIDENCY_TIME*1000) ) {
-        #else
-          while(current_raw < target_raw) {
-        #endif
+          #else
+            while(current_raw < target_raw) {
+          #endif
+              if( (millis() - codenum) > 1000 ) //Print Temp Reading every 1 second while heating up.
+              {
+                Serial.print("T:");
+                Serial.println( analog2temp(current_raw) );
+                codenum = millis();
+              }
+              manage_heater();
+              #ifdef TEMP_RESIDENCY_TIME
+                /* start/restart the TEMP_RESIDENCY_TIME timer whenever we reach target temp for the first time
+                   or when current temp falls outside the hysteresis after target temp was reached */
+                if ( (residencyStart == -1 && current_raw >= target_raw)
+                    || (residencyStart > -1 && labs(analog2temp(current_raw) - analog2temp(target_raw)) > TEMP_HYSTERESIS) ) {
+                  residencyStart = millis();
+                }
+              #endif
+	    }
+        else if( current_raw > target_raw )
+ 	  /* We are cooling down */
+          #ifdef TEMP_RESIDENCY_TIME
+            long residencyStart;
+            residencyStart = -1;
+            /* continue to loop until we have reached the target temp 
+               _and_ until TEMP_RESIDENCY_TIME hasn't passed since we reached it */
+          while( current_raw > target_raw 
+              || (residencyStart > -1 && (millis() - residencyStart) < TEMP_RESIDENCY_TIME*1000) ) {
+          #else
+            while(current_raw > target_raw) {
+          #endif
           if( (millis() - codenum) > 1000 ) //Print Temp Reading every 1 second while heating up.
           {
             Serial.print("T:");
@@ -818,7 +849,7 @@ inline void process_commands()
           #ifdef TEMP_RESIDENCY_TIME
             /* start/restart the TEMP_RESIDENCY_TIME timer whenever we reach target temp for the first time
                or when current temp falls outside the hysteresis after target temp was reached */
-            if ( (residencyStart == -1 && current_raw >= target_raw)
+            if ( (residencyStart == -1 && current_raw <= target_raw)
                 || (residencyStart > -1 && labs(analog2temp(current_raw) - analog2temp(target_raw)) > TEMP_HYSTERESIS) ) {
               residencyStart = millis();
             }
