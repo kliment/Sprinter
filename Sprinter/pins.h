@@ -303,14 +303,14 @@
 #define E_STEP_PIN 12 
 #define E_DIR_PIN 17
 #define E_ENABLE_PIN 3
-#define HEATER_0_PIN 11
+#define HEATER_0_PIN 16
 #define TEMP_0_PIN 0
 
-#define FAN_PIN 16
+#define FAN_PIN -1
 
 //bed pins
-#define HEATER_1_PIN 11
-#define TEMP_1_PIN 10
+#define HEATER_1_PIN -1
+#define TEMP_1_PIN -1
 
 
 #define SDSS		 -1
