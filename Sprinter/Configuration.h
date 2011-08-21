@@ -42,7 +42,7 @@ const bool ENDSTOPS_INVERTING = false; //set to true to invert the logic of the 
 #define BAUDRATE 115200
 
 // Comment out (using // at the start of the line) to disable SD support:
-#define SDSUPPORT 1
+//#define SDSUPPORT 1
 
 
 //// ADVANCED SETTINGS - to tweak parameters
@@ -156,12 +156,12 @@ char uuid[] = "00000000-0000-0000-0000-000000000000";
 #define MAXTEMP 275
 
 // Select one of these only to define how the nozzle temp is read.
-#define HEATER_USES_THERMISTOR
+//#define HEATER_USES_THERMISTOR
 //#define HEATER_USES_AD595
-//#define HEATER_USES_MAX6675
+#define HEATER_USES_MAX6675
 
 // Select one of these only to define how the bed temp is read.
-#define BED_USES_THERMISTOR
+//#define BED_USES_THERMISTOR
 //#define BED_USES_AD595
 
 // Uncomment the following line to enable debugging. You can better control debugging below the following line
