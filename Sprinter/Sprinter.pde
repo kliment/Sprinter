@@ -315,17 +315,13 @@ void setup()
   #endif
     
 #ifdef HEATER_USES_MAX6675
-  SET_OUTPUT(SCK_PIN);
-  WRITE(SCK_PIN,0);
-  
-  SET_OUTPUT(MOSI_PIN);
-  WRITE(MOSI_PIN,1);
-  
-  SET_INPUT(MISO_PIN);
-  WRITE(MISO_PIN,1);
-  
-  SET_OUTPUT(MAX6675_SS);
-  WRITE(MAX6675_SS,1);
+// 6675 on extruder requires these IO lines: 
+#define E_MISO 11    // MISO
+#define E_SCK 10   // Serial Clock
+#define E_CS 9  // CS Pin
+   pinMode(E_MISO, INPUT);
+  pinMode(E_SCK, OUTPUT);
+  pinMode(E_CS, OUTPUT);
 #endif  
  
 #ifdef SDSUPPORT
@@ -738,8 +734,12 @@ inline void process_commands()
         #endif
         break;
       case 105: // M105
-        #if (TEMP_0_PIN > -1) || defined (HEATER_USES_MAX6675)|| defined HEATER_USES_AD595
+        #if (TEMP_0_PIN > -1) || defined (HEATER_USES_AD595) || defined (HEATER_USES_MAX6675) 
           tt = analog2temp(current_raw);
+              //        Serial.print("current_raw: ");
+            //Serial.print(current_raw);
+              //          Serial.print("tt: ");
+            //Serial.print(tt);
         #endif
         #if TEMP_1_PIN > -1 || defined BED_USES_AD595
           bt = analog2tempBed(current_bed_raw);
@@ -1316,57 +1316,64 @@ void do_step(int axis) {
 
 #define HEAT_INTERVAL 250
 #ifdef HEATER_USES_MAX6675
-unsigned long max6675_previous_millis = 0;
+//unsigned long max6675_previous_millis = 0;
 int max6675_temp = 2000;
+unsigned long last_read = 0;
+int currentTemperature = 0;
 
 int read_max6675()
 {
-  if (millis() - max6675_previous_millis < HEAT_INTERVAL) 
-    return max6675_temp;
   
-  max6675_previous_millis = millis();
 
-  max6675_temp = 0;
+// for now, we pull pin assignments from fixed #defines,  but it would be better to change this function to pass them in, 
+//   so we can use multiple thermocouples at once ( eg on the bed and nozzle),  like this: 
+ //  read_max6675(int tc_0, int sck, int miso ) { 
+int tc_0 = E_CS;
+int sck = E_SCK;
+int miso = E_MISO;
+
+
+   int value = 0;
+   byte error_tc;
+ // don't read more often than 200 ms
+ if (  millis() - last_read > 200 )  { 
+   
+   last_read = millis();
+
+  digitalWrite(tc_0, 0); // Enable device
+
+  /* Cycle the clock for dummy bit 15 */
+  digitalWrite(sck,1);
+  digitalWrite(sck,0);
+
+  /* Read bits 14-3 from MAX6675 for the Temp
+   	 Loop for each bit reading the value 
+   */
+  for (int i=11; i>=0; i--)
+  {
+    digitalWrite(sck,1);  // Set Clock to HIGH
+    value += digitalRead(miso) << i;  // Read data and add it to our variable
+    digitalWrite(sck,0);  // Set Clock to LOW
+  }
+
+  /* Read the TC Input inp to check for TC Errors */
+  digitalWrite(sck,1); // Set Clock to HIGH
+  error_tc = digitalRead(miso); // Read data
+  digitalWrite(sck,0);  // Set Clock to LOW
+
+  digitalWrite(tc_0, 1); //Disable Device
+
+  if(error_tc)
+    currentTemperature = 2000;
+  else
+    currentTemperature = value/4;
     
-  #ifdef	PRR
-    PRR &= ~(1<<PRSPI);
-  #elif defined PRR0
-    PRR0 &= ~(1<<PRSPI);
-  #endif
+ } // read 
+ 
+//NOTE!  we return the actual ( and accurate) degrees in Celcius here! 
+// to use this internally in sprinter, you may need to temp2analogh() it, as sprinter stores it in a raw analog format. 
+return currentTemperature;
   
-  SPCR = (1<<MSTR) | (1<<SPE) | (1<<SPR0);
-  
-  // enable TT_MAX6675
-  WRITE(MAX6675_SS, 0);
-  
-  // ensure 100ns delay - a bit extra is fine
-  delay(1);
-  
-  // read MSB
-  SPDR = 0;
-  for (;(SPSR & (1<<SPIF)) == 0;);
-  max6675_temp = SPDR;
-  max6675_temp <<= 8;
-  
-  // read LSB
-  SPDR = 0;
-  for (;(SPSR & (1<<SPIF)) == 0;);
-  max6675_temp |= SPDR;
-  
-  // disable TT_MAX6675
-  WRITE(MAX6675_SS, 1);
-
-  if (max6675_temp & 4) 
-  {
-    // thermocouple open
-    max6675_temp = 2000;
-  }
-  else 
-  {
-    max6675_temp = max6675_temp >> 3;
-  }
-
-  return max6675_temp;
 }
 #endif
 
@@ -1385,10 +1392,13 @@ void manage_heater()
     // When using thermistor, when the heater is colder than targer temp, we get a higher analog reading than target, 
     // this switches it up so that the reading appears lower than target for the control logic.
     current_raw = 1023 - current_raw;
-  #elif defined HEATER_USES_AD595
-    current_raw = analogRead(TEMP_0_PIN);    
-  #elif defined HEATER_USES_MAX6675
-    current_raw = read_max6675();
+  #endif
+  #if defined HEATER_USES_AD595
+    current_raw = analogRead(TEMP_0_PIN);   
+  #endif 
+  #if defined HEATER_USES_MAX6675
+    current_raw = temp2analogh(read_max6675());
+//    Serial.println(current_raw);
   #endif
   #ifdef SMOOTHING
   if (!nma) nma = SMOOTHFACTOR * current_raw;
@@ -1508,11 +1518,16 @@ int temp2analogu(int celsius, const short table[][2], int numtemps, int source) 
 
     return 1023 - raw;
     }
-  #elif defined (HEATER_USES_AD595) || defined (BED_USES_AD595)
+  #endif
+  // can't be elif's in-case you have a bed thermistor, and a nozzle 6675 :-)
+  #if defined (HEATER_USES_AD595) || defined (BED_USES_AD595)
     if(source==2)
         return celsius * 1024 / (500);
-  #elif defined (HEATER_USES_MAX6675) || defined (BED_USES_MAX6675)
+  #endif
+  #if defined (HEATER_USES_MAX6675) || defined (BED_USES_MAX6675)
     if(source==3)
+     // Serial.print("celsius: ");
+     //Serial.println(celsius);
         return celsius * 4;
   #endif
   return -1;
@@ -1544,10 +1559,12 @@ int analog2tempu(int raw,const short table[][2], int numtemps, int source) {
 
     return celsius;
     }
-  #elif defined (HEATER_USES_AD595) || defined (BED_USES_AD595)
+  #endif
+  #if defined (HEATER_USES_AD595) || defined (BED_USES_AD595)
     if(source==2)
         return raw * 500 / 1024;
-  #elif defined (HEATER_USES_MAX6675) || defined (BED_USES_MAX6675)
+  #endif
+  #if defined (HEATER_USES_MAX6675) || defined (BED_USES_MAX6675)
     if(source==3)
         return raw / 4;
   #endif
