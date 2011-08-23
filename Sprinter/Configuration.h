@@ -19,6 +19,7 @@
 // 3 is mendel-parts thermistor
 // 4 is 10k thermistor
 // 5 is ParCan supplied 104GT-2 100K
+// 6 is EPCOS 100k
 #define THERMISTORHEATER 1
 #define THERMISTORBED 1
 
