@@ -225,6 +225,48 @@ const short temptable_5[NUMTEMPS_5][2] = {
 };
 #endif
 
+#if (THERMISTORHEATER == 6) || (THERMISTORBED == 6) // 100k Epcos thermistor
+#define NUMTEMPS_6 36
+const short temptable_6[NUMTEMPS_6][2] = {
+   {28, 250},
+   {31, 245},
+   {35, 240},
+   {39, 235},
+   {42, 230},
+   {44, 225},
+   {49, 220},
+   {53, 215},
+   {62, 210},
+   {73, 205},
+   {72, 200},
+   {94, 190},
+   {102, 185},
+   {116, 170},
+   {143, 160},
+   {183, 150},
+   {223, 140},
+   {270, 130},
+   {318, 120},
+   {383, 110},
+   {413, 105},
+   {439, 100},
+   {484, 95},
+   {513, 90},
+   {607, 80},
+   {664, 70},
+   {781, 60},
+   {810, 55},
+   {849, 50},
+   {914, 45},
+   {914, 40},
+   {935, 35},
+   {954, 30},
+   {970, 25},
+   {978, 22},
+   {1008, 3}
+};
+#endif
+
 #if THERMISTORHEATER == 1
 #define NUMTEMPS NUMTEMPS_1
 #define temptable temptable_1
@@ -240,6 +282,9 @@ const short temptable_5[NUMTEMPS_5][2] = {
 #elif THERMISTORHEATER == 5
 #define NUMTEMPS NUMTEMPS_5
 #define temptable temptable_5
+#elif THERMISTORHEATER == 6
+#define NUMTEMPS NUMTEMPS_6
+#define temptable temptable_6
 #elif defined HEATER_USES_THERMISTOR
 #error No heater thermistor table specified
 #endif
@@ -258,9 +303,11 @@ const short temptable_5[NUMTEMPS_5][2] = {
 #elif THERMISTORBED == 5
 #define BNUMTEMPS NUMTEMPS_5
 #define bedtemptable temptable_5
+#elif THERMISTORBED == 6
+#define BNUMTEMPS NUMTEMPS_6
+#define bedtemptable temptable_6
 #elif defined BED_USES_THERMISTOR
 #error No bed thermistor table specified
 #endif
 
 #endif //THERMISTORTABLES_H_
-
