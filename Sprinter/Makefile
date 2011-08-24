@@ -33,7 +33,7 @@
 # $Id$
 
 TARGET = $(notdir $(CURDIR))
-INSTALL_DIR = /home/chris/arduino-0022
+INSTALL_DIR = ../../arduino22/arduino-0022/
 UPLOAD_RATE = 38400
 AVRDUDE_PROGRAMMER = stk500v1
 PORT = /dev/ttyUSB0
@@ -52,9 +52,9 @@ ARDUINO = $(INSTALL_DIR)/hardware/arduino/cores/arduino
 AVR_TOOLS_PATH = /usr/bin
 SRC =  $(ARDUINO)/pins_arduino.c $(ARDUINO)/wiring.c \
 $(ARDUINO)/wiring_analog.c $(ARDUINO)/wiring_digital.c \
-$(ARDUINO)/wiring_pulse.c $(ARDUINO)/wiring_serial.c \
+$(ARDUINO)/wiring_pulse.c \
 $(ARDUINO)/wiring_shift.c $(ARDUINO)/WInterrupts.c
-CXXSRC = $(ARDUINO)/HardwareSerial.cpp $(ARDUINO)/WMath.cpp \
+CXXSRC = $(ARDUINO)/HardwareSerial.cpp $(ARDUINO)/WMath.cpp $(ARDUINO)/WString.cpp\
 $(ARDUINO)/Print.cpp ./SdFile.cpp ./SdVolume.cpp ./Sd2Card.cpp
 FORMAT = ihex
 
@@ -82,14 +82,14 @@ CXXINCS = -I$(ARDUINO)
 # gnu89 - c89 plus GCC extensions
 # c99   - ISO C99 standard (not yet fully implemented)
 # gnu99 - c99 plus GCC extensions
-CSTANDARD = -std=gnu99
+#CSTANDARD = -std=gnu99
 CDEBUG = -g$(DEBUG)
 CWARN = -Wall -Wstrict-prototypes
-CTUNING = -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums
+CTUNING = -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums -w -ffunction-sections -fdata-sections -DARDUINO=22
 #CEXTRA = -Wa,-adhlns=$(<:.c=.lst)
 
-CFLAGS = $(CDEBUG) $(CDEFS) $(CINCS) -O$(OPT) $(CWARN) $(CSTANDARD) $(CEXTRA)
-CXXFLAGS = $(CDEFS) $(CINCS) -O$(OPT)
+CFLAGS = $(CDEBUG) $(CDEFS) $(CINCS) -O$(OPT) $(CWARN) $(CEXTRA) $(CTUNING)
+CXXFLAGS = $(CDEFS) $(CINCS) -O$(OPT) -Wall $(CEXTRA) $(CTUNING)
 #ASFLAGS = -Wa,-adhlns=$(<:.S=.lst),-gstabs 
 LDFLAGS = -lm
 
@@ -142,7 +142,7 @@ applet_files: $(TARGET).pde
 	test -d applet || mkdir applet
 	echo '#include "WProgram.h"' > applet/$(TARGET).cpp
 	cat $(TARGET).pde >> applet/$(TARGET).cpp
-	cat $(ARDUINO)/main.cxx >> applet/$(TARGET).cpp
+	cat $(ARDUINO)/main.cpp >> applet/$(TARGET).cpp
 
 elf: applet/$(TARGET).elf
 hex: applet/$(TARGET).hex
@@ -200,7 +200,7 @@ extcoff: $(TARGET).elf
 
 	# Link: create ELF output file from library.
 applet/$(TARGET).elf: $(TARGET).pde applet/core.a 
-	$(CC) $(ALL_CFLAGS) -o $@ applet/$(TARGET).cpp -L. applet/core.a $(LDFLAGS)
+	$(CC) $(ALL_CFLAGS) -Wl,--gc-sections -o $@ applet/$(TARGET).cpp -L. applet/core.a $(LDFLAGS)
 
 applet/core.a: $(OBJ)
 	@for i in $(OBJ); do echo $(AR) rcs applet/core.a $$i; $(AR) rcs applet/core.a $$i; done
