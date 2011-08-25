@@ -787,7 +787,7 @@ inline void process_commands()
         #endif
         return;
         //break;
-      case 109: // M109 - Wait for extruder heater to reach target.
+      case 109: { // M109 - Wait for extruder heater to reach target.
         if (code_seen('S')) target_raw = temp2analogh(code_value());
         #ifdef WATCHPERIOD
             if(target_raw>current_raw){
@@ -798,65 +798,39 @@ inline void process_commands()
             }
         #endif
         codenum = millis(); 
+        
         /* See if we are heating up or cooling down */
-        if( current_raw < target_raw )
-         /* We are heating up */
-          #ifdef TEMP_RESIDENCY_TIME
-            long residencyStart;
-            residencyStart = -1;
-            /* continue to loop until we have reached the target temp   
-               _and_ until TEMP_RESIDENCY_TIME hasn't passed since we reached it */
-            while( current_raw < target_raw
-                || (residencyStart > -1 && (millis() - residencyStart) < TEMP_RESIDENCY_TIME*1000) ) {
-          #else
-            while(current_raw < target_raw) {
-          #endif
-              if( (millis() - codenum) > 1000 ) //Print Temp Reading every 1 second while heating up.
-              {
-                Serial.print("T:");
-                Serial.println( analog2temp(current_raw) );
-                codenum = millis();
-              }
-              manage_heater();
-              #ifdef TEMP_RESIDENCY_TIME
-                /* start/restart the TEMP_RESIDENCY_TIME timer whenever we reach target temp for the first time
-                   or when current temp falls outside the hysteresis after target temp was reached */
-                if ( (residencyStart == -1 && current_raw >= target_raw)
-                    || (residencyStart > -1 && labs(analog2temp(current_raw) - analog2temp(target_raw)) > TEMP_HYSTERESIS) ) {
-                  residencyStart = millis();
-                }
-              #endif
-	    }
-        else if( current_raw > target_raw )
- 	  /* We are cooling down */
-          #ifdef TEMP_RESIDENCY_TIME
-            long residencyStart;
-            residencyStart = -1;
-            /* continue to loop until we have reached the target temp 
-               _and_ until TEMP_RESIDENCY_TIME hasn't passed since we reached it */
-          while( current_raw > target_raw 
-              || (residencyStart > -1 && (millis() - residencyStart) < TEMP_RESIDENCY_TIME*1000) ) {
-          #else
-            while(current_raw > target_raw) {
-          #endif
-          if( (millis() - codenum) > 1000 ) //Print Temp Reading every 1 second while heating up.
+        bool target_direction = (current_raw < target_raw);  // true if heating, false if cooling
+        
+      #ifdef TEMP_RESIDENCY_TIME
+        long residencyStart;
+        residencyStart = -1;
+        /* continue to loop until we have reached the target temp   
+           _and_ until TEMP_RESIDENCY_TIME hasn't passed since we reached it */
+        while( (target_direction ? (current_raw < target_raw) : (current_raw > target_raw))
+            || (residencyStart > -1 && (millis() - residencyStart) < TEMP_RESIDENCY_TIME*1000) ) {
+      #else
+        while ( target_direction ? (current_raw < target_raw) : (current_raw > target_raw) ) {
+      #endif
+          if( (millis() - codenum) > 1000 ) //Print Temp Reading every 1 second while heating up/cooling down
           {
             Serial.print("T:");
-            Serial.println( analog2temp(current_raw) ); 
-            codenum = millis(); 
+            Serial.println( analog2temp(current_raw) );
+            codenum = millis();
           }
           manage_heater();
           #ifdef TEMP_RESIDENCY_TIME
             /* start/restart the TEMP_RESIDENCY_TIME timer whenever we reach target temp for the first time
                or when current temp falls outside the hysteresis after target temp was reached */
-            if ( (residencyStart == -1 && current_raw <= target_raw)
+            if (   (residencyStart == -1 &&  target_direction && current_raw >= target_raw)
+                || (residencyStart == -1 && !target_direction && current_raw <= target_raw)
                 || (residencyStart > -1 && labs(analog2temp(current_raw) - analog2temp(target_raw)) > TEMP_HYSTERESIS) ) {
               residencyStart = millis();
             }
           #endif
-        }
-        
-        break;
+	    }
+      }
+      break;
       case 190: // M190 - Wait bed for heater to reach target.
       #if TEMP_1_PIN > -1
         if (code_seen('S')) target_bed_raw = temp2analogh(code_value());
