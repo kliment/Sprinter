@@ -33,7 +33,7 @@ float axis_steps_per_unit[] = {80, 80, 3200/1.25,700};
 //float axis_steps_per_unit[] = {104.987, 104.987, 4545.4544, 1487};
 
 //// Endstop Settings
-#define ENDSTOPPULLUPS 1 // Comment this out (using // at the start of the line) to disable the endstop pullup resistors
+#define ENDSTOPPULLUPS // Comment this out (using // at the start of the line) to disable the endstop pullup resistors
 // The pullups are needed if you directly connect a mechanical endswitch between the signal and ground pins.
 const bool ENDSTOPS_INVERTING = false; //set to true to invert the logic of the endstops
 //If your axes are only moving in one direction, make sure the endstops are connected properly.
@@ -43,7 +43,7 @@ const bool ENDSTOPS_INVERTING = false; //set to true to invert the logic of the 
 #define BAUDRATE 115200
 
 // Comment out (using // at the start of the line) to disable SD support:
-#define SDSUPPORT 1
+#define SDSUPPORT
 
 
 //// ADVANCED SETTINGS - to tweak parameters
@@ -95,7 +95,7 @@ bool axis_relative_modes[] = {false, false, false, false};
 //#define STEP_DELAY_RATIO 0.25
 
 // Comment this to disable ramp acceleration
-#define RAMP_ACCELERATION 1
+#define RAMP_ACCELERATION
 
 //// Acceleration settings
 #ifdef RAMP_ACCELERATION
@@ -115,7 +115,7 @@ char uuid[] = "00000000-0000-0000-0000-000000000000";
 
 //// PID settings:
 // Uncomment the following line to enable PID support. This is untested and could be disastrous. Be careful.
-//#define PIDTEMP 1
+//#define PIDTEMP
 #ifdef PIDTEMP
 #define PID_MAX 255 // limits current to nozzle
 #define PID_INTEGRAL_DRIVE_MAX 220
