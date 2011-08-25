@@ -337,6 +337,17 @@ void setup()
   #endif
   initsd();
 
+  // Custom Setup code execution 
+  // You can implement your own setup code without ANY modification
+  // to this file, by simple creating a custom function and defining 
+  // the CUSTOM_SETUP macro with the name of your function
+  // See detailed explanation and sample code in Configuration.h file
+  #ifdef CUSTOM_SETUP
+    CUSTOM_SETUP();
+  #endif
+
+
+
 #endif
 
 }
@@ -368,10 +379,19 @@ void loop()
     buflen = (buflen-1);
     bufindr = (bufindr + 1)%BUFSIZE;
     }
-  //check heater every n milliseconds
-      manage_heater();
-      manage_inactivity(1);
-  }
+    //check heater every n milliseconds
+    manage_heater();
+    manage_inactivity(1);
+    
+    // Custom Loop code execution 
+    // You can implement your own Loop code without ANY modification
+    // to this file, by simple creating a custom function and defining 
+    // the CUSTOM_LOOP macro with the name of your function
+    // See detailed explanation and sample code in Configuration.h file
+    #ifdef CUSTOM_LOOP
+        CUSTOM_LOOP();
+    #endif
+}
 
 
 inline void get_command() 
