@@ -139,7 +139,7 @@ char uuid[] = "00000000-0000-0000-0000-000000000000";
 #define DISABLE_CHECK_DURING_TRAVEL 1000
 
 //// Temperature smoothing - only uncomment this if your temp readings are noisy (Gen6 without EvdZ's 5V hack)
-//#define SMOOTHING 1
+//#define SMOOTHING
 //#define SMOOTHFACTOR 16 //best to use a power of two here - determines how many values are averaged together by the smoothing algorithm
 
 //// Experimental watchdog and minimal temp
