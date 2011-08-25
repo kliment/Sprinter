@@ -267,6 +267,42 @@ const short temptable_6[NUMTEMPS_6][2] = {
 };
 #endif
 
+
+#if (THERMISTORHEATER == 7) || (THERMISTORBED == 7) // Honeywell 100K Thermistor (135-104LAG-J01)
+// Honeywell 100K Thermistor (135-104LAG-J01)
+// Made with createTemperatureLookup.py (http://svn.reprap.org/trunk/reprap/firmware/Arduino/utilities/createTemperatureLookup.py)
+// ./createTemperatureLookup.py --r0=100000 --t0=25 --r1=0 --r2=4700 --beta=3974 --max-adc=1023
+// r0: 100000
+// t0: 25
+// r1: 0
+// r2: 4700
+// beta: 3974
+// max adc: 1023
+#define NUMTEMPS_7 20
+short temptable_7[NUMTEMPS_7][2] = {
+{1, 916},
+{54, 265},
+{107, 216},
+{160, 189},
+{213, 171},
+{266, 157},
+{319, 146},
+{372, 136},
+{425, 127},
+{478, 118},
+{531, 110},
+{584, 103},
+{637, 95},
+{690, 88},
+{743, 80},
+{796, 71},
+{849, 62},
+{902, 50},
+{955, 34},
+{1008, 2}
+};
+#endif
+
 #if THERMISTORHEATER == 1
 #define NUMTEMPS NUMTEMPS_1
 #define temptable temptable_1
@@ -285,6 +321,9 @@ const short temptable_6[NUMTEMPS_6][2] = {
 #elif THERMISTORHEATER == 6
 #define NUMTEMPS NUMTEMPS_6
 #define temptable temptable_6
+#elif THERMISTORHEATER == 7
+#define NUMTEMPS NUMTEMPS_7
+#define temptable temptable_7
 #elif defined HEATER_USES_THERMISTOR
 #error No heater thermistor table specified
 #endif
