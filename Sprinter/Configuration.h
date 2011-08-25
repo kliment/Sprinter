@@ -7,7 +7,7 @@
 // To use your own custom config, uncomment the line below, modifying
 // "customConfigFile.h" with your own config file name. 
 // To create your own custom one, just copy/paste this one into your new file.
-#include "customConfigFile.h"
+//#include "customConfigFile.h"
 
 // If MOTHERBOARD is already defined from without a custom config, 
 // then ignore the values below
