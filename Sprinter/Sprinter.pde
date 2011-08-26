@@ -960,7 +960,7 @@ inline void process_commands()
       	#endif
       	#if (Z_MIN_PIN > -1)
       	Serial.print("z_min:");
-        Serial.print((READ(Z_MIN_PIN)^Z_ENDSTOP_INVERT?"H ":"L ");
+        Serial.print((READ(Z_MIN_PIN)^Z_ENDSTOP_INVERT)?"H ":"L ");
       	#endif
       	#if (Z_MAX_PIN > -1)
       	Serial.print("z_max:");
