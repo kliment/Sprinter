@@ -866,27 +866,27 @@ inline void process_commands()
       case 119: // M119
       	#if (X_MIN_PIN > -1)
       	Serial.print("x_min:");
-        Serial.print((READ(X_MIN_PIN)^ENDSTOPS_INVERTING)?"H ":"L ");
+        Serial.print((READ(X_MIN_PIN)^X_ENDSTOP_INVERT)?"H ":"L ");
       	#endif
       	#if (X_MAX_PIN > -1)
       	Serial.print("x_max:");
-        Serial.print((READ(X_MAX_PIN)^ENDSTOPS_INVERTING)?"H ":"L ");
+        Serial.print((READ(X_MAX_PIN)^X_ENDSTOP_INVERT)?"H ":"L ");
       	#endif
       	#if (Y_MIN_PIN > -1)
       	Serial.print("y_min:");
-        Serial.print((READ(Y_MIN_PIN)^ENDSTOPS_INVERTING)?"H ":"L ");
+        Serial.print((READ(Y_MIN_PIN)^Y_ENDSTOP_INVERT)?"H ":"L ");
       	#endif
       	#if (Y_MAX_PIN > -1)
       	Serial.print("y_max:");
-        Serial.print((READ(Y_MAX_PIN)^ENDSTOPS_INVERTING)?"H ":"L ");
+        Serial.print((READ(Y_MAX_PIN)^Y_ENDSTOP_INVERT)?"H ":"L ");
       	#endif
       	#if (Z_MIN_PIN > -1)
       	Serial.print("z_min:");
-        Serial.print((READ(Z_MIN_PIN)^ENDSTOPS_INVERTING)?"H ":"L ");
+        Serial.print((READ(Z_MIN_PIN)^Z_ENDSTOP_INVERT?"H ":"L ");
       	#endif
       	#if (Z_MAX_PIN > -1)
       	Serial.print("z_max:");
-        Serial.print((READ(Z_MAX_PIN)^ENDSTOPS_INVERTING)?"H ":"L ");
+        Serial.print((READ(Z_MAX_PIN)^Z_ENDSTOP_INVERT)?"H ":"L ");
       	#endif
         Serial.println("");
       	break;
@@ -1041,22 +1041,22 @@ inline void linear_move(unsigned long axis_steps_remaining[]) // make linear mov
   else WRITE(E_DIR_PIN,INVERT_E_DIR);
   movereset:
   #if (X_MIN_PIN > -1) 
-    if(!move_direction[0]) if(READ(X_MIN_PIN) != ENDSTOPS_INVERTING) axis_steps_remaining[0]=0;
+    if(!move_direction[0]) if(READ(X_MIN_PIN) != X_ENDSTOP_INVERT) axis_steps_remaining[0]=0;
   #endif
   #if (Y_MIN_PIN > -1) 
-    if(!move_direction[1]) if(READ(Y_MIN_PIN) != ENDSTOPS_INVERTING) axis_steps_remaining[1]=0;
+    if(!move_direction[1]) if(READ(Y_MIN_PIN) != Y_ENDSTOP_INVERT) axis_steps_remaining[1]=0;
   #endif
   #if (Z_MIN_PIN > -1) 
-    if(!move_direction[2]) if(READ(Z_MIN_PIN) != ENDSTOPS_INVERTING) axis_steps_remaining[2]=0;
+    if(!move_direction[2]) if(READ(Z_MIN_PIN) != Z_ENDSTOP_INVERT) axis_steps_remaining[2]=0;
   #endif
   #if (X_MAX_PIN > -1) 
-    if(move_direction[0]) if(READ(X_MAX_PIN) != ENDSTOPS_INVERTING) axis_steps_remaining[0]=0;
+    if(move_direction[0]) if(READ(X_MAX_PIN) != X_ENDSTOP_INVERT) axis_steps_remaining[0]=0;
   #endif
   #if (Y_MAX_PIN > -1) 
-    if(move_direction[1]) if(READ(Y_MAX_PIN) != ENDSTOPS_INVERTING) axis_steps_remaining[1]=0;
+    if(move_direction[1]) if(READ(Y_MAX_PIN) != Y_ENDSTOP_INVERT) axis_steps_remaining[1]=0;
   #endif
   # if(Z_MAX_PIN > -1) 
-    if(move_direction[2]) if(READ(Z_MAX_PIN) != ENDSTOPS_INVERTING) axis_steps_remaining[2]=0;
+    if(move_direction[2]) if(READ(Z_MAX_PIN) != Z_ENDSTOP_INVERT) axis_steps_remaining[2]=0;
   #endif
   
   
@@ -1232,22 +1232,22 @@ inline void linear_move(unsigned long axis_steps_remaining[]) // make linear mov
     //If there are x or y steps remaining, perform Bresenham algorithm
     if(axis_steps_remaining[primary_axis]) {
       #if (X_MIN_PIN > -1) 
-        if(!move_direction[0]) if(READ(X_MIN_PIN) != ENDSTOPS_INVERTING) if(primary_axis==0) break; else if(axis_steps_remaining[0]) axis_steps_remaining[0]=0;
+        if(!move_direction[0]) if(READ(X_MIN_PIN) != X_ENDSTOP_INVERT) if(primary_axis==0) break; else if(axis_steps_remaining[0]) axis_steps_remaining[0]=0;
       #endif
       #if (Y_MIN_PIN > -1) 
-        if(!move_direction[1]) if(READ(Y_MIN_PIN) != ENDSTOPS_INVERTING) if(primary_axis==1) break; else if(axis_steps_remaining[1]) axis_steps_remaining[1]=0;
+        if(!move_direction[1]) if(READ(Y_MIN_PIN) != Y_ENDSTOP_INVERT) if(primary_axis==1) break; else if(axis_steps_remaining[1]) axis_steps_remaining[1]=0;
       #endif
       #if (X_MAX_PIN > -1) 
-        if(move_direction[0]) if(READ(X_MAX_PIN) != ENDSTOPS_INVERTING) if(primary_axis==0) break; else if(axis_steps_remaining[0]) axis_steps_remaining[0]=0;
+        if(move_direction[0]) if(READ(X_MAX_PIN) != X_ENDSTOP_INVERT) if(primary_axis==0) break; else if(axis_steps_remaining[0]) axis_steps_remaining[0]=0;
       #endif
       #if (Y_MAX_PIN > -1) 
-        if(move_direction[1]) if(READ(Y_MAX_PIN) != ENDSTOPS_INVERTING) if(primary_axis==1) break; else if(axis_steps_remaining[1]) axis_steps_remaining[1]=0;
+        if(move_direction[1]) if(READ(Y_MAX_PIN) != Y_ENDSTOP_INVERT) if(primary_axis==1) break; else if(axis_steps_remaining[1]) axis_steps_remaining[1]=0;
       #endif
       #if (Z_MIN_PIN > -1) 
-        if(!move_direction[2]) if(READ(Z_MIN_PIN) != ENDSTOPS_INVERTING) if(primary_axis==2) break; else if(axis_steps_remaining[2]) axis_steps_remaining[2]=0;
+        if(!move_direction[2]) if(READ(Z_MIN_PIN) != Z_ENDSTOP_INVERT) if(primary_axis==2) break; else if(axis_steps_remaining[2]) axis_steps_remaining[2]=0;
       #endif
       #if (Z_MAX_PIN > -1) 
-        if(move_direction[2]) if(READ(Z_MAX_PIN) != ENDSTOPS_INVERTING) if(primary_axis==2) break; else if(axis_steps_remaining[2]) axis_steps_remaining[2]=0;
+        if(move_direction[2]) if(READ(Z_MAX_PIN) != Z_ENDSTOP_INVERT) if(primary_axis==2) break; else if(axis_steps_remaining[2]) axis_steps_remaining[2]=0;
       #endif
       timediff = micros() * 100 - axis_previous_micros[primary_axis];
       if(timediff<0){//check for overflow
