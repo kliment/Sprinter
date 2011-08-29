@@ -311,11 +311,7 @@ void setup()
     SET_OUTPUT(E_STEP_PIN);
   #endif  
   #ifdef RAMP_ACCELERATION
-  for(int i=0; i < NUM_AXIS; i++){
-        axis_max_interval[i] = 100000000.0 / (max_start_speed_units_per_second[i] * axis_steps_per_unit[i]);
-        axis_steps_per_sqr_second[i] = max_acceleration_units_per_sq_second[i] * axis_steps_per_unit[i];
-        axis_travel_steps_per_sqr_second[i] = max_travel_acceleration_units_per_sq_second[i] * axis_steps_per_unit[i];
-    }
+    setup_acceleration();
   #endif
     
 #ifdef HEATER_USES_MAX6675
@@ -891,15 +887,10 @@ inline void process_commands()
           if(code_seen(axis_codes[i])) axis_steps_per_unit[i] = code_value();
         }
         
-        //Update start speed intervals and axis order. TODO: refactor axis_max_interval[] calculation into a function, as it
-        // should also be used in setup() as well
         #ifdef RAMP_ACCELERATION
-          long temp_max_intervals[NUM_AXIS];
-          for(int i=0; i < NUM_AXIS; i++) {
-            axis_max_interval[i] = 100000000.0 / (max_start_speed_units_per_second[i] * axis_steps_per_unit[i]);//TODO: do this for
-                  // all steps_per_unit related variables
-          }
+          setup_acceleration();
         #endif
+        
         break;
       case 115: // M115
         Serial.print("FIRMWARE_NAME:Sprinter FIRMWARE_URL:http%%3A/github.com/kliment/Sprinter/ PROTOCOL_VERSION:1.0 MACHINE_TYPE:Mendel EXTRUDER_COUNT:1 UUID:");
@@ -1637,6 +1628,16 @@ inline void manage_inactivity(byte debug) {
 if( (millis()-previous_millis_cmd) >  max_inactive_time ) if(max_inactive_time) kill(); 
 if( (millis()-previous_millis_cmd) >  stepper_inactive_time ) if(stepper_inactive_time) { disable_x(); disable_y(); disable_z(); disable_e(); }
 }
+
+#ifdef RAMP_ACCELERATION
+void setup_acceleration() {
+  for (int i=0; i < NUM_AXIS; i++) {
+    axis_max_interval[i]                = 100000000.0 / (max_start_speed_units_per_second[i] * axis_steps_per_unit[i]);
+    axis_steps_per_sqr_second[i]        = max_acceleration_units_per_sq_second[i] * axis_steps_per_unit[i];
+    axis_travel_steps_per_sqr_second[i] = max_travel_acceleration_units_per_sq_second[i] * axis_steps_per_unit[i];
+  }
+}
+#endif
 
 #ifdef DEBUG
 void log_message(char*   message) {
