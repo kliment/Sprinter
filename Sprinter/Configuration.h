@@ -258,5 +258,19 @@
             lcd.print(temp);
         }
     #endif
+    
+    //#define CUSTOM_CODES
+    #ifdef CUSTOM_CODES
+        #define CUSTOM_M_CODES \
+            case 300:\
+                Serial.print("custom M code 300 works!\n");\
+                break;
+                
+        #define CUSTOM_G_CODES \
+            case 300:\
+                Serial.print("custom G code 300 works!\n");\
+                break;
+    #endif
+    
     //=========================================================
 #endif

@@ -538,6 +538,11 @@ inline void process_commands()
   {
     switch((int)code_value())
     {
+
+#ifdef CUSTOM_G_CODES
+      CUSTOM_G_CODES
+#endif
+      
       case 0: // G0 -> G1
       case 1: // G1
         #if (defined DISABLE_CHECK_DURING_ACC) || (defined DISABLE_CHECK_DURING_MOVE) || (defined DISABLE_CHECK_DURING_TRAVEL)
@@ -651,6 +656,11 @@ inline void process_commands()
     
     switch( (int)code_value() ) 
     {
+        
+#ifdef CUSTOM_M_CODES
+      CUSTOM_M_CODES
+#endif
+
 #ifdef SDSUPPORT
         
       case 20: // M20 - list SD card
