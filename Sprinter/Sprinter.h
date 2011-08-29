@@ -8,6 +8,7 @@ void get_command();
 void process_commands();
 
 void manage_inactivity(byte debug);
+void setup_acceleration();
 
 void manage_heater();
 int temp2analogu(int celsius, const short table[][2], int numtemps, int source);
