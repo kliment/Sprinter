@@ -261,7 +261,7 @@
 #define HEATER_1_PIN       8
 #define TEMP_0_PIN         13   // ANALOG NUMBERING
 #define TEMP_1_PIN         14   // ANALOG NUMBERING
-
+#define TEMP_2_PIN         15   // ANALOG NUMBERING
 
 #else // RAMPS_V_1_1 or RAMPS_V_1_2 as default
 
