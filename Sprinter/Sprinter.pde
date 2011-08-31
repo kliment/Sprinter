@@ -43,6 +43,7 @@
 // M27  - Report SD print status
 // M28  - Start SD write (M28 filename.g)
 // M29  - Stop SD write
+// M42 - Set output on free pins, on a non pwm pin (over pin 13 on an arduino mega) use S255 to turn it on and S0 to turn it off. Use P to decide the pin (M42 P23 S255) would turn pin 23 on
 // M81  - Turn off Power Supply
 // M82  - Set E codes absolute (default)
 // M83  - Set E codes relative while in Absolute Coordinates (G90) mode
@@ -310,11 +311,7 @@ void setup()
     SET_OUTPUT(E_STEP_PIN);
   #endif  
   #ifdef RAMP_ACCELERATION
-  for(int i=0; i < NUM_AXIS; i++){
-        axis_max_interval[i] = 100000000.0 / (max_start_speed_units_per_second[i] * axis_steps_per_unit[i]);
-        axis_steps_per_sqr_second[i] = max_acceleration_units_per_sq_second[i] * axis_steps_per_unit[i];
-        axis_travel_steps_per_sqr_second[i] = max_travel_acceleration_units_per_sq_second[i] * axis_steps_per_unit[i];
-    }
+    setup_acceleration();
   #endif
     
 #ifdef HEATER_USES_MAX6675
@@ -724,6 +721,31 @@ inline void process_commands()
         //savetosd = false;
         break;
 #endif
+      case 42: //M42 -Change pin status via gcode
+        if (code_seen('S'))
+        {
+          int pin_status = code_value();
+          if (code_seen('P') && pin_status >= 0 && pin_status <= 255)
+          {
+            int pin_number = code_value();
+            for(int i = 0; i < sizeof(sensitive_pins); i++)
+            {
+              if (sensitive_pins[i] == pin_number)
+              {
+                pin_number = -1;
+                break;
+              }
+            }
+            
+            if (pin_number > -1)
+            {              
+              pinMode(pin_number, OUTPUT);
+              digitalWrite(pin_number, pin_status);
+              analogWrite(pin_number, pin_status);
+            }
+          }
+        }
+        break;
       case 104: // M104
         if (code_seen('S')) target_raw = temp2analogh(code_value());
         #ifdef WATCHPERIOD
@@ -761,7 +783,7 @@ inline void process_commands()
         #endif
         return;
         //break;
-      case 109: // M109 - Wait for extruder heater to reach target.
+      case 109: { // M109 - Wait for extruder heater to reach target.
         if (code_seen('S')) target_raw = temp2analogh(code_value());
         #ifdef WATCHPERIOD
             if(target_raw>current_raw){
@@ -772,34 +794,39 @@ inline void process_commands()
             }
         #endif
         codenum = millis(); 
-        #ifdef TEMP_RESIDENCY_TIME
-          long residencyStart;
-          residencyStart = -1;
-          /* continue to loop until we have reached the target temp 
-             _and_ until TEMP_RESIDENCY_TIME hasn't passed since we reached it */
-          while( current_raw < target_raw 
-                || (residencyStart > -1 && (millis() - residencyStart) < TEMP_RESIDENCY_TIME*1000) ) {
-        #else
-          while(current_raw < target_raw) {
-        #endif
-          if( (millis() - codenum) > 1000 ) //Print Temp Reading every 1 second while heating up.
+        
+        /* See if we are heating up or cooling down */
+        bool target_direction = (current_raw < target_raw);  // true if heating, false if cooling
+        
+      #ifdef TEMP_RESIDENCY_TIME
+        long residencyStart;
+        residencyStart = -1;
+        /* continue to loop until we have reached the target temp   
+           _and_ until TEMP_RESIDENCY_TIME hasn't passed since we reached it */
+        while( (target_direction ? (current_raw < target_raw) : (current_raw > target_raw))
+            || (residencyStart > -1 && (millis() - residencyStart) < TEMP_RESIDENCY_TIME*1000) ) {
+      #else
+        while ( target_direction ? (current_raw < target_raw) : (current_raw > target_raw) ) {
+      #endif
+          if( (millis() - codenum) > 1000 ) //Print Temp Reading every 1 second while heating up/cooling down
           {
             Serial.print("T:");
-            Serial.println( analog2temp(current_raw) ); 
-            codenum = millis(); 
+            Serial.println( analog2temp(current_raw) );
+            codenum = millis();
           }
           manage_heater();
           #ifdef TEMP_RESIDENCY_TIME
             /* start/restart the TEMP_RESIDENCY_TIME timer whenever we reach target temp for the first time
                or when current temp falls outside the hysteresis after target temp was reached */
-            if ( (residencyStart == -1 && current_raw >= target_raw)
+            if (   (residencyStart == -1 &&  target_direction && current_raw >= target_raw)
+                || (residencyStart == -1 && !target_direction && current_raw <= target_raw)
                 || (residencyStart > -1 && labs(analog2temp(current_raw) - analog2temp(target_raw)) > TEMP_HYSTERESIS) ) {
               residencyStart = millis();
             }
           #endif
-        }
-        
-        break;
+	    }
+      }
+      break;
       case 190: // M190 - Wait bed for heater to reach target.
       #if TEMP_1_PIN > -1
         if (code_seen('S')) target_bed_raw = temp2analogh(code_value());
@@ -860,15 +887,10 @@ inline void process_commands()
           if(code_seen(axis_codes[i])) axis_steps_per_unit[i] = code_value();
         }
         
-        //Update start speed intervals and axis order. TODO: refactor axis_max_interval[] calculation into a function, as it
-        // should also be used in setup() as well
         #ifdef RAMP_ACCELERATION
-          long temp_max_intervals[NUM_AXIS];
-          for(int i=0; i < NUM_AXIS; i++) {
-            axis_max_interval[i] = 100000000.0 / (max_start_speed_units_per_second[i] * axis_steps_per_unit[i]);//TODO: do this for
-                  // all steps_per_unit related variables
-          }
+          setup_acceleration();
         #endif
+        
         break;
       case 115: // M115
         Serial.print("FIRMWARE_NAME:Sprinter FIRMWARE_URL:http%%3A/github.com/kliment/Sprinter/ PROTOCOL_VERSION:1.0 MACHINE_TYPE:Mendel EXTRUDER_COUNT:1 UUID:");
@@ -1496,7 +1518,11 @@ void manage_heater()
   #endif
   
   
+  #ifdef MINTEMP
+    if(current_bed_raw >= target_bed_raw || current_bed_raw < minttemp)
+  #else
     if(current_bed_raw >= target_bed_raw)
+  #endif
     {
       WRITE(HEATER_1_PIN,LOW);
     }
@@ -1602,6 +1628,16 @@ inline void manage_inactivity(byte debug) {
 if( (millis()-previous_millis_cmd) >  max_inactive_time ) if(max_inactive_time) kill(); 
 if( (millis()-previous_millis_cmd) >  stepper_inactive_time ) if(stepper_inactive_time) { disable_x(); disable_y(); disable_z(); disable_e(); }
 }
+
+#ifdef RAMP_ACCELERATION
+void setup_acceleration() {
+  for (int i=0; i < NUM_AXIS; i++) {
+    axis_max_interval[i]                = 100000000.0 / (max_start_speed_units_per_second[i] * axis_steps_per_unit[i]);
+    axis_steps_per_sqr_second[i]        = max_acceleration_units_per_sq_second[i] * axis_steps_per_unit[i];
+    axis_travel_steps_per_sqr_second[i] = max_travel_acceleration_units_per_sq_second[i] * axis_steps_per_unit[i];
+  }
+}
+#endif
 
 #ifdef DEBUG
 void log_message(char*   message) {
