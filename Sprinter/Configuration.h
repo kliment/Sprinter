@@ -9,6 +9,8 @@
 // Gen6 = 5, 
 // Sanguinololu up to 1.1 = 6
 // Sanguinololu 1.2 and above = 62
+// Gen 3 Plus = 21
+// gen 3  Monolithic Electronics = 22
 #define MOTHERBOARD 3 
 
 //// Thermistor settings:
@@ -16,6 +18,8 @@
 // 2 is 200k thermistor
 // 3 is mendel-parts thermistor
 // 4 is 10k thermistor
+// 5 is ParCan supplied 104GT-2 100K
+// 6 is EPCOS 100k
 #define THERMISTORHEATER 1
 #define THERMISTORBED 1
 
@@ -29,7 +33,7 @@ float axis_steps_per_unit[] = {80, 80, 3200/1.25,700};
 //float axis_steps_per_unit[] = {104.987, 104.987, 4545.4544, 1487};
 
 //// Endstop Settings
-#define ENDSTOPPULLUPS 1 // Comment this out (using // at the start of the line) to disable the endstop pullup resistors
+#define ENDSTOPPULLUPS // Comment this out (using // at the start of the line) to disable the endstop pullup resistors
 // The pullups are needed if you directly connect a mechanical endswitch between the signal and ground pins.
 const bool ENDSTOPS_INVERTING = false; //set to true to invert the logic of the endstops
 //If your axes are only moving in one direction, make sure the endstops are connected properly.
@@ -39,7 +43,7 @@ const bool ENDSTOPS_INVERTING = false; //set to true to invert the logic of the 
 #define BAUDRATE 115200
 
 // Comment out (using // at the start of the line) to disable SD support:
-#define SDSUPPORT 1
+#define SDSUPPORT
 
 
 //// ADVANCED SETTINGS - to tweak parameters
@@ -91,7 +95,7 @@ bool axis_relative_modes[] = {false, false, false, false};
 //#define STEP_DELAY_RATIO 0.25
 
 // Comment this to disable ramp acceleration
-#define RAMP_ACCELERATION 1
+#define RAMP_ACCELERATION
 
 //// Acceleration settings
 #ifdef RAMP_ACCELERATION
@@ -111,7 +115,7 @@ char uuid[] = "00000000-0000-0000-0000-000000000000";
 
 //// PID settings:
 // Uncomment the following line to enable PID support. This is untested and could be disastrous. Be careful.
-//#define PIDTEMP 1
+//#define PIDTEMP
 #ifdef PIDTEMP
 #define PID_INTEGRAL_DRIVE_MAX 220
 #define PID_PGAIN 180 //100 is 1.0
@@ -137,7 +141,7 @@ char uuid[] = "00000000-0000-0000-0000-000000000000";
 #define DISABLE_CHECK_DURING_TRAVEL 1000
 
 //// Temperature smoothing - only uncomment this if your temp readings are noisy (Gen6 without EvdZ's 5V hack)
-//#define SMOOTHING 1
+//#define SMOOTHING
 //#define SMOOTHFACTOR 16 //best to use a power of two here - determines how many values are averaged together by the smoothing algorithm
 
 //// Experimental watchdog and minimal temp

@@ -157,6 +157,116 @@ short temptable_4[NUMTEMPS_4][2] = {
 };
 #endif
 
+#if (THERMISTORHEATER == 5) || (THERMISTORBED == 5) //100k ParCan thermistor (104GT-2)
+
+#define NUMTEMPS_5 61
+const short temptable_5[NUMTEMPS_5][2] = {
+{1, 713},
+{18, 316},
+{35, 266},
+{52, 239},
+{69, 221},
+{86, 208},
+{103, 197},
+{120, 188},
+{137, 181},
+{154, 174},
+{171, 169},
+{188, 163},
+{205, 159},
+{222, 154},
+{239, 150},
+{256, 147},
+{273, 143},
+{290, 140},
+{307, 136},
+{324, 133},
+{341, 130},
+{358, 128},
+{375, 125},
+{392, 122},
+{409, 120},
+{426, 117},
+{443, 115},
+{460, 112},
+{477, 110},
+{494, 108},
+{511, 106},
+{528, 103},
+{545, 101},
+{562, 99},
+{579, 97},
+{596, 95},
+{613, 92},
+{630, 90},
+{647, 88},
+{664, 86},
+{681, 84},
+{698, 81},
+{715, 79},
+{732, 77},
+{749, 75},
+{766, 72},
+{783, 70},
+{800, 67},
+{817, 64},
+{834, 61},
+{851, 58},
+{868, 55},
+{885, 52},
+{902, 48},
+{919, 44},
+{936, 40},
+{953, 34},
+{970, 28},
+{987, 20},
+{1004, 8},
+{1021, 0}
+};
+#endif
+
+#if (THERMISTORHEATER == 6) || (THERMISTORBED == 6) // 100k Epcos thermistor
+#define NUMTEMPS_6 36
+const short temptable_6[NUMTEMPS_6][2] = {
+   {28, 250},
+   {31, 245},
+   {35, 240},
+   {39, 235},
+   {42, 230},
+   {44, 225},
+   {49, 220},
+   {53, 215},
+   {62, 210},
+   {73, 205},
+   {72, 200},
+   {94, 190},
+   {102, 185},
+   {116, 170},
+   {143, 160},
+   {183, 150},
+   {223, 140},
+   {270, 130},
+   {318, 120},
+   {383, 110},
+   {413, 105},
+   {439, 100},
+   {484, 95},
+   {513, 90},
+   {607, 80},
+   {664, 70},
+   {781, 60},
+   {810, 55},
+   {849, 50},
+   {914, 45},
+   {914, 40},
+   {935, 35},
+   {954, 30},
+   {970, 25},
+   {978, 22},
+   {1008, 3}
+};
+#endif
+
 #if THERMISTORHEATER == 1
 #define NUMTEMPS NUMTEMPS_1
 #define temptable temptable_1
@@ -169,6 +279,12 @@ short temptable_4[NUMTEMPS_4][2] = {
 #elif THERMISTORHEATER == 4
 #define NUMTEMPS NUMTEMPS_4
 #define temptable temptable_4
+#elif THERMISTORHEATER == 5
+#define NUMTEMPS NUMTEMPS_5
+#define temptable temptable_5
+#elif THERMISTORHEATER == 6
+#define NUMTEMPS NUMTEMPS_6
+#define temptable temptable_6
 #elif defined HEATER_USES_THERMISTOR
 #error No heater thermistor table specified
 #endif
@@ -184,6 +300,12 @@ short temptable_4[NUMTEMPS_4][2] = {
 #elif THERMISTORBED == 4
 #define BNUMTEMPS NUMTEMPS_4
 #define bedtemptable temptable_4
+#elif THERMISTORBED == 5
+#define BNUMTEMPS NUMTEMPS_5
+#define bedtemptable temptable_5
+#elif THERMISTORBED == 6
+#define BNUMTEMPS NUMTEMPS_6
+#define bedtemptable temptable_6
 #elif defined BED_USES_THERMISTOR
 #error No bed thermistor table specified
 #endif

@@ -400,7 +400,7 @@ pins
 #define PD7_PWM			NULL
 #endif	/*	_AVR_ATmega{168,328,328P}__ */
 
-#if defined (__AVR_ATmega644__) || defined (__AVR_ATmega644P__) || defined (__AVR_ATmega644PA__)
+#if defined (__AVR_ATmega644__) || defined (__AVR_ATmega644P__) || defined (__AVR_ATmega644PA__) || defined(__AVR_ATmega1284P__)
 // UART
 #define	RXD					DIO8
 #define	TXD					DIO9
@@ -901,7 +901,7 @@ pins
 #define PD7_WPORT		PORTD
 #define PD7_DDR			DDRD
 #define PD7_PWM			&OCR2A
-#endif	/*	_AVR_ATmega{644,644P,644PA}__ */
+#endif	/*	_AVR_ATmega{644,644P,644PA,1284P}__ */
 
 #if defined (__AVR_ATmega1280__) || defined (__AVR_ATmega2560__)
 // UART
