@@ -1217,8 +1217,8 @@ inline void linear_move(unsigned long axis_steps_remaining[]) // make linear mov
         accelerating = true;
         decelerating = true;
       }				
-      long current_speed = (long) ((long) max_speed_steps_per_second - ((((long) steps_per_sqr_second) / 10000)
-          * ((micros() - start_move_micros) / 100)));
+      long current_speed = (long) ((long) max_speed_steps_per_second - ((((long) steps_per_sqr_second) / 100)
+          * ((micros() - start_move_micros) / 100)/100));
       interval = 100000000 / current_speed;
       if (interval > max_interval)
 	interval = max_interval;
