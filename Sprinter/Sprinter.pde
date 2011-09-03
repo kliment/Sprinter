@@ -1242,8 +1242,8 @@ inline void linear_move(unsigned long axis_steps_remaining[]) // make linear mov
     if (acceleration_enabled && steps_done == 0) {
         interval = max_interval;
     } else if (acceleration_enabled && steps_done <= plateau_steps) {
-        long current_speed = (long) ((((long) steps_per_sqr_second) / 10000)
-	    * ((micros() - start_move_micros)  / 100) + (long) min_speed_steps_per_second);
+        long current_speed = (long) ((((long) steps_per_sqr_second) / 100)
+	    * ((micros() - start_move_micros)  / 100)/100 + (long) min_speed_steps_per_second);
 	    interval = 100000000 / current_speed;
       if (interval < full_interval) {
         accelerating = false;
