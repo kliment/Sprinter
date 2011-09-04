@@ -808,16 +808,14 @@ inline void process_commands()
             WRITE(FAN_PIN, HIGH);
             analogWrite(FAN_PIN, constrain(code_value(),0,255) );
         }
-        else
+        else {
             WRITE(FAN_PIN, HIGH);
+            analogWrite(FAN_PIN, 255 );
+        }
         break;
       case 107: //M107 Fan Off
-        if (code_seen('S')){
           analogWrite(FAN_PIN, 0);
-        }
-        else {
-        WRITE(FAN_PIN, LOW);
-        }
+          WRITE(FAN_PIN, LOW);
         break;
       #endif
       #if (PS_ON_PIN > -1)
