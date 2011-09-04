@@ -293,6 +293,11 @@ void setup()
     SET_OUTPUT(HEATER_1_PIN);
   #endif  
   
+  //Initialize Fan Pin
+  #if (FAN_PIN > -1) 
+    SET_OUTPUT(FAN_PIN);
+  #endif
+  
 //Initialize Step Pins
   #if (X_STEP_PIN > -1) 
     SET_OUTPUT(X_STEP_PIN);
@@ -803,13 +808,14 @@ inline void process_commands()
             WRITE(FAN_PIN, HIGH);
             analogWrite(FAN_PIN, constrain(code_value(),0,255) );
         }
-        else
+        else {
             WRITE(FAN_PIN, HIGH);
+            analogWrite(FAN_PIN, 255 );
+        }
         break;
       case 107: //M107 Fan Off
-        analogWrite(FAN_PIN, 0);
-        
-        WRITE(FAN_PIN, LOW);
+          analogWrite(FAN_PIN, 0);
+          WRITE(FAN_PIN, LOW);
         break;
       #endif
       #if (PS_ON_PIN > -1)
