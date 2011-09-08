@@ -20,6 +20,7 @@
 // 4 is 10k thermistor
 // 5 is ParCan supplied 104GT-2 100K
 // 6 is EPCOS 100k
+// 7 is 100k Honeywell thermistor 135-104LAG-J01
 #define THERMISTORHEATER 1
 #define THERMISTORBED 1
 
