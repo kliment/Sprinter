@@ -35,9 +35,11 @@ float axis_steps_per_unit[] = {80, 80, 3200/1.25,700};
 //// Endstop Settings
 #define ENDSTOPPULLUPS // Comment this out (using // at the start of the line) to disable the endstop pullup resistors
 // The pullups are needed if you directly connect a mechanical endswitch between the signal and ground pins.
-const bool ENDSTOPS_INVERTING = false; //set to true to invert the logic of the endstops
 //If your axes are only moving in one direction, make sure the endstops are connected properly.
-//If your axes move in one direction ONLY when the endstops are triggered, set ENDSTOPS_INVERTING to true here
+//If your axes move in one direction ONLY when the endstops are triggered, set [XYZ]_ENDSTOP_INVERT to true here:
+const bool X_ENDSTOP_INVERT = false;
+const bool Y_ENDSTOP_INVERT = false;
+const bool Z_ENDSTOP_INVERT = false;
 
 // This determines the communication speed of the printer
 #define BAUDRATE 115200
