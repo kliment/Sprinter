@@ -268,40 +268,66 @@ const short temptable_6[NUMTEMPS_6][2] = {
 #endif
 
 
-#if (THERMISTORHEATER == 7) || (THERMISTORBED == 7) // Honeywell 100K Thermistor (135-104LAG-J01)
-// Honeywell 100K Thermistor (135-104LAG-J01)
-// Made with createTemperatureLookup.py (http://svn.reprap.org/trunk/reprap/firmware/Arduino/utilities/createTemperatureLookup.py)
-// ./createTemperatureLookup.py --r0=100000 --t0=25 --r1=0 --r2=4700 --beta=3974 --max-adc=1023
-// r0: 100000
-// t0: 25
-// r1: 0
-// r2: 4700
-// beta: 3974
-// max adc: 1023
-#define NUMTEMPS_7 20
-short temptable_7[NUMTEMPS_7][2] = {
-{1, 916},
-{54, 265},
-{107, 216},
-{160, 189},
-{213, 171},
-{266, 157},
-{319, 146},
-{372, 136},
-{425, 127},
-{478, 118},
-{531, 110},
-{584, 103},
-{637, 95},
-{690, 88},
-{743, 80},
-{796, 71},
-{849, 62},
-{902, 50},
-{955, 34},
-{1008, 2}
+#if (THERMISTORHEATER == 7) || (THERMISTORBED == 7) // 100k Honeywell 135-104LAG-J01
+#define NUMTEMPS_7 54
+const short temptable_7[NUMTEMPS_7][2] = {
+   {46, 270},
+   {50, 265},
+   {54, 260},
+   {58, 255},
+   {62, 250},
+   {67, 245},
+   {72, 240},
+   {79, 235},
+   {85, 230},
+   {91, 225},
+   {99, 220},
+   {107, 215},
+   {116, 210},
+   {126, 205},
+   {136, 200},
+   {149, 195},
+   {160, 190},
+   {175, 185},
+   {191, 180},
+   {209, 175},
+   {224, 170},
+   {246, 165},
+   {267, 160},
+   {293, 155},
+   {316, 150},
+   {340, 145},
+   {364, 140},
+   {396, 135},
+   {425, 130},
+   {460, 125},
+   {489, 120},
+   {526, 115},
+   {558, 110},
+   {591, 105},
+   {628, 100},
+   {660, 95},
+   {696, 90},
+   {733, 85},
+   {761, 80},
+   {794, 75},
+   {819, 70},
+   {847, 65},
+   {870, 60},
+   {892, 55},
+   {911, 50},
+   {929, 45},
+   {944, 40},
+   {959, 35},
+   {971, 30},
+   {981, 25},
+   {989, 20},
+   {994, 15},
+   {1001, 10},
+   {1005, 5}
 };
 #endif
+
 
 #if THERMISTORHEATER == 1
 #define NUMTEMPS NUMTEMPS_1
@@ -345,6 +371,9 @@ short temptable_7[NUMTEMPS_7][2] = {
 #elif THERMISTORBED == 6
 #define BNUMTEMPS NUMTEMPS_6
 #define bedtemptable temptable_6
+#elif THERMISTORBED == 7
+#define BNUMTEMPS NUMTEMPS_7
+#define bedtemptable temptable_7
 #elif defined BED_USES_THERMISTOR
 #error No bed thermistor table specified
 #endif

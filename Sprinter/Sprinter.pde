@@ -293,6 +293,11 @@ void setup()
     SET_OUTPUT(HEATER_1_PIN);
   #endif  
   
+  //Initialize Fan Pin
+  #if (FAN_PIN > -1) 
+    SET_OUTPUT(FAN_PIN);
+  #endif
+  
 //Initialize Step Pins
   #if (X_STEP_PIN > -1) 
     SET_OUTPUT(X_STEP_PIN);
@@ -833,13 +838,14 @@ inline void process_commands()
             WRITE(FAN_PIN, HIGH);
             analogWrite(FAN_PIN, constrain(code_value(),0,255) );
         }
-        else
+        else {
             WRITE(FAN_PIN, HIGH);
+            analogWrite(FAN_PIN, 255 );
+        }
         break;
       case 107: //M107 Fan Off
-        analogWrite(FAN_PIN, 0);
-        
-        WRITE(FAN_PIN, LOW);
+          analogWrite(FAN_PIN, 0);
+          WRITE(FAN_PIN, LOW);
         break;
       #endif
       #if (PS_ON_PIN > -1)
@@ -1229,8 +1235,8 @@ inline void linear_move(unsigned long axis_steps_remaining[]) // make linear mov
     if (acceleration_enabled && steps_done == 0) {
         interval = max_interval;
     } else if (acceleration_enabled && steps_done <= plateau_steps) {
-        long current_speed = (long) ((((long) steps_per_sqr_second) / 10000)
-	    * ((micros() - start_move_micros)  / 100) + (long) min_speed_steps_per_second);
+        long current_speed = (long) ((((long) steps_per_sqr_second) / 100)
+	    * ((micros() - start_move_micros)  / 100)/100 + (long) min_speed_steps_per_second);
 	    interval = 100000000 / current_speed;
       if (interval < full_interval) {
         accelerating = false;
@@ -1247,8 +1253,8 @@ inline void linear_move(unsigned long axis_steps_remaining[]) // make linear mov
         accelerating = true;
         decelerating = true;
       }				
-      long current_speed = (long) ((long) max_speed_steps_per_second - ((((long) steps_per_sqr_second) / 10000)
-          * ((micros() - start_move_micros) / 100)));
+      long current_speed = (long) ((long) max_speed_steps_per_second - ((((long) steps_per_sqr_second) / 100)
+          * ((micros() - start_move_micros) / 100)/100));
       interval = 100000000 / current_speed;
       if (interval > max_interval)
 	interval = max_interval;
