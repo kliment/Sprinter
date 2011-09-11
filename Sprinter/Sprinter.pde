@@ -1489,10 +1489,8 @@ void manage_heater()
     #endif
 }
 
-
-int temp2analogu(int celsius, const short table[][2], int numtemps, int source) {
-  #if defined (HEATER_USES_THERMISTOR) || defined (BED_USES_THERMISTOR)
-  if(source==1){
+#if defined (HEATER_USES_THERMISTOR) || defined (BED_USES_THERMISTOR)
+int temp2analog_thermistor(int celsius, const short table[][2], int numtemps) {
     int raw = 0;
     byte i;
     
@@ -1513,20 +1511,23 @@ int temp2analogu(int celsius, const short table[][2], int numtemps, int source) 
     if (i == numtemps) raw = table[i-1][0];
 
     return 1023 - raw;
-    }
-  #elif defined (HEATER_USES_AD595) || defined (BED_USES_AD595)
-    if(source==2)
-        return celsius * 1024 / (500);
-  #elif defined (HEATER_USES_MAX6675) || defined (BED_USES_MAX6675)
-    if(source==3)
-        return celsius * 4;
-  #endif
-  return -1;
 }
+#endif
 
-int analog2tempu(int raw,const short table[][2], int numtemps, int source) {
-  #if defined (HEATER_USES_THERMISTOR) || defined (BED_USES_THERMISTOR)
-    if(source==1){
+#if defined (HEATER_USES_AD595) || defined (BED_USES_AD595)
+int temp2analog_ad595(int celsius) {
+    return celsius * 1024 / (500);
+}
+#endif
+
+#if defined (HEATER_USES_MAX6675) || defined (BED_USES_MAX6675)
+int temp2analog_max6675(int celsius) {
+    return celsius * 4;
+}
+#endif
+
+#if defined (HEATER_USES_THERMISTOR) || defined (BED_USES_THERMISTOR)
+int analog2temp_thermistor(int raw,const short table[][2], int numtemps) {
     int celsius = 0;
     byte i;
     
@@ -1549,17 +1550,20 @@ int analog2tempu(int raw,const short table[][2], int numtemps, int source) {
     if (i == numtemps) celsius = table[i-1][1];
 
     return celsius;
-    }
-  #elif defined (HEATER_USES_AD595) || defined (BED_USES_AD595)
-    if(source==2)
-        return raw * 500 / 1024;
-  #elif defined (HEATER_USES_MAX6675) || defined (BED_USES_MAX6675)
-    if(source==3)
-        return raw / 4;
-  #endif
-  return -1;
 }
+#endif
 
+#if defined (HEATER_USES_AD595) || defined (BED_USES_AD595)
+int analog2temp_ad595(int raw) {
+        return raw * 500 / 1024;
+}
+#endif
+
+#if defined (HEATER_USES_MAX6675) || defined (BED_USES_MAX6675)
+int analog2temp_max6675(int raw) {
+    return raw / 4;
+}
+#endif
 
 inline void kill()
 {
