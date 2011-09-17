@@ -302,6 +302,12 @@ void setup()
     SET_OUTPUT(FAN_PIN);
   #endif
   
+  //Initialize Alarm Pin
+  #if (ALARM_PIN > -1) 
+    SET_OUTPUT(ALARM_PIN);
+    WRITE(ALARM_PIN,LOW);
+  #endif
+  
 //Initialize Step Pins
   #if (X_STEP_PIN > -1) 
     SET_OUTPUT(X_STEP_PIN);
@@ -1465,6 +1471,9 @@ void manage_heater()
   #ifdef MAXTEMP
     if(current_raw >= maxttemp) {
         target_raw = 0;
+        #if (ALARM_PIN > -1) 
+          WRITE(ALARM_PIN,HIGH);
+        #endif
     }
   #endif
   #if (TEMP_0_PIN > -1) || defined (HEATER_USES_MAX6675) || defined (HEATER_USES_AD595)
