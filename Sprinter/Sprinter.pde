@@ -292,9 +292,11 @@ void setup()
   
   #if (HEATER_0_PIN > -1) 
     SET_OUTPUT(HEATER_0_PIN);
+    WRITE(HEATER_0_PIN,LOW);
   #endif  
   #if (HEATER_1_PIN > -1) 
     SET_OUTPUT(HEATER_1_PIN);
+    WRITE(HEATER_1_PIN,LOW);
   #endif  
   
   //Initialize Fan Pin
@@ -302,6 +304,12 @@ void setup()
     SET_OUTPUT(FAN_PIN);
   #endif
   
+  //Initialize Alarm Pin
+  #if (ALARM_PIN > -1) 
+    SET_OUTPUT(ALARM_PIN);
+    WRITE(ALARM_PIN,LOW);
+  #endif
+
   //Initialize LED Pin
   #if (LED_PIN > -1) 
     SET_OUTPUT(LED_PIN);
@@ -1471,6 +1479,9 @@ void manage_heater()
   #ifdef MAXTEMP
     if(current_raw >= maxttemp) {
         target_raw = 0;
+        #if (ALARM_PIN > -1) 
+          WRITE(ALARM_PIN,HIGH);
+        #endif
     }
   #endif
   #if (TEMP_0_PIN > -1) || defined (HEATER_USES_MAX6675) || defined (HEATER_USES_AD595)
