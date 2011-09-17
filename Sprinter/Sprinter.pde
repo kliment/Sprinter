@@ -292,9 +292,11 @@ void setup()
   
   #if (HEATER_0_PIN > -1) 
     SET_OUTPUT(HEATER_0_PIN);
+    WRITE(HEATER_0_PIN,LOW);
   #endif  
   #if (HEATER_1_PIN > -1) 
     SET_OUTPUT(HEATER_1_PIN);
+    WRITE(HEATER_1_PIN,LOW);
   #endif  
   
   //Initialize Fan Pin
