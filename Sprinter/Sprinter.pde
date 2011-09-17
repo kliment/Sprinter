@@ -392,7 +392,7 @@ inline void get_command()
   if(strstr(cmdbuffer[bufindw], "N") != NULL)
   {
     strchr_pointer = strchr(cmdbuffer[bufindw], 'N');
-    gcode_N = atoi(strchr_pointer+1);
+    gcode_N = atol(strchr_pointer+1);
     if(gcode_N != gcode_LastN+1 && (strstr(cmdbuffer[bufindw], "M110") == NULL) ) {
       Serial.print("Serial Error: Line Number is not Last Line Number+1, Last Line:");
       Serial.println(gcode_LastN);
