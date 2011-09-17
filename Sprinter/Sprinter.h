@@ -34,6 +34,21 @@ void manage_heater();
 #define analog2tempBed( c ) analog2temp_max6675(c)
 #endif
 
+#if defined (HEATER_USES_THERMISTOR) || defined (BED_USES_THERMISTOR)
+int temp2analog_thermistor(int celsius, const short table[][2], int numtemps);
+int analog2temp_thermistor(int raw,const short table[][2], int numtemps);
+#endif
+
+#if defined (HEATER_USES_AD595) || defined (BED_USES_AD595)
+int temp2analog_ad595(int celsius);
+int analog2temp_ad595(int raw);
+#endif
+
+#if defined (HEATER_USES_MAX6675) || defined (BED_USES_MAX6675)
+int temp2analog_max6675(int celsius);
+int analog2temp_max6675(int raw);
+#endif
+
 #if X_ENABLE_PIN > -1
 #define  enable_x() WRITE(X_ENABLE_PIN, X_ENABLE_ON)
 #define disable_x() WRITE(X_ENABLE_PIN,!X_ENABLE_ON)
