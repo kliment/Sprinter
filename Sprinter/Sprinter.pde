@@ -307,6 +307,12 @@ void setup()
     SET_OUTPUT(ALARM_PIN);
     WRITE(ALARM_PIN,LOW);
   #endif
+
+  //Initialize LED Pin
+  #if (LED_PIN > -1) 
+    SET_OUTPUT(LED_PIN);
+    WRITE(LED_PIN,LOW);
+  #endif
   
 //Initialize Step Pins
   #if (X_STEP_PIN > -1) 
