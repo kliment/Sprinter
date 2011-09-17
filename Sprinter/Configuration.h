@@ -118,12 +118,16 @@ char uuid[] = "00000000-0000-0000-0000-000000000000";
 
 //// PID settings:
 // Uncomment the following line to enable PID support. This is untested and could be disastrous. Be careful.
-//#define PIDTEMP
+//#define PIDTEMP 1
 #ifdef PIDTEMP
-#define PID_INTEGRAL_DRIVE_MAX 220
-#define PID_PGAIN 180 //100 is 1.0
-#define PID_IGAIN 2 //100 is 1.0
-#define PID_DGAIN 100 //100 is 1.0
+#define PID_INTEGRAL_DRIVE_MAX 80 // too big, and heater will lag after changing temperature, too small and it might not compensate enough for long-term errors
+#define PID_PGAIN 1280 //256 is 1.0  // value of 5.0 means that error of 20C is changing it almost halfway of the PWM range
+#define PID_IGAIN 64 //256 is 1.0  // value of 0.25 means that each degree error over 1 sec (2 measurements) changes duty cycle by 0.5 units (verify?)
+#define PID_DGAIN 2048 //256 is 1.0  // value of 8.0 means that each degree change over one measurement (half second) adjusts PWM by 8 units to compensate
+// magic formula 1, to get approximate "zero error" PWM duty. It is most likely linear formula
+#define HEATER_DUTY_FOR_SETPOINT(setpoint) (22+1*setpoint)
+// magic formula 2, to make led brightness approximately linear
+#define LED_PWM_FOR_BRIGHTNESS(brightness) ((64*brightness-1384)/(300-brightness))
 #endif
 
 // Change this value (range 1-255) to limit the current to the nozzle

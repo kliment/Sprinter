@@ -1,4 +1,4 @@
-// Tonokip RepRap firmware rewrite based off of Hydra-mmm firmware.
+  // Tonokip RepRap firmware rewrite based off of Hydra-mmm firmware.
 // Licence: GPL
 
 #include "fastio.h"
@@ -112,20 +112,22 @@ char *strchr_pointer; // just a pointer to find chars in the cmd string like X, 
 // degree increments (i.e. 100=25 deg). 
 
 int target_raw = 0;
+int target_temp = 0;
 int current_raw = 0;
 int target_bed_raw = 0;
 int current_bed_raw = 0;
 int tt = 0, bt = 0;
 #ifdef PIDTEMP
   int temp_iState = 0;
-  int temp_dState = 0;
+  int prev_temp = 0;
   int pTerm;
   int iTerm;
   int dTerm;
       //int output;
   int error;
-  int temp_iState_min = 100 * -PID_INTEGRAL_DRIVE_MAX / PID_IGAIN;
-  int temp_iState_max = 100 * PID_INTEGRAL_DRIVE_MAX / PID_IGAIN;
+  int heater_duty = 0;
+  const int temp_iState_min = 256L * -PID_INTEGRAL_DRIVE_MAX / PID_IGAIN;
+  const int temp_iState_max = 256L * PID_INTEGRAL_DRIVE_MAX / PID_IGAIN;
 #endif
 #ifndef HEATER_CURRENT
   #define HEATER_CURRENT 255
@@ -766,7 +768,7 @@ inline void process_commands()
         }
         break;
       case 104: // M104
-        if (code_seen('S')) target_raw = temp2analogh(code_value());
+        if (code_seen('S')) target_raw = temp2analogh(target_temp = code_value());
         #ifdef WATCHPERIOD
             if(target_raw > current_raw){
                 watchmillis = max(1,millis());
@@ -791,6 +793,12 @@ inline void process_commands()
         #if (TEMP_0_PIN > -1) || defined (HEATER_USES_MAX6675) || defined HEATER_USES_AD595
             Serial.print("ok T:");
             Serial.print(tt); 
+          #ifdef PIDTEMP
+            Serial.print(" @:");
+            Serial.print(heater_duty); 
+            Serial.print(",");
+            Serial.print(iTerm);
+          #endif
           #if TEMP_1_PIN > -1 || defined BED_USES_AD595
             Serial.print(" B:");
             Serial.println(bt); 
@@ -803,7 +811,7 @@ inline void process_commands()
         return;
         //break;
       case 109: { // M109 - Wait for extruder heater to reach target.
-        if (code_seen('S')) target_raw = temp2analogh(code_value());
+        if (code_seen('S')) target_raw = temp2analogh(target_temp = code_value());
         #ifdef WATCHPERIOD
             if(target_raw>current_raw){
                 watchmillis = max(1,millis());
@@ -1461,7 +1469,7 @@ void manage_heater()
   #ifdef WATCHPERIOD
     if(watchmillis && millis() - watchmillis > WATCHPERIOD){
         if(watch_raw + 1 >= current_raw){
-            target_raw = 0;
+            target_temp = target_raw = 0;
             WRITE(HEATER_0_PIN,LOW);
             analogWrite(HEATER_0_PIN, 0);
             #if LED_PIN>-1
@@ -1474,11 +1482,11 @@ void manage_heater()
   #endif
   #ifdef MINTEMP
     if(current_raw <= minttemp)
-        target_raw = 0;
+        target_temp = target_raw = 0;
   #endif
   #ifdef MAXTEMP
     if(current_raw >= maxttemp) {
-        target_raw = 0;
+        target_temp = target_raw = 0;
         #if (ALARM_PIN > -1) 
           WRITE(ALARM_PIN,HIGH);
         #endif
@@ -1486,14 +1494,31 @@ void manage_heater()
   #endif
   #if (TEMP_0_PIN > -1) || defined (HEATER_USES_MAX6675) || defined (HEATER_USES_AD595)
     #ifdef PIDTEMP
-      error = target_raw - current_raw;
-      pTerm = (PID_PGAIN * error) / 100;
-      temp_iState += error;
-      temp_iState = constrain(temp_iState, temp_iState_min, temp_iState_max);
-      iTerm = (PID_IGAIN * temp_iState) / 100;
-      dTerm = (PID_DGAIN * (current_raw - temp_dState)) / 100;
-      temp_dState = current_raw;
-      analogWrite(HEATER_0_PIN, constrain(pTerm + iTerm - dTerm, 0, HEATER_CURRENT));
+      int current_temp = analog2temp(current_raw);
+      error = target_temp - current_temp;
+      int delta_temp = current_temp - prev_temp;
+      prev_temp = current_temp;
+      pTerm = ((long)PID_PGAIN * error) / 256;
+      const int H0 = min(HEATER_DUTY_FOR_SETPOINT(target_temp),HEATER_CURRENT);
+      heater_duty = H0 + pTerm;
+      if(error < 20){
+        temp_iState += error;
+        temp_iState = constrain(temp_iState, temp_iState_min, temp_iState_max);
+        iTerm = ((long)PID_IGAIN * temp_iState) / 256;
+        heater_duty += iTerm;
+      }
+      int prev_error = abs(target_temp - prev_temp);
+      int log3 = 1; // discrete logarithm base 3, plus 1
+      if(prev_error > 81){ prev_error /= 81; log3 += 4; }
+      if(prev_error >  9){ prev_error /=  9; log3 += 2; }
+      if(prev_error >  3){ prev_error /=  3; log3 ++; }
+      dTerm = ((long)PID_DGAIN * delta_temp) / (256*log3);
+      heater_duty += dTerm;
+      heater_duty = constrain(heater_duty, 0, HEATER_CURRENT);
+      analogWrite(HEATER_0_PIN, heater_duty);
+      #if LED_PIN>-1
+        analogWrite(LED_PIN, constrain(LED_PWM_FOR_BRIGHTNESS(heater_duty),0,255));
+      #endif
     #else
       if(current_raw >= target_raw)
       {
