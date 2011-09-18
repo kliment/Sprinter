@@ -408,7 +408,7 @@ inline void get_command()
   if(strstr(cmdbuffer[bufindw], "N") != NULL)
   {
     strchr_pointer = strchr(cmdbuffer[bufindw], 'N');
-    gcode_N = atol(strchr_pointer+1);
+    gcode_N = (strtol(&cmdbuffer[bufindw][strchr_pointer - cmdbuffer[bufindw] + 1], NULL, 10));
     if(gcode_N != gcode_LastN+1 && (strstr(cmdbuffer[bufindw], "M110") == NULL) ) {
       Serial.print("Serial Error: Line Number is not Last Line Number+1, Last Line:");
       Serial.println(gcode_LastN);
@@ -425,7 +425,7 @@ inline void get_command()
       while(cmdbuffer[bufindw][count] != '*') checksum = checksum^cmdbuffer[bufindw][count++];
       strchr_pointer = strchr(cmdbuffer[bufindw], '*');
   
-      if( atoi(strchr_pointer+1) != checksum) {
+      if( (int)(strtod(&cmdbuffer[bufindw][strchr_pointer - cmdbuffer[bufindw] + 1], NULL)) != checksum) {
         Serial.print("Error: checksum mismatch, Last Line:");
         Serial.println(gcode_LastN);
         FlushSerialRequestResend();
@@ -458,7 +458,7 @@ inline void get_command()
   }
 	if((strstr(cmdbuffer[bufindw], "G") != NULL)){
 		strchr_pointer = strchr(cmdbuffer[bufindw], 'G');
-		switch(atoi(strchr_pointer+1)){
+		switch((int)((strtod(&cmdbuffer[bufindw][strchr_pointer - cmdbuffer[bufindw] + 1], NULL)))){
 		case 0:
 		case 1:
               #ifdef SDSUPPORT
@@ -520,8 +520,8 @@ if(!sdmode || serial_count!=0){
 }
 
 
-inline float code_value() { return strtod(strchr_pointer, NULL); }
-inline long code_value_long() { return atol(strchr_pointer); }
+inline float code_value() { return (strtod(&cmdbuffer[bufindr][strchr_pointer - cmdbuffer[bufindr] + 1], NULL)); }
+inline long code_value_long() { return (strtol(&cmdbuffer[bufindr][strchr_pointer - cmdbuffer[bufindr] + 1], NULL, 10)); }
 inline bool code_seen(char code_string[]) { return (strstr(cmdbuffer[bufindr], code_string) != NULL); }  //Return True if the string was found
 
 inline bool code_seen(char code)
