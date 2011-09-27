@@ -32,6 +32,7 @@
 #
 # $Id$
 
+
 TARGET = $(notdir $(CURDIR))
 INSTALL_DIR = ../../arduino22/arduino-0022/
 UPLOAD_RATE = 38400
@@ -58,6 +59,12 @@ CXXSRC = $(ARDUINO)/HardwareSerial.cpp $(ARDUINO)/WMath.cpp $(ARDUINO)/WString.c
 $(ARDUINO)/Print.cpp ./SdFile.cpp ./SdVolume.cpp ./Sd2Card.cpp
 FORMAT = ihex
 
+ifeq (${shell uname},Darwin)
+    ${info Building in OSX }
+    OSXAPPS := /Volumes/Data/Users/hradec/Apps
+    INSTALL_DIR := $(OSXAPPS)/Arduino.app/Contents/Resources/Java/
+    AVR_TOOLS_PATH := $(OSXAPPS)/Arduino.app/Contents//Resources/Java/hardware/tools/avr/bin
+endif
 
 # Name of this Makefile (used for "make depend").
 MAKEFILE = Makefile
