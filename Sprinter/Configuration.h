@@ -4,11 +4,12 @@
 // By using a custom config file here, we keep this main Configuration.h
 // file intact, making it MUCH easier to update.
 // We also keep the original values untouch, as a quick reference. 
-// To use your own custom config, uncomment the line below, modifying
-// "customConfigFile.h" with your own config file name. 
+// To use your own custom config, define CUSTOM_CONFIG with the filename of your config file.
+// CUSTOM_CONFIG can be defined in the command line if compiling with make.
 // To create your own custom one, just copy/paste this one into your new file.
-//#include "customConfigFile.h"
-
+#ifdef CUSTOM_CONFIG
+    #include CUSTOM_CONFIG
+#endif
 // If MOTHERBOARD is already defined from without a custom config, 
 // then ignore the values below
 #ifndef MOTHERBOARD
@@ -273,4 +274,5 @@ char uuid[] = "00000000-0000-0000-0000-000000000000";
     
     //=========================================================
 
+#endif
 #endif

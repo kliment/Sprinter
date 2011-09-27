@@ -77,8 +77,8 @@ DEBUG = stabs
 OPT = s
 
 # Place -D or -U options here
-CDEFS = -DF_CPU=$(F_CPU)
-CXXDEFS = -DF_CPU=$(F_CPU)
+CDEFS = -DF_CPU=$(F_CPU) -DCUSTOM_CONFIG='"configCS1.h"'
+CXXDEFS = -DF_CPU=$(F_CPU) -DCUSTOM_CONFIG='"configCS1.h"'
 
 # Place -I options here
 CINCS = -I$(ARDUINO)
