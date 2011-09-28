@@ -1181,7 +1181,7 @@ inline void linear_move(unsigned long axis_steps_remaining[]) // make linear mov
   
   //move until no more steps remain 
   while(axis_steps_remaining[0] + axis_steps_remaining[1] + axis_steps_remaining[2] + axis_steps_remaining[3] > 0) {
-    #ifdef DISABLE_CHECK_DURING_ACC
+    #if defined RAMP_ACCELERATION && defined DISABLE_CHECK_DURING_ACC
       if(!accelerating && !decelerating) {
         //If more that HEATER_CHECK_INTERVAL ms have passed since previous heating check, adjust temp
         #ifdef DISABLE_CHECK_DURING_TRAVEL
