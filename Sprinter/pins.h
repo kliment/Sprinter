@@ -620,3 +620,56 @@
 #endif
 
 #endif
+
+/****************************************************************************************
+* Teensylu 0.7 pin assingments (ATMEGA90USB)
+* Requires the Teensyduino software with Teensy2.0++ selected in arduino IDE!
+* SDSUPPORT must be disabled
+****************************************************************************************/
+#if MOTHERBOARD == 8
+#define MOTHERBOARD 8
+#define KNOWN_BOARD 1
+
+
+#define X_STEP_PIN         28 
+#define X_DIR_PIN          29 
+#define X_ENABLE_PIN       19
+#define X_MIN_PIN          25
+#define X_MAX_PIN          -1    
+
+#define Y_STEP_PIN         30 
+#define Y_DIR_PIN          31
+#define Y_ENABLE_PIN       18
+#define Y_MIN_PIN          26
+#define Y_MAX_PIN          -1    
+
+#define Z_STEP_PIN         32 
+#define Z_DIR_PIN          33
+#define Z_ENABLE_PIN       17
+#define Z_MIN_PIN          27
+#define Z_MAX_PIN          -1    
+
+#define E_STEP_PIN         34 
+#define E_DIR_PIN          35
+#define E_ENABLE_PIN       13
+
+
+
+#define HEATER_0_PIN       15   // Extruder
+#define HEATER_1_PIN       14   // Bed
+#define FAN_PIN            16   // Fan   
+
+#define TEMP_0_PIN          7    // Extruder
+#define TEMP_1_PIN          6    // Bed
+
+// #define SDPOWER            48
+// #define SDSS               53
+#define LED_PIN            -1
+#define PS_ON_PIN          -1
+#define KILL_PIN           -1 //28
+
+//TODO: SDsupport
+
+#endif
+
+
