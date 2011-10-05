@@ -9,6 +9,7 @@
 // Gen6 = 5, 
 // Sanguinololu up to 1.1 = 6
 // Sanguinololu 1.2 and above = 62
+// Teensylu (at90usb) = 8
 // Gen 3 Plus = 21
 // gen 3  Monolithic Electronics = 22
 #define MOTHERBOARD 3 
