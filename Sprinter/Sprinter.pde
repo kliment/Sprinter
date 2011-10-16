@@ -245,6 +245,10 @@ void setup()
   if(!E_ENABLE_ON) WRITE(E_ENABLE_PIN,HIGH);
   #endif
   
+  #ifdef CONTROLLERFAN_PIN
+    SET_OUTPUT(CONTROLLERFAN_PIN); //Set pin used for driver cooling fan
+  #endif
+  
   //endstops and pullups
   #ifdef ENDSTOPPULLUPS
   #if X_MIN_PIN > -1
@@ -1441,6 +1445,32 @@ int read_max6675()
 }
 #endif
 
+#ifdef CONTROLLERFAN_PIN
+unsigned long lastMotor = 0; //Save the time for when a motor was turned on last
+unsigned long lastMotorCheck = 0;
+
+void controllerFan()
+{  
+  if ((millis() - lastMotorCheck) >= 2500) //Not a time critical function, so we only check every 2500ms
+  {
+    lastMotorCheck = millis();
+    
+    if(!READ(X_ENABLE_PIN) || !READ(Y_ENABLE_PIN) || !READ(Z_ENABLE_PIN) || !READ(E_ENABLE_PIN)) //If any of the drivers are enabled...
+    {
+      lastMotor = millis(); //... set time to NOW so the fan will turn on
+    }
+    
+    if ((millis() - lastMotor) >= (CONTROLLERFAN_SEC*1000UL) || lastMotor == 0) //If the last time any driver was enabled, is longer since than CONTROLLERSEC...
+    {
+      WRITE(CONTROLLERFAN_PIN, LOW); //... turn the fan off
+    }
+    else
+    {
+      WRITE(CONTROLLERFAN_PIN, HIGH); //... turn the fan on
+    }
+  }
+}
+#endif
 
 void manage_heater()
 {
@@ -1579,6 +1609,10 @@ void manage_heater()
       WRITE(HEATER_1_PIN,HIGH);
     }
     #endif
+    
+#ifdef CONTROLLERFAN_PIN
+  controllerFan(); //Check if fan should be turned on to cool stepper drivers down
+#endif
 }
 
 #if defined (HEATER_USES_THERMISTOR) || defined (BED_USES_THERMISTOR)
