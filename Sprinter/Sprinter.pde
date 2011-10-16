@@ -1455,18 +1455,18 @@ void controllerFan()
   {
     lastMotorCheck = millis();
     
-    if(!digitalRead(X_ENABLE_PIN) || !digitalRead(Y_ENABLE_PIN) || !digitalRead(Z_ENABLE_PIN) || !digitalRead(E_ENABLE_PIN)) //If any of the drivers are enabled...
+    if(!READ(X_ENABLE_PIN) || !READ(Y_ENABLE_PIN) || !READ(Z_ENABLE_PIN) || !READ(E_ENABLE_PIN)) //If any of the drivers are enabled...
     {
       lastMotor = millis(); //... set time to NOW so the fan will turn on
     }
     
     if ((millis() - lastMotor) >= (CONTROLLERFAN_SEC*1000) || lastMotor == 0) //If the last time any driver was enabled, is longer since than CONTROLLERSEC...
     {
-      digitalWrite(CONTROLLERFAN_PIN, LOW); //... turn the fan off
+      WRITE(CONTROLLERFAN_PIN, LOW); //... turn the fan off
     }
     else
     {
-      digitalWrite(CONTROLLERFAN_PIN, HIGH); //... turn the fan on
+      WRITE(CONTROLLERFAN_PIN, HIGH); //... turn the fan on
     }
   }
 }
