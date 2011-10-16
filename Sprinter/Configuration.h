@@ -179,6 +179,12 @@ char uuid[] = "00000000-0000-0000-0000-000000000000";
 #define BED_USES_THERMISTOR
 //#define BED_USES_AD595
 
+//This is for controlling a fan to cool down the stepper drivers
+//it will turn on when any driver is enabled
+//and turn off after the set amount of seconds from last driver being disabled again
+#define CONTROLLERFAN_PIN 23 //Pin used for the fan to cool controller, comment out to disable this function
+#define CONTROLLERFAN_SEC 60 //How many seconds, after all motors were disabled, the fan should run
+
 // Uncomment the following line to enable debugging. You can better control debugging below the following line
 //#define DEBUG
 #ifdef DEBUG
