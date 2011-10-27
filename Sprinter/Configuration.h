@@ -12,6 +12,7 @@
 // Teensylu (at90usb) = 8
 // Gen 3 Plus = 21
 // gen 3  Monolithic Electronics = 22
+// Gen3 PLUS for TechZone Gen3 Remix Motherboard = 23
 #define MOTHERBOARD 3 
 
 //// Thermistor settings:
@@ -37,9 +38,11 @@ float axis_steps_per_unit[] = {80, 80, 3200/1.25,700};
 //// Endstop Settings
 #define ENDSTOPPULLUPS // Comment this out (using // at the start of the line) to disable the endstop pullup resistors
 // The pullups are needed if you directly connect a mechanical endswitch between the signal and ground pins.
-const bool ENDSTOPS_INVERTING = false; //set to true to invert the logic of the endstops
 //If your axes are only moving in one direction, make sure the endstops are connected properly.
-//If your axes move in one direction ONLY when the endstops are triggered, set ENDSTOPS_INVERTING to true here
+//If your axes move in one direction ONLY when the endstops are triggered, set [XYZ]_ENDSTOP_INVERT to true here:
+const bool X_ENDSTOP_INVERT = false;
+const bool Y_ENDSTOP_INVERT = false;
+const bool Z_ENDSTOP_INVERT = false;
 
 // This determines the communication speed of the printer
 #define BAUDRATE 115200
@@ -117,14 +120,20 @@ char uuid[] = "00000000-0000-0000-0000-000000000000";
 
 //// PID settings:
 // Uncomment the following line to enable PID support. This is untested and could be disastrous. Be careful.
-//#define PIDTEMP
+//#define PIDTEMP 1
 #ifdef PIDTEMP
-#define PID_MAX 255 // limits current to nozzle
-#define PID_INTEGRAL_DRIVE_MAX 220
-#define PID_PGAIN 180 //100 is 1.0
-#define PID_IGAIN 2 //100 is 1.0
-#define PID_DGAIN 100 //100 is 1.0
+#define PID_INTEGRAL_DRIVE_MAX 80 // too big, and heater will lag after changing temperature, too small and it might not compensate enough for long-term errors
+#define PID_PGAIN 1280 //256 is 1.0  // value of 5.0 means that error of 20C is changing it almost halfway of the PWM range
+#define PID_IGAIN 64 //256 is 1.0  // value of 0.25 means that each degree error over 1 sec (2 measurements) changes duty cycle by 0.5 units (verify?)
+#define PID_DGAIN 2048 //256 is 1.0  // value of 8.0 means that each degree change over one measurement (half second) adjusts PWM by 8 units to compensate
+// magic formula 1, to get approximate "zero error" PWM duty. It is most likely linear formula
+#define HEATER_DUTY_FOR_SETPOINT(setpoint) (22+1*setpoint)
+// magic formula 2, to make led brightness approximately linear
+#define LED_PWM_FOR_BRIGHTNESS(brightness) ((64*brightness-1384)/(300-brightness))
 #endif
+
+// Change this value (range 1-255) to limit the current to the nozzle
+#define HEATER_CURRENT 255
 
 // How often should the heater check for new temp readings, in milliseconds
 #define HEATER_CHECK_INTERVAL 500
@@ -149,6 +158,10 @@ char uuid[] = "00000000-0000-0000-0000-000000000000";
 // If the temperature has not increased at the end of that period, the target temperature is set to zero. It can be reset with another M104/M109
 //#define WATCHPERIOD 5000 //5 seconds
 
+// Actual temperature must be close to target for this long before M109 returns success
+//#define TEMP_RESIDENCY_TIME 20  // (seconds)
+//#define TEMP_HYSTERESIS 5       // (C°) range of +/- temperatures considered "close" to the target one
+
 //// The minimal temperature defines the temperature below which the heater will not be enabled
 #define MINTEMP 5
 
@@ -166,6 +179,12 @@ char uuid[] = "00000000-0000-0000-0000-000000000000";
 // Select one of these only to define how the bed temp is read.
 #define BED_USES_THERMISTOR
 //#define BED_USES_AD595
+
+//This is for controlling a fan to cool down the stepper drivers
+//it will turn on when any driver is enabled
+//and turn off after the set amount of seconds from last driver being disabled again
+//#define CONTROLLERFAN_PIN 23 //Pin used for the fan to cool controller, comment out to disable this function
+#define CONTROLLERFAN_SEC 60 //How many seconds, after all motors were disabled, the fan should run
 
 // Uncomment the following line to enable debugging. You can better control debugging below the following line
 //#define DEBUG

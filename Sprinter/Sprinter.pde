@@ -1,4 +1,4 @@
-// Tonokip RepRap firmware rewrite based off of Hydra-mmm firmware.
+  // Tonokip RepRap firmware rewrite based off of Hydra-mmm firmware.
 // Licence: GPL
 
 #include "fastio.h"
@@ -43,6 +43,7 @@
 // M27  - Report SD print status
 // M28  - Start SD write (M28 filename.g)
 // M29  - Stop SD write
+// M42 - Set output on free pins, on a non pwm pin (over pin 13 on an arduino mega) use S255 to turn it on and S0 to turn it off. Use P to decide the pin (M42 P23 S255) would turn pin 23 on
 // M81  - Turn off Power Supply
 // M82  - Set E codes absolute (default)
 // M83  - Set E codes relative while in Absolute Coordinates (G90) mode
@@ -111,20 +112,25 @@ char *strchr_pointer; // just a pointer to find chars in the cmd string like X, 
 // degree increments (i.e. 100=25 deg). 
 
 int target_raw = 0;
+int target_temp = 0;
 int current_raw = 0;
 int target_bed_raw = 0;
 int current_bed_raw = 0;
 int tt = 0, bt = 0;
 #ifdef PIDTEMP
   int temp_iState = 0;
-  int temp_dState = 0;
+  int prev_temp = 0;
   int pTerm;
   int iTerm;
   int dTerm;
       //int output;
   int error;
-  int temp_iState_min = 100 * -PID_INTEGRAL_DRIVE_MAX / PID_IGAIN;
-  int temp_iState_max = 100 * PID_INTEGRAL_DRIVE_MAX / PID_IGAIN;
+  int heater_duty = 0;
+  const int temp_iState_min = 256L * -PID_INTEGRAL_DRIVE_MAX / PID_IGAIN;
+  const int temp_iState_max = 256L * PID_INTEGRAL_DRIVE_MAX / PID_IGAIN;
+#endif
+#ifndef HEATER_CURRENT
+  #define HEATER_CURRENT 255
 #endif
 #ifdef SMOOTHING
   uint32_t nma = 0;
@@ -239,6 +245,10 @@ void setup()
   if(!E_ENABLE_ON) WRITE(E_ENABLE_PIN,HIGH);
   #endif
   
+  #ifdef CONTROLLERFAN_PIN
+    SET_OUTPUT(CONTROLLERFAN_PIN); //Set pin used for driver cooling fan
+  #endif
+  
   //endstops and pullups
   #ifdef ENDSTOPPULLUPS
   #if X_MIN_PIN > -1
@@ -288,14 +298,28 @@ void setup()
   
   #if (HEATER_0_PIN > -1) 
     SET_OUTPUT(HEATER_0_PIN);
+    WRITE(HEATER_0_PIN,LOW);
   #endif  
   #if (HEATER_1_PIN > -1) 
     SET_OUTPUT(HEATER_1_PIN);
+    WRITE(HEATER_1_PIN,LOW);
   #endif  
   
   //Initialize Fan Pin
   #if (FAN_PIN > -1) 
     SET_OUTPUT(FAN_PIN);
+  #endif
+  
+  //Initialize Alarm Pin
+  #if (ALARM_PIN > -1) 
+    SET_OUTPUT(ALARM_PIN);
+    WRITE(ALARM_PIN,LOW);
+  #endif
+
+  //Initialize LED Pin
+  #if (LED_PIN > -1) 
+    SET_OUTPUT(LED_PIN);
+    WRITE(LED_PIN,LOW);
   #endif
   
 //Initialize Step Pins
@@ -312,11 +336,7 @@ void setup()
     SET_OUTPUT(E_STEP_PIN);
   #endif  
   #ifdef RAMP_ACCELERATION
-  for(int i=0; i < NUM_AXIS; i++){
-        axis_max_interval[i] = 100000000.0 / (max_start_speed_units_per_second[i] * axis_steps_per_unit[i]);
-        axis_steps_per_sqr_second[i] = max_acceleration_units_per_sq_second[i] * axis_steps_per_unit[i];
-        axis_travel_steps_per_sqr_second[i] = max_travel_acceleration_units_per_sq_second[i] * axis_steps_per_unit[i];
-    }
+    setup_acceleration();
   #endif
     
 #ifdef HEATER_USES_MAX6675
@@ -726,8 +746,33 @@ inline void process_commands()
         //savetosd = false;
         break;
 #endif
+      case 42: //M42 -Change pin status via gcode
+        if (code_seen('S'))
+        {
+          int pin_status = code_value();
+          if (code_seen('P') && pin_status >= 0 && pin_status <= 255)
+          {
+            int pin_number = code_value();
+            for(int i = 0; i < sizeof(sensitive_pins); i++)
+            {
+              if (sensitive_pins[i] == pin_number)
+              {
+                pin_number = -1;
+                break;
+              }
+            }
+            
+            if (pin_number > -1)
+            {              
+              pinMode(pin_number, OUTPUT);
+              digitalWrite(pin_number, pin_status);
+              analogWrite(pin_number, pin_status);
+            }
+          }
+        }
+        break;
       case 104: // M104
-        if (code_seen('S')) target_raw = temp2analogh(code_value());
+        if (code_seen('S')) target_raw = temp2analogh(target_temp = code_value());
         #ifdef WATCHPERIOD
             if(target_raw > current_raw){
                 watchmillis = max(1,millis());
@@ -752,6 +797,12 @@ inline void process_commands()
         #if (TEMP_0_PIN > -1) || defined (HEATER_USES_MAX6675) || defined HEATER_USES_AD595
             Serial.print("ok T:");
             Serial.print(tt); 
+          #ifdef PIDTEMP
+            Serial.print(" @:");
+            Serial.print(heater_duty); 
+            Serial.print(",");
+            Serial.print(iTerm);
+          #endif
           #if TEMP_1_PIN > -1 || defined BED_USES_AD595
             Serial.print(" B:");
             Serial.println(bt); 
@@ -763,8 +814,8 @@ inline void process_commands()
         #endif
         return;
         //break;
-      case 109: // M109 - Wait for extruder heater to reach target.
-        if (code_seen('S')) target_raw = temp2analogh(code_value());
+      case 109: { // M109 - Wait for extruder heater to reach target.
+        if (code_seen('S')) target_raw = temp2analogh(target_temp = code_value());
         #ifdef WATCHPERIOD
             if(target_raw>current_raw){
                 watchmillis = max(1,millis());
@@ -774,16 +825,39 @@ inline void process_commands()
             }
         #endif
         codenum = millis(); 
-        while(current_raw < target_raw) {
-          if( (millis() - codenum) > 1000 ) //Print Temp Reading every 1 second while heating up.
+        
+        /* See if we are heating up or cooling down */
+        bool target_direction = (current_raw < target_raw);  // true if heating, false if cooling
+        
+      #ifdef TEMP_RESIDENCY_TIME
+        long residencyStart;
+        residencyStart = -1;
+        /* continue to loop until we have reached the target temp   
+           _and_ until TEMP_RESIDENCY_TIME hasn't passed since we reached it */
+        while( (target_direction ? (current_raw < target_raw) : (current_raw > target_raw))
+            || (residencyStart > -1 && (millis() - residencyStart) < TEMP_RESIDENCY_TIME*1000) ) {
+      #else
+        while ( target_direction ? (current_raw < target_raw) : (current_raw > target_raw) ) {
+      #endif
+          if( (millis() - codenum) > 1000 ) //Print Temp Reading every 1 second while heating up/cooling down
           {
             Serial.print("T:");
-            Serial.println( analog2temp(current_raw) ); 
-            codenum = millis(); 
+            Serial.println( analog2temp(current_raw) );
+            codenum = millis();
           }
           manage_heater();
-        }
-        break;
+          #ifdef TEMP_RESIDENCY_TIME
+            /* start/restart the TEMP_RESIDENCY_TIME timer whenever we reach target temp for the first time
+               or when current temp falls outside the hysteresis after target temp was reached */
+            if (   (residencyStart == -1 &&  target_direction && current_raw >= target_raw)
+                || (residencyStart == -1 && !target_direction && current_raw <= target_raw)
+                || (residencyStart > -1 && labs(analog2temp(current_raw) - analog2temp(target_raw)) > TEMP_HYSTERESIS) ) {
+              residencyStart = millis();
+            }
+          #endif
+	    }
+      }
+      break;
       case 190: // M190 - Wait bed for heater to reach target.
       #if TEMP_1_PIN > -1
         if (code_seen('S')) target_bed_raw = temp2analogh(code_value());
@@ -845,15 +919,10 @@ inline void process_commands()
           if(code_seen(axis_codes[i])) axis_steps_per_unit[i] = code_value();
         }
         
-        //Update start speed intervals and axis order. TODO: refactor axis_max_interval[] calculation into a function, as it
-        // should also be used in setup() as well
         #ifdef RAMP_ACCELERATION
-          long temp_max_intervals[NUM_AXIS];
-          for(int i=0; i < NUM_AXIS; i++) {
-            axis_max_interval[i] = 100000000.0 / (max_start_speed_units_per_second[i] * axis_steps_per_unit[i]);//TODO: do this for
-                  // all steps_per_unit related variables
-          }
+          setup_acceleration();
         #endif
+        
         break;
       case 115: // M115
         Serial.print("FIRMWARE_NAME:Sprinter FIRMWARE_URL:http%%3A/github.com/kliment/Sprinter/ PROTOCOL_VERSION:1.0 MACHINE_TYPE:Mendel EXTRUDER_COUNT:1 UUID:");
@@ -872,27 +941,27 @@ inline void process_commands()
       case 119: // M119
       	#if (X_MIN_PIN > -1)
       	Serial.print("x_min:");
-        Serial.print((READ(X_MIN_PIN)^ENDSTOPS_INVERTING)?"H ":"L ");
+        Serial.print((READ(X_MIN_PIN)^X_ENDSTOP_INVERT)?"H ":"L ");
       	#endif
       	#if (X_MAX_PIN > -1)
       	Serial.print("x_max:");
-        Serial.print((READ(X_MAX_PIN)^ENDSTOPS_INVERTING)?"H ":"L ");
+        Serial.print((READ(X_MAX_PIN)^X_ENDSTOP_INVERT)?"H ":"L ");
       	#endif
       	#if (Y_MIN_PIN > -1)
       	Serial.print("y_min:");
-        Serial.print((READ(Y_MIN_PIN)^ENDSTOPS_INVERTING)?"H ":"L ");
+        Serial.print((READ(Y_MIN_PIN)^Y_ENDSTOP_INVERT)?"H ":"L ");
       	#endif
       	#if (Y_MAX_PIN > -1)
       	Serial.print("y_max:");
-        Serial.print((READ(Y_MAX_PIN)^ENDSTOPS_INVERTING)?"H ":"L ");
+        Serial.print((READ(Y_MAX_PIN)^Y_ENDSTOP_INVERT)?"H ":"L ");
       	#endif
       	#if (Z_MIN_PIN > -1)
       	Serial.print("z_min:");
-        Serial.print((READ(Z_MIN_PIN)^ENDSTOPS_INVERTING)?"H ":"L ");
+        Serial.print((READ(Z_MIN_PIN)^Z_ENDSTOP_INVERT)?"H ":"L ");
       	#endif
       	#if (Z_MAX_PIN > -1)
       	Serial.print("z_max:");
-        Serial.print((READ(Z_MAX_PIN)^ENDSTOPS_INVERTING)?"H ":"L ");
+        Serial.print((READ(Z_MAX_PIN)^Z_ENDSTOP_INVERT)?"H ":"L ");
       	#endif
         Serial.println("");
       	break;
@@ -1047,22 +1116,22 @@ inline void linear_move(unsigned long axis_steps_remaining[]) // make linear mov
   else WRITE(E_DIR_PIN,INVERT_E_DIR);
   movereset:
   #if (X_MIN_PIN > -1) 
-    if(!move_direction[0]) if(READ(X_MIN_PIN) != ENDSTOPS_INVERTING) axis_steps_remaining[0]=0;
+    if(!move_direction[0]) if(READ(X_MIN_PIN) != X_ENDSTOP_INVERT) axis_steps_remaining[0]=0;
   #endif
   #if (Y_MIN_PIN > -1) 
-    if(!move_direction[1]) if(READ(Y_MIN_PIN) != ENDSTOPS_INVERTING) axis_steps_remaining[1]=0;
+    if(!move_direction[1]) if(READ(Y_MIN_PIN) != Y_ENDSTOP_INVERT) axis_steps_remaining[1]=0;
   #endif
   #if (Z_MIN_PIN > -1) 
-    if(!move_direction[2]) if(READ(Z_MIN_PIN) != ENDSTOPS_INVERTING) axis_steps_remaining[2]=0;
+    if(!move_direction[2]) if(READ(Z_MIN_PIN) != Z_ENDSTOP_INVERT) axis_steps_remaining[2]=0;
   #endif
   #if (X_MAX_PIN > -1) 
-    if(move_direction[0]) if(READ(X_MAX_PIN) != ENDSTOPS_INVERTING) axis_steps_remaining[0]=0;
+    if(move_direction[0]) if(READ(X_MAX_PIN) != X_ENDSTOP_INVERT) axis_steps_remaining[0]=0;
   #endif
   #if (Y_MAX_PIN > -1) 
-    if(move_direction[1]) if(READ(Y_MAX_PIN) != ENDSTOPS_INVERTING) axis_steps_remaining[1]=0;
+    if(move_direction[1]) if(READ(Y_MAX_PIN) != Y_ENDSTOP_INVERT) axis_steps_remaining[1]=0;
   #endif
   # if(Z_MAX_PIN > -1) 
-    if(move_direction[2]) if(READ(Z_MAX_PIN) != ENDSTOPS_INVERTING) axis_steps_remaining[2]=0;
+    if(move_direction[2]) if(READ(Z_MAX_PIN) != Z_ENDSTOP_INVERT) axis_steps_remaining[2]=0;
   #endif
   
   
@@ -1238,22 +1307,22 @@ inline void linear_move(unsigned long axis_steps_remaining[]) // make linear mov
     //If there are x or y steps remaining, perform Bresenham algorithm
     if(axis_steps_remaining[primary_axis]) {
       #if (X_MIN_PIN > -1) 
-        if(!move_direction[0]) if(READ(X_MIN_PIN) != ENDSTOPS_INVERTING) if(primary_axis==0) break; else if(axis_steps_remaining[0]) axis_steps_remaining[0]=0;
+        if(!move_direction[0]) if(READ(X_MIN_PIN) != X_ENDSTOP_INVERT) if(primary_axis==0) break; else if(axis_steps_remaining[0]) axis_steps_remaining[0]=0;
       #endif
       #if (Y_MIN_PIN > -1) 
-        if(!move_direction[1]) if(READ(Y_MIN_PIN) != ENDSTOPS_INVERTING) if(primary_axis==1) break; else if(axis_steps_remaining[1]) axis_steps_remaining[1]=0;
+        if(!move_direction[1]) if(READ(Y_MIN_PIN) != Y_ENDSTOP_INVERT) if(primary_axis==1) break; else if(axis_steps_remaining[1]) axis_steps_remaining[1]=0;
       #endif
       #if (X_MAX_PIN > -1) 
-        if(move_direction[0]) if(READ(X_MAX_PIN) != ENDSTOPS_INVERTING) if(primary_axis==0) break; else if(axis_steps_remaining[0]) axis_steps_remaining[0]=0;
+        if(move_direction[0]) if(READ(X_MAX_PIN) != X_ENDSTOP_INVERT) if(primary_axis==0) break; else if(axis_steps_remaining[0]) axis_steps_remaining[0]=0;
       #endif
       #if (Y_MAX_PIN > -1) 
-        if(move_direction[1]) if(READ(Y_MAX_PIN) != ENDSTOPS_INVERTING) if(primary_axis==1) break; else if(axis_steps_remaining[1]) axis_steps_remaining[1]=0;
+        if(move_direction[1]) if(READ(Y_MAX_PIN) != Y_ENDSTOP_INVERT) if(primary_axis==1) break; else if(axis_steps_remaining[1]) axis_steps_remaining[1]=0;
       #endif
       #if (Z_MIN_PIN > -1) 
-        if(!move_direction[2]) if(READ(Z_MIN_PIN) != ENDSTOPS_INVERTING) if(primary_axis==2) break; else if(axis_steps_remaining[2]) axis_steps_remaining[2]=0;
+        if(!move_direction[2]) if(READ(Z_MIN_PIN) != Z_ENDSTOP_INVERT) if(primary_axis==2) break; else if(axis_steps_remaining[2]) axis_steps_remaining[2]=0;
       #endif
       #if (Z_MAX_PIN > -1) 
-        if(move_direction[2]) if(READ(Z_MAX_PIN) != ENDSTOPS_INVERTING) if(primary_axis==2) break; else if(axis_steps_remaining[2]) axis_steps_remaining[2]=0;
+        if(move_direction[2]) if(READ(Z_MAX_PIN) != Z_ENDSTOP_INVERT) if(primary_axis==2) break; else if(axis_steps_remaining[2]) axis_steps_remaining[2]=0;
       #endif
       timediff = micros() * 100 - axis_previous_micros[primary_axis];
       if(timediff<0){//check for overflow
@@ -1376,6 +1445,32 @@ int read_max6675()
 }
 #endif
 
+#ifdef CONTROLLERFAN_PIN
+unsigned long lastMotor = 0; //Save the time for when a motor was turned on last
+unsigned long lastMotorCheck = 0;
+
+void controllerFan()
+{  
+  if ((millis() - lastMotorCheck) >= 2500) //Not a time critical function, so we only check every 2500ms
+  {
+    lastMotorCheck = millis();
+    
+    if(!READ(X_ENABLE_PIN) || !READ(Y_ENABLE_PIN) || !READ(Z_ENABLE_PIN) || !READ(E_ENABLE_PIN)) //If any of the drivers are enabled...
+    {
+      lastMotor = millis(); //... set time to NOW so the fan will turn on
+    }
+    
+    if ((millis() - lastMotor) >= (CONTROLLERFAN_SEC*1000UL) || lastMotor == 0) //If the last time any driver was enabled, is longer since than CONTROLLERSEC...
+    {
+      WRITE(CONTROLLERFAN_PIN, LOW); //... turn the fan off
+    }
+    else
+    {
+      WRITE(CONTROLLERFAN_PIN, HIGH); //... turn the fan on
+    }
+  }
+}
+#endif
 
 void manage_heater()
 {
@@ -1404,8 +1499,9 @@ void manage_heater()
   #ifdef WATCHPERIOD
     if(watchmillis && millis() - watchmillis > WATCHPERIOD){
         if(watch_raw + 1 >= current_raw){
-            target_raw = 0;
+            target_temp = target_raw = 0;
             WRITE(HEATER_0_PIN,LOW);
+            analogWrite(HEATER_0_PIN, 0);
             #if LED_PIN>-1
                 WRITE(LED_PIN,LOW);
             #endif
@@ -1416,27 +1512,48 @@ void manage_heater()
   #endif
   #ifdef MINTEMP
     if(current_raw <= minttemp)
-        target_raw = 0;
+        target_temp = target_raw = 0;
   #endif
   #ifdef MAXTEMP
     if(current_raw >= maxttemp) {
-        target_raw = 0;
+        target_temp = target_raw = 0;
+        #if (ALARM_PIN > -1) 
+          WRITE(ALARM_PIN,HIGH);
+        #endif
     }
   #endif
   #if (TEMP_0_PIN > -1) || defined (HEATER_USES_MAX6675) || defined (HEATER_USES_AD595)
     #ifdef PIDTEMP
-      error = target_raw - current_raw;
-      pTerm = (PID_PGAIN * error) / 100;
-      temp_iState += error;
-      temp_iState = constrain(temp_iState, temp_iState_min, temp_iState_max);
-      iTerm = (PID_IGAIN * temp_iState) / 100;
-      dTerm = (PID_DGAIN * (current_raw - temp_dState)) / 100;
-      temp_dState = current_raw;
-      analogWrite(HEATER_0_PIN, constrain(pTerm + iTerm - dTerm, 0, PID_MAX));
+      int current_temp = analog2temp(current_raw);
+      error = target_temp - current_temp;
+      int delta_temp = current_temp - prev_temp;
+      prev_temp = current_temp;
+      pTerm = ((long)PID_PGAIN * error) / 256;
+      const int H0 = min(HEATER_DUTY_FOR_SETPOINT(target_temp),HEATER_CURRENT);
+      heater_duty = H0 + pTerm;
+      if(error < 20){
+        temp_iState += error;
+        temp_iState = constrain(temp_iState, temp_iState_min, temp_iState_max);
+        iTerm = ((long)PID_IGAIN * temp_iState) / 256;
+        heater_duty += iTerm;
+      }
+      int prev_error = abs(target_temp - prev_temp);
+      int log3 = 1; // discrete logarithm base 3, plus 1
+      if(prev_error > 81){ prev_error /= 81; log3 += 4; }
+      if(prev_error >  9){ prev_error /=  9; log3 += 2; }
+      if(prev_error >  3){ prev_error /=  3; log3 ++; }
+      dTerm = ((long)PID_DGAIN * delta_temp) / (256*log3);
+      heater_duty += dTerm;
+      heater_duty = constrain(heater_duty, 0, HEATER_CURRENT);
+      analogWrite(HEATER_0_PIN, heater_duty);
+      #if LED_PIN>-1
+        analogWrite(LED_PIN, constrain(LED_PWM_FOR_BRIGHTNESS(heater_duty),0,255));
+      #endif
     #else
       if(current_raw >= target_raw)
       {
         WRITE(HEATER_0_PIN,LOW);
+        analogWrite(HEATER_0_PIN, 0);
         #if LED_PIN>-1
             WRITE(LED_PIN,LOW);
         #endif
@@ -1444,6 +1561,7 @@ void manage_heater()
       else 
       {
         WRITE(HEATER_0_PIN,HIGH);
+        analogWrite(HEATER_0_PIN, HEATER_CURRENT);
         #if LED_PIN > -1
             WRITE(LED_PIN,HIGH);
         #endif
@@ -1478,7 +1596,11 @@ void manage_heater()
   #endif
   
   
+  #ifdef MINTEMP
+    if(current_bed_raw >= target_bed_raw || current_bed_raw < minttemp)
+  #else
     if(current_bed_raw >= target_bed_raw)
+  #endif
     {
       WRITE(HEATER_1_PIN,LOW);
     }
@@ -1487,12 +1609,14 @@ void manage_heater()
       WRITE(HEATER_1_PIN,HIGH);
     }
     #endif
+    
+#ifdef CONTROLLERFAN_PIN
+  controllerFan(); //Check if fan should be turned on to cool stepper drivers down
+#endif
 }
 
-
-int temp2analogu(int celsius, const short table[][2], int numtemps, int source) {
-  #if defined (HEATER_USES_THERMISTOR) || defined (BED_USES_THERMISTOR)
-  if(source==1){
+#if defined (HEATER_USES_THERMISTOR) || defined (BED_USES_THERMISTOR)
+int temp2analog_thermistor(int celsius, const short table[][2], int numtemps) {
     int raw = 0;
     byte i;
     
@@ -1513,20 +1637,23 @@ int temp2analogu(int celsius, const short table[][2], int numtemps, int source) 
     if (i == numtemps) raw = table[i-1][0];
 
     return 1023 - raw;
-    }
-  #elif defined (HEATER_USES_AD595) || defined (BED_USES_AD595)
-    if(source==2)
-        return celsius * 1024 / (500);
-  #elif defined (HEATER_USES_MAX6675) || defined (BED_USES_MAX6675)
-    if(source==3)
-        return celsius * 4;
-  #endif
-  return -1;
 }
+#endif
 
-int analog2tempu(int raw,const short table[][2], int numtemps, int source) {
-  #if defined (HEATER_USES_THERMISTOR) || defined (BED_USES_THERMISTOR)
-    if(source==1){
+#if defined (HEATER_USES_AD595) || defined (BED_USES_AD595)
+int temp2analog_ad595(int celsius) {
+    return celsius * 1024 / (500);
+}
+#endif
+
+#if defined (HEATER_USES_MAX6675) || defined (BED_USES_MAX6675)
+int temp2analog_max6675(int celsius) {
+    return celsius * 4;
+}
+#endif
+
+#if defined (HEATER_USES_THERMISTOR) || defined (BED_USES_THERMISTOR)
+int analog2temp_thermistor(int raw,const short table[][2], int numtemps) {
     int celsius = 0;
     byte i;
     
@@ -1549,17 +1676,20 @@ int analog2tempu(int raw,const short table[][2], int numtemps, int source) {
     if (i == numtemps) celsius = table[i-1][1];
 
     return celsius;
-    }
-  #elif defined (HEATER_USES_AD595) || defined (BED_USES_AD595)
-    if(source==2)
-        return raw * 500 / 1024;
-  #elif defined (HEATER_USES_MAX6675) || defined (BED_USES_MAX6675)
-    if(source==3)
-        return raw / 4;
-  #endif
-  return -1;
 }
+#endif
 
+#if defined (HEATER_USES_AD595) || defined (BED_USES_AD595)
+int analog2temp_ad595(int raw) {
+        return raw * 500 / 1024;
+}
+#endif
+
+#if defined (HEATER_USES_MAX6675) || defined (BED_USES_MAX6675)
+int analog2temp_max6675(int raw) {
+    return raw / 4;
+}
+#endif
 
 inline void kill()
 {
@@ -1584,6 +1714,16 @@ inline void manage_inactivity(byte debug) {
 if( (millis()-previous_millis_cmd) >  max_inactive_time ) if(max_inactive_time) kill(); 
 if( (millis()-previous_millis_cmd) >  stepper_inactive_time ) if(stepper_inactive_time) { disable_x(); disable_y(); disable_z(); disable_e(); }
 }
+
+#ifdef RAMP_ACCELERATION
+void setup_acceleration() {
+  for (int i=0; i < NUM_AXIS; i++) {
+    axis_max_interval[i]                = 100000000.0 / (max_start_speed_units_per_second[i] * axis_steps_per_unit[i]);
+    axis_steps_per_sqr_second[i]        = max_acceleration_units_per_sq_second[i] * axis_steps_per_unit[i];
+    axis_travel_steps_per_sqr_second[i] = max_travel_acceleration_units_per_sq_second[i] * axis_steps_per_unit[i];
+  }
+}
+#endif
 
 #ifdef DEBUG
 void log_message(char*   message) {
