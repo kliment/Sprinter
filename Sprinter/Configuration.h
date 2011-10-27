@@ -123,11 +123,11 @@ char uuid[] = "00000000-0000-0000-0000-000000000000";
 //#define PIDTEMP 1
 #ifdef PIDTEMP
 #define PID_INTEGRAL_DRIVE_MAX 80 // too big, and heater will lag after changing temperature, too small and it might not compensate enough for long-term errors
-#define PID_PGAIN 1280 //256 is 1.0  // value of 5.0 means that error of 20C is changing it almost halfway of the PWM range
-#define PID_IGAIN 64 //256 is 1.0  // value of 0.25 means that each degree error over 1 sec (2 measurements) changes duty cycle by 0.5 units (verify?)
-#define PID_DGAIN 2048 //256 is 1.0  // value of 8.0 means that each degree change over one measurement (half second) adjusts PWM by 8 units to compensate
-// magic formula 1, to get approximate "zero error" PWM duty. It is most likely linear formula
-#define HEATER_DUTY_FOR_SETPOINT(setpoint) (22+1*setpoint)
+#define PID_PGAIN 2560 //256 is 1.0  // value of X means that error of 1 degree is changing PWM duty by X, probably no need to go over 25
+#define PID_IGAIN 64 //256 is 1.0  // value of X (e.g 0.25) means that each degree error over 1 sec (2 measurements) changes duty cycle by 2X (=0.5) units (verify?)
+#define PID_DGAIN 4096 //256 is 1.0  // value of X means that around reached setpoint, each degree change over one measurement (half second) adjusts PWM by X units to compensate
+// magic formula 1, to get approximate "zero error" PWM duty. Take few measurements with low PWM duty and make linear fit to get the formula
+#define HEATER_DUTY_FOR_SETPOINT(setpoint) ((int)((187L*(long)setpoint)>>8)-27)  // for my makergear hot-end: linear fit {50,10},{60,20},{80,30},{105,50},{176,100},{128,64},{208,128}
 // magic formula 2, to make led brightness approximately linear
 #define LED_PWM_FOR_BRIGHTNESS(brightness) ((64*brightness-1384)/(300-brightness))
 #endif
