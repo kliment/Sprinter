@@ -9,7 +9,8 @@
 // Gen6 = 5, 
 // Sanguinololu up to 1.1 = 6
 // Sanguinololu 1.2 and above = 62
-// Gen Gen3 PLUS for RepRap Motherboard V1.2 = 21
+// Teensylu (at90usb) = 8
+// Gen 3 Plus = 21
 // gen 3  Monolithic Electronics = 22
 // Gen3 PLUS for TechZone Gen3 Remix Motherboard = 23
 #define MOTHERBOARD 3 
