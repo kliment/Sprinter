@@ -57,6 +57,7 @@
 #define FAN_PIN            -1
 #define PS_ON_PIN          15
 #define KILL_PIN           -1
+#define ALARM_PIN          -1
 
 #define HEATER_0_PIN        6
 #define TEMP_0_PIN          0    // MUST USE ANALOG INPUT NUMBERING NOT DIGITAL OUTPUT NUMBERING!!!!!!!!!
@@ -130,6 +131,7 @@
 #define FAN_PIN            -1
 #define PS_ON_PIN          -1
 #define KILL_PIN           -1
+#define ALARM_PIN          -1
 
 #define HEATER_0_PIN       14
 #define TEMP_0_PIN          4 //D27   // MUST USE ANALOG INPUT NUMBERING NOT DIGITAL OUTPUT NUMBERING!!!!!!!!!
@@ -191,6 +193,7 @@
 
 #define FAN_PIN         -1
 #define KILL_PIN        -1
+#define ALARM_PIN          -1
 
 #define HEATER_0_PIN    -1
 #define TEMP_0_PIN      -1    // MUST USE ANALOG INPUT NUMBERING NOT DIGITAL OUTPUT NUMBERING!!!!!!!!!
@@ -201,7 +204,7 @@
 #endif
 
 /****************************************************************************************
-* Gen3 PLUS
+* Gen3 PLUS for RepRap Motherboard V1.2
 *
 ****************************************************************************************/
 #if MOTHERBOARD == 21
@@ -243,7 +246,7 @@
 #define HEATER_0_PIN	12
 
 //Pin for heated bed heater
-#define HEATER_1_PIN	 5
+#define HEATER_1_PIN	 16
 
 
 //pin for debugging.
@@ -265,7 +268,7 @@
 #endif
 
 /****************************************************************************************
-* Gen3  Monolithic Electronics
+* Gen3  Monolithic Electronics 
 *
 ****************************************************************************************/
 #if MOTHERBOARD == 22
@@ -315,6 +318,71 @@
 
 #define SDSS		 -1
 #define SDPOWER          -1
+#define LED_PIN          -1
+
+//pin for controlling the PSU.
+#define PS_ON_PIN       14
+
+#endif
+
+
+/****************************************************************************************
+* Gen3 PLUS for TechZone Gen3 Remix Motherboard
+*
+****************************************************************************************/
+#if MOTHERBOARD == 23
+#define KNOWN_BOARD 1
+
+#ifndef __AVR_ATmega644P__
+    #error Oops!  Make sure you have 'Sanguino' selected from the 'Tools -> Boards' menu.
+#endif
+
+
+//x axis pins
+#define X_STEP_PIN      15
+#define X_DIR_PIN       18
+#define X_ENABLE_PIN    24 //same as E/Y_enable_pin
+#define X_MIN_PIN       20
+#define X_MAX_PIN       -1
+
+//y axis pins
+#define Y_STEP_PIN      23
+#define Y_DIR_PIN       22
+#define Y_ENABLE_PIN    24 //same as E/X_enable_pin
+#define Y_MIN_PIN       25
+#define Y_MAX_PIN       -1
+
+//z axis pins
+#define Z_STEP_PIN      27
+#define Z_DIR_PIN       28
+#define Z_ENABLE_PIN    29
+#define Z_MIN_PIN       30
+#define Z_MAX_PIN       -1
+
+#define E_DIR_PIN        21
+#define E_STEP_PIN	19
+#define E_ENABLE_PIN	24 //same as X/Y_enable_pin
+
+//heaters
+
+//pin for hot end heater
+#define HEATER_0_PIN	16
+
+//Pin for heated bed heater
+#define HEATER_1_PIN	17
+
+
+//pin for debugging.
+#define DEBUG_PIN        -1
+
+//SD card pin
+
+#define SDSS		  4
+
+#define SDPOWER          -1
+#define FAN_PIN          -1
+#define TEMP_0_PIN        0
+#define TEMP_1_PIN        5
 #define LED_PIN          -1
 
 //pin for controlling the PSU.
@@ -379,12 +447,13 @@
 #define FAN_PIN            9
 #define PS_ON_PIN          12
 #define KILL_PIN           -1
+#define ALARM_PIN          -1
 
 #define HEATER_0_PIN       10
 #define HEATER_1_PIN       8
 #define TEMP_0_PIN         13   // ANALOG NUMBERING
 #define TEMP_1_PIN         14   // ANALOG NUMBERING
-
+#define TEMP_2_PIN         15   // ANALOG NUMBERING
 
 #else // RAMPS_V_1_1 or RAMPS_V_1_2 as default
 
@@ -415,7 +484,7 @@
 #define LED_PIN            13
 #define PS_ON_PIN          -1
 #define KILL_PIN           -1
-
+#define ALARM_PIN          -1
 
 
 #ifdef RAMPS_V_1_0 // RAMPS_V_1_0
@@ -486,6 +555,7 @@
 #define FAN_PIN             5
 #define PS_ON_PIN          -1
 #define KILL_PIN           -1
+#define ALARM_PIN          -1
 
 #define HEATER_0_PIN        6
 #define TEMP_0_PIN          0    // MUST USE ANALOG INPUT NUMBERING NOT DIGITAL OUTPUT NUMBERING!!!!!!!!!
@@ -587,6 +657,7 @@
 
 #define PS_ON_PIN          -1
 #define KILL_PIN           -1
+#define ALARM_PIN          -1
 
 #define HEATER_0_PIN       13 // (extruder)
 
@@ -619,4 +690,64 @@
 
 #endif
 
+//List of pins which to ignore when asked to change by gcode, 0 and 1 are RX and TX, do not mess with those!
+const int sensitive_pins[] = {0, 1, X_STEP_PIN, X_DIR_PIN, X_ENABLE_PIN, X_MIN_PIN, X_MAX_PIN, Y_STEP_PIN, Y_DIR_PIN, Y_ENABLE_PIN, Y_MIN_PIN, Y_MAX_PIN, Z_STEP_PIN, Z_DIR_PIN, Z_ENABLE_PIN, Z_MIN_PIN, Z_MAX_PIN, E_STEP_PIN, E_DIR_PIN, E_ENABLE_PIN, LED_PIN, PS_ON_PIN, HEATER_0_PIN, HEATER_1_PIN, FAN_PIN, TEMP_0_PIN, TEMP_1_PIN};
+
 #endif
+
+/****************************************************************************************
+* Teensylu 0.7 pin assingments (ATMEGA90USB)
+* Requires the Teensyduino software with Teensy2.0++ selected in arduino IDE!
+****************************************************************************************/
+#if MOTHERBOARD == 8
+#define MOTHERBOARD 8
+#define KNOWN_BOARD 1
+
+
+#define X_STEP_PIN          0  
+#define X_DIR_PIN           1  
+#define X_ENABLE_PIN       39 
+#define X_MIN_PIN          13 
+#define X_MAX_PIN          -1    
+
+#define Y_STEP_PIN          2  
+#define Y_DIR_PIN           3 
+#define Y_ENABLE_PIN       38 
+#define Y_MIN_PIN          14 
+#define Y_MAX_PIN          -1    
+
+#define Z_STEP_PIN          4
+#define Z_DIR_PIN           5 
+#define Z_ENABLE_PIN       23 
+#define Z_MIN_PIN          15 
+#define Z_MAX_PIN          -1    
+
+#define E_STEP_PIN          6  
+#define E_DIR_PIN           7 
+#define E_ENABLE_PIN       19 
+
+
+
+#define HEATER_0_PIN       21  // Extruder
+#define HEATER_1_PIN       20  // Bed
+#define FAN_PIN            22  // Fan   
+
+#define TEMP_0_PIN          7  // Extruder
+#define TEMP_1_PIN          6  // Bed
+
+#define SDPOWER            -1
+#define SDSS                8
+#define LED_PIN            -1
+#define PS_ON_PIN          -1
+#define KILL_PIN           -1 
+
+#ifndef SDSUPPORT
+// these pins are defined in the SD library if building with SD support  
+  #define SCK_PIN           9 
+  #define MISO_PIN         11 
+  #define MOSI_PIN         10 
+#endif
+
+#endif
+
+
