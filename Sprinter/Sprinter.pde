@@ -1062,7 +1062,7 @@ void prepare_move()
   else if(abs(axis_diff[0]) > 0 || abs(axis_diff[1]) > 0) { //X or Y or both
     xy_d = sqrt(axis_diff[0] * axis_diff[0] + axis_diff[1] * axis_diff[1]);
     //check if Z involved - if so interpolate that too
-    d = (abs(axis_diff[2]>0))?sqrt(xy_d * xy_d + axis_diff[2] * axis_diff[2]):xy_d;
+    d = (abs(axis_diff[2])>0)?sqrt(xy_d * xy_d + axis_diff[2] * axis_diff[2]):xy_d;
   }
   else if(abs(axis_diff[3]) > 0)
     d = abs(axis_diff[3]);
