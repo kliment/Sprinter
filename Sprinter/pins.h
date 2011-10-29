@@ -1,5 +1,6 @@
 #ifndef PINS_H
 #define PINS_H
+#define ALARM_PIN          -1
 
 /****************************************************************************************
 * Arduino pin assignment
