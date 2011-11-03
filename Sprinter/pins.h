@@ -688,6 +688,53 @@
 #endif
 
 /****************************************************************************************
+* Gen7 pin assignment
+*
+****************************************************************************************/
+#if MOTHERBOARD == 7
+#define KNOWN_BOARD 1
+
+#if !defined(__AVR_ATmega644P__) && !defined(__AVR_ATmega1284P__) 
+    #error Oops!  Make sure you have 'Sanguino' selected from the 'Tools -> Boards' menu.
+#endif
+
+//x axis pins
+    #define X_STEP_PIN      15
+    #define X_DIR_PIN       18
+    #define X_ENABLE_PIN    33
+    #define X_MIN_PIN       8
+    #define X_MAX_PIN       7
+
+    //y axis pins
+    #define Y_STEP_PIN      29
+    #define Y_DIR_PIN       28
+    #define Y_ENABLE_PIN    33
+    #define Y_MIN_PIN       3
+    #define Y_MAX_PIN       6
+
+    //z axis pins
+    #define Z_STEP_PIN      35
+    #define Z_DIR_PIN       34
+    #define Z_ENABLE_PIN    33
+    #define Z_MIN_PIN       2
+    #define Z_MAX_PIN       1
+
+    //extruder pins
+    #define E_STEP_PIN      37     
+    #define E_DIR_PIN       36     
+    #define E_ENABLE_PIN    33     
+    #define TEMP_0_PIN      39    // Extruder 
+    #define HEATER_0_PIN     5    // Extruder
+    #define HEATER_1_PIN     4    // Bed
+
+
+    #define SDPOWER         -1
+    #define SDSS            -1
+    #define LED_PIN         -1    
+    #define TEMP_1_PIN      38    //Bed   
+    #define FAN_PIN         -1    
+    #define PS_ON_PIN       21    
+/****************************************************************************************
 * Teensylu 0.7 pin assingments (ATMEGA90USB)
 * Requires the Teensyduino software with Teensy2.0++ selected in arduino IDE!
 ****************************************************************************************/
