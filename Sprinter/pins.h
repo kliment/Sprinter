@@ -734,6 +734,9 @@
     #define TEMP_1_PIN      38    //Bed   
     #define FAN_PIN         -1    
     #define PS_ON_PIN       21    
+
+#endif
+
 /****************************************************************************************
 * Teensylu 0.7 pin assingments (ATMEGA90USB)
 * Requires the Teensyduino software with Teensy2.0++ selected in arduino IDE!
