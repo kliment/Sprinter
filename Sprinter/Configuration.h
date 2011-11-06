@@ -99,6 +99,12 @@ bool axis_relative_modes[] = {false, false, false, false};
 // If you enable this, make sure STEP_DELAY_MICROS is disabled. (except for Gen6: both need to be enabled.)
 //#define STEP_DELAY_RATIO 0.25
 
+///Oscillation reduction.  Forces x,y,or z axis to be stationary for ## ms before allowing axis to switch direcitons.  Alternative method to prevent skipping steps.  Uncomment the line below to activate.
+//#define RAPID_OSCILLATION_REDUCTION
+#ifdef RAPID_OSCILLATION_REDUCTION
+long min_time_before_dir_change = 30; //milliseconds
+#endif
+
 // Comment this to disable ramp acceleration
 #define RAMP_ACCELERATION
 
