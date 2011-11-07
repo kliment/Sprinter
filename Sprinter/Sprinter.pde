@@ -91,7 +91,12 @@ float axis_diff[NUM_AXIS] = {0, 0, 0, 0};
 #ifdef STEP_DELAY_RATIO
   long long_step_delay_ratio = STEP_DELAY_RATIO * 100;
 #endif
-
+///oscillation reduction
+ifdef RAPID_OSCILLATION_REDUCTION
+  float cumm_wait_time_in_dir[NUM_AXIS]={0.0,0.0,0.0,0.0};
+  bool prev_move_direction[NUM_AXIS]={1,1,1,1};
+  float osc_wait_remainder = 0.0;
+#endif
 
 // comm variables
 #define MAX_CMD_SIZE 96
@@ -1081,11 +1086,46 @@ void prepare_move()
       time_for_move = time_for_move / max_feedrate[i] * (abs(axis_diff[i]) / (time_for_move / 60000000.0));
     }
   }
+
+#ifdef RAPID_OSCILLATION_REDUCTION  //VERBOSE commenting for peer review.  tested on multiple prints--works!
+    for(int i=0; i < NUM_AXIS-1; i++) { //do for each axis, except for extruder (refer to the -1 value)
+      if(prev_move_direction[i] != move_direction[i]){ //check if we've changed direcitons
+        osc_wait_remainder=min_time_before_dir_change;  //if we changed directions, then shit the bed!  We better make sure to wait & chill out time before jerkin' over in the opposite direction!
+        if(cumm_wait_time_in_dir[i]<min_time_before_dir_change){ //if so, check if we've sat @ the current position long enough for this axis
+          if((min_time_before_dir_change-cumm_wait_time_in_dir[i])>osc_wait_remainder){ //if not, dont overwrite the remaining wait time if we already have to wait LONGER for a different axis
+            osc_wait_remainder=min_time_before_dir_change-cumm_wait_time_in_dir[i];
+            }
+          }
+        cumm_wait_time_in_dir[i] = 0.0; //we've changed directions!  now that we've either set a wait period, or we had already waited long enough after a direction change, let's reset our wait variable for this axis
+        }
+      else{  //we haven't changed directions! so, lets make sure to increase our wait time for the time we have not been moving back on the same axis
+        if(cumm_wait_time_in_dir[i]==0.0){
+          cumm_wait_time_in_dir[i] = 0.001; //if the cumm wait variable = 0.0, that means we've just completed our first move after a dir change. we really haven't waited at all. so, let's increment the wait value insignifcant value so that we may proceed, but not hit this line again.
+          }
+        else{
+          //Serial.print("It is will take [ESTIMATED] this many seconds to perform this move:"); Serial.println(time_for_move/1000000);
+          cumm_wait_time_in_dir[i] = cumm_wait_time_in_dir[i] + time_for_move/1000; //increment the time we've waited in this axis
+          }       
+      }
+    }
+
+    //update prev_moves for next move.  again, excluded extruder
+    for(int i=0; i < NUM_AXIS-1; i++) { 
+      prev_move_direction[i]=move_direction[i];
+    } 
+
+    //now WAIT if you are oscillating back & forth too fast in any given axis
+    if(osc_wait_remainder>0.0){
+      delay(osc_wait_remainder);
+      osc_wait_remainder=0.0;
+    }
+#endif
+
   //Calculate the full speed stepper interval for each axis
   for(int i=0; i < NUM_AXIS; i++) {
     if(move_steps_to_take[i]) axis_interval[i] = time_for_move / move_steps_to_take[i] * 100;
   }
-  
+
   #ifdef DEBUG_PREPARE_MOVE
     log_float("_PREPARE_MOVE - Move distance on the XY plane", xy_d);
     log_float("_PREPARE_MOVE - Move distance on the XYZ space", d);
