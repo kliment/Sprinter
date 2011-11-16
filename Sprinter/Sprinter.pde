@@ -225,7 +225,7 @@ unsigned long stepper_inactive_time = 0;
     
     if(pstr == NULL)
     {
-      SerialMgr.cur()->println("invalid command");
+      Serial.println("invalid command");
       return;
     }
     
@@ -234,24 +234,24 @@ unsigned long stepper_inactive_time = 0;
     //check mode (currently only RAW is supported
     if(strcmp(strchr_pointer+4, "RAW") != 0)
     {
-      SerialMgr.cur()->println("Invalid transfer codec");
+      Serial.println("Invalid transfer codec");
       return;
     }else{
-      SerialMgr.cur()->print("Selected codec: ");
-      SerialMgr.cur()->println(strchr_pointer+4);
+      Serial.print("Selected codec: ");
+      Serial.println(strchr_pointer+4);
     }
     
     if (!file.open(&root, pstr+1, O_CREAT | O_APPEND | O_WRITE | O_TRUNC))
     {
-      SerialMgr.cur()->print("open failed, File: ");
-      SerialMgr.cur()->print(pstr+1);
-      SerialMgr.cur()->print(".");
+      Serial.print("open failed, File: ");
+      Serial.print(pstr+1);
+      Serial.print(".");
     }else{
-      SerialMgr.cur()->print("Writing to file: ");
-      SerialMgr.cur()->println(pstr+1);
+      Serial.print("Writing to file: ");
+      Serial.println(pstr+1);
     }
         
-    SerialMgr.cur()->println("ok");
+    Serial.println("ok");
     
     //RAW transfer codec
     //Host sends \0 then up to SD_FAST_XFER_CHUNK_SIZE then \0
@@ -261,10 +261,10 @@ unsigned long stepper_inactive_time = 0;
     //read SD_FAST_XFER_CHUNK_SIZE bytes (or until \0 is recieved)
     while(!done)
     {
-      while(!SerialMgr.cur()->available())
+      while(!Serial.available())
       {
       }
-      if(SerialMgr.cur()->peek() != 0)
+      if(Serial.peek() != 0)
       {
         //host has failed, this isn't a RAW chunk, it's an actual command
         file.sync();
@@ -272,13 +272,13 @@ unsigned long stepper_inactive_time = 0;
         return;
       }
       //clear the initial 0
-      SerialMgr.cur()->read();
+      Serial.read();
       for(int i=0;i<SD_FAST_XFER_CHUNK_SIZE+1;i++)
       {
-        while(!SerialMgr.cur()->available())
+        while(!Serial.available())
         {
         }
-        lastxferchar = SerialMgr.cur()->read();
+        lastxferchar = Serial.read();
         //buffer the data...
         fastxferbuffer[i] = lastxferchar;
         
@@ -292,11 +292,11 @@ unsigned long stepper_inactive_time = 0;
       {
         fastxferbuffer[SD_FAST_XFER_CHUNK_SIZE] = 0;
         file.write(fastxferbuffer);
-        SerialMgr.cur()->println("ok");
+        Serial.println("ok");
       }else{
-        SerialMgr.cur()->print("Wrote ");
-        SerialMgr.cur()->print(xferbytes);
-        SerialMgr.cur()->println(" bytes.");
+        Serial.print("Wrote ");
+        Serial.print(xferbytes);
+        Serial.println(" bytes.");
         done = true;
       }
     }
@@ -853,8 +853,8 @@ inline void process_commands()
         fast_xfer();
         break;
       case 31: //M31 - high speed xfer capabilities
-        SerialMgr.cur()->print("RAW:");
-        SerialMgr.cur()->println(SD_FAST_XFER_CHUNK_SIZE);
+        Serial.print("RAW:");
+        Serial.println(SD_FAST_XFER_CHUNK_SIZE);
         break;
 #endif
       case 42: //M42 -Change pin status via gcode
