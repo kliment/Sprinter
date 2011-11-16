@@ -50,8 +50,12 @@ const bool Z_ENDSTOP_INVERT = false;
 // Comment out (using // at the start of the line) to disable SD support:
 #define SDSUPPORT
 
-
 //// ADVANCED SETTINGS - to tweak parameters
+
+#ifdef SDSUPPORT
+	//Fast transfer chunk size (> 1024 is unstable, change at your own risk).
+	#define SD_FAST_XFER_CHUNK_SIZE 1024
+#endif
 
 #include "thermistortables.h"
 
