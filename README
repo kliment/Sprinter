@@ -32,6 +32,8 @@ From a fresh Ubuntu install how to update the firmware of your Prusa Mendel ?
 This version uses the http://reprap.org/wiki/Sanguinololu. 
 Some details may not fit your hardware, be sure to check what you are doing)
 
+Steps 3,10,11 are hardware-specific to the Sanguinololu and Bath Prusa and should be skipped or modified accordingly for other hardware such as the Arduino Mega 2560
+
 Software installation
 ----------------------
 
