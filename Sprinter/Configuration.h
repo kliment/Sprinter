@@ -49,6 +49,8 @@ const bool Z_ENDSTOP_INVERT = false;
 
 // Comment out (using // at the start of the line) to disable SD support:
 #define SDSUPPORT
+// Uncomment to make Sprinter run init.g from SD on boot
+//#define SDINITFILE
 
 
 //// ADVANCED SETTINGS - to tweak parameters

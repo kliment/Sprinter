@@ -176,8 +176,17 @@ unsigned long stepper_inactive_time = 0;
           Serial.println("volume.init failed");
     else if (!root.openRoot(&volume)) 
           Serial.println("openRoot failed");
-    else 
-            sdactive = true;
+    else{
+          sdactive = true;
+          #ifdef SDINITFILE
+            file.close();
+            if(file.open(&root, "init.g", O_READ)){
+                sdpos = 0;
+                filesize = file.fileSize();
+                sdmode = true;
+            }
+          #endif
+    }
   #endif
   }
   
