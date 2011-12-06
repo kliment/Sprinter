@@ -92,7 +92,7 @@ float axis_diff[NUM_AXIS] = {0, 0, 0, 0};
   long long_step_delay_ratio = STEP_DELAY_RATIO * 100;
 #endif
 ///oscillation reduction
-ifdef RAPID_OSCILLATION_REDUCTION
+#ifdef RAPID_OSCILLATION_REDUCTION
   float cumm_wait_time_in_dir[NUM_AXIS]={0.0,0.0,0.0,0.0};
   bool prev_move_direction[NUM_AXIS]={1,1,1,1};
   float osc_wait_remainder = 0.0;
