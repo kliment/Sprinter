@@ -625,54 +625,6 @@ pins
 #define DIO31_DDR		DDRA
 #define DIO31_PWM		NULL
 
-#define DIO33_PIN               PINA7
-#define DIO33_RPORT     PINA
-#define DIO33_WPORT     PORTA
-#define DIO33_DDR               DDRA
-#define DIO33_PWM               NULL
-
-#define DIO34_PIN               PINA6
-#define DIO34_RPORT     PINA
-#define DIO34_WPORT     PORTA
-#define DIO34_DDR               DDRA
-#define DIO34_PWM               NULL
-
-#define DIO35_PIN               PINA5
-#define DIO35_RPORT     PINA
-#define DIO35_WPORT     PORTA
-#define DIO35_DDR               DDRA
-#define DIO35_PWM               NULL
-
-#define DIO36_PIN               PINA4
-#define DIO36_RPORT     PINA
-#define DIO36_WPORT     PORTA
-#define DIO36_DDR               DDRA
-#define DIO36_PWM               NULL
-
-#define DIO37_PIN               PINA3
-#define DIO37_RPORT     PINA
-#define DIO37_WPORT     PORTA
-#define DIO37_DDR               DDRA
-#define DIO37_PWM               NULL
-
-#define DIO38_PIN               PINA2
-#define DIO38_RPORT     PINA
-#define DIO38_WPORT     PORTA
-#define DIO38_DDR               DDRA
-#define DIO38_PWM               NULL
-
-#define DIO39_PIN               PINA1
-#define DIO39_RPORT     PINA
-#define DIO39_WPORT     PORTA
-#define DIO39_DDR               DDRA
-#define DIO39_PWM               NULL
-
-#define DIO40_PIN               PINA0
-#define DIO40_RPORT     PINA
-#define DIO40_WPORT     PORTA
-#define DIO40_DDR               DDRA
-#define DIO40_PWM               NULL
-
 #define AIO0_PIN		PINA0
 #define AIO0_RPORT	PINA
 #define AIO0_WPORT	PORTA
