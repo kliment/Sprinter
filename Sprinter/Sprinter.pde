@@ -91,7 +91,12 @@ float axis_diff[NUM_AXIS] = {0, 0, 0, 0};
 #ifdef STEP_DELAY_RATIO
   long long_step_delay_ratio = STEP_DELAY_RATIO * 100;
 #endif
-
+///oscillation reduction
+ifdef RAPID_OSCILLATION_REDUCTION
+  float cumm_wait_time_in_dir[NUM_AXIS]={0.0,0.0,0.0,0.0};
+  bool prev_move_direction[NUM_AXIS]={1,1,1,1};
+  float osc_wait_remainder = 0.0;
+#endif
 
 // comm variables
 #define MAX_CMD_SIZE 96
@@ -162,6 +167,9 @@ unsigned long stepper_inactive_time = 0;
   bool sdactive = false;
   bool savetosd = false;
   int16_t n;
+  char fastxferbuffer[SD_FAST_XFER_CHUNK_SIZE + 1];
+  int lastxferchar;
+  long xferbytes;
   
   void initsd(){
   sdactive = false;
@@ -199,6 +207,102 @@ unsigned long stepper_inactive_time = 0;
       if (file.writeError){
           Serial.println("error writing to file");
       }
+  }
+  
+  void fast_xfer()
+  {
+    char *pstr;
+    boolean done = false;
+    
+    //force heater pins low
+    if(HEATER_0_PIN > -1) WRITE(HEATER_0_PIN,LOW);
+    if(HEATER_1_PIN > -1) WRITE(HEATER_1_PIN,LOW);
+    
+    lastxferchar = 1;
+    xferbytes = 0;
+    
+    pstr = strstr(strchr_pointer+4, " ");
+    
+    if(pstr == NULL)
+    {
+      Serial.println("invalid command");
+      return;
+    }
+    
+    *pstr = '\0';
+    
+    //check mode (currently only RAW is supported
+    if(strcmp(strchr_pointer+4, "RAW") != 0)
+    {
+      Serial.println("Invalid transfer codec");
+      return;
+    }else{
+      Serial.print("Selected codec: ");
+      Serial.println(strchr_pointer+4);
+    }
+    
+    if (!file.open(&root, pstr+1, O_CREAT | O_APPEND | O_WRITE | O_TRUNC))
+    {
+      Serial.print("open failed, File: ");
+      Serial.print(pstr+1);
+      Serial.print(".");
+    }else{
+      Serial.print("Writing to file: ");
+      Serial.println(pstr+1);
+    }
+        
+    Serial.println("ok");
+    
+    //RAW transfer codec
+    //Host sends \0 then up to SD_FAST_XFER_CHUNK_SIZE then \0
+    //when host is done, it sends \0\0.
+    //if a non \0 character is recieved at the beginning, host has failed somehow, kill the transfer.
+    
+    //read SD_FAST_XFER_CHUNK_SIZE bytes (or until \0 is recieved)
+    while(!done)
+    {
+      while(!Serial.available())
+      {
+      }
+      if(Serial.peek() != 0)
+      {
+        //host has failed, this isn't a RAW chunk, it's an actual command
+        file.sync();
+        file.close();
+        return;
+      }
+      //clear the initial 0
+      Serial.read();
+      for(int i=0;i<SD_FAST_XFER_CHUNK_SIZE+1;i++)
+      {
+        while(!Serial.available())
+        {
+        }
+        lastxferchar = Serial.read();
+        //buffer the data...
+        fastxferbuffer[i] = lastxferchar;
+        
+        xferbytes++;
+        
+        if(lastxferchar == 0)
+          break;
+      }
+      
+      if(fastxferbuffer[0] != 0)
+      {
+        fastxferbuffer[SD_FAST_XFER_CHUNK_SIZE] = 0;
+        file.write(fastxferbuffer);
+        Serial.println("ok");
+      }else{
+        Serial.print("Wrote ");
+        Serial.print(xferbytes);
+        Serial.println(" bytes.");
+        done = true;
+      }
+    }
+
+    file.sync();
+    file.close();
   }
 #endif
 
@@ -745,6 +849,13 @@ inline void process_commands()
         //processed in write to file routine above
         //savetosd = false;
         break;
+	  case 30: //M30 - fast SD transfer
+        fast_xfer();
+        break;
+      case 31: //M31 - high speed xfer capabilities
+        Serial.print("RAW:");
+        Serial.println(SD_FAST_XFER_CHUNK_SIZE);
+        break;
 #endif
       case 42: //M42 -Change pin status via gcode
         if (code_seen('S'))
@@ -1081,11 +1192,46 @@ void prepare_move()
       time_for_move = time_for_move / max_feedrate[i] * (abs(axis_diff[i]) / (time_for_move / 60000000.0));
     }
   }
+
+#ifdef RAPID_OSCILLATION_REDUCTION  //VERBOSE commenting for peer review.  tested on multiple prints--works!
+    for(int i=0; i < NUM_AXIS-1; i++) { //do for each axis, except for extruder (refer to the -1 value)
+      if(prev_move_direction[i] != move_direction[i]){ //check if we've changed direcitons
+        osc_wait_remainder=min_time_before_dir_change;  //if we changed directions, then shit the bed!  We better make sure to wait & chill out time before jerkin' over in the opposite direction!
+        if(cumm_wait_time_in_dir[i]<min_time_before_dir_change){ //if so, check if we've sat @ the current position long enough for this axis
+          if((min_time_before_dir_change-cumm_wait_time_in_dir[i])>osc_wait_remainder){ //if not, dont overwrite the remaining wait time if we already have to wait LONGER for a different axis
+            osc_wait_remainder=min_time_before_dir_change-cumm_wait_time_in_dir[i];
+            }
+          }
+        cumm_wait_time_in_dir[i] = 0.0; //we've changed directions!  now that we've either set a wait period, or we had already waited long enough after a direction change, let's reset our wait variable for this axis
+        }
+      else{  //we haven't changed directions! so, lets make sure to increase our wait time for the time we have not been moving back on the same axis
+        if(cumm_wait_time_in_dir[i]==0.0){
+          cumm_wait_time_in_dir[i] = 0.001; //if the cumm wait variable = 0.0, that means we've just completed our first move after a dir change. we really haven't waited at all. so, let's increment the wait value insignifcant value so that we may proceed, but not hit this line again.
+          }
+        else{
+          //Serial.print("It is will take [ESTIMATED] this many seconds to perform this move:"); Serial.println(time_for_move/1000000);
+          cumm_wait_time_in_dir[i] = cumm_wait_time_in_dir[i] + time_for_move/1000; //increment the time we've waited in this axis
+          }       
+      }
+    }
+
+    //update prev_moves for next move.  again, excluded extruder
+    for(int i=0; i < NUM_AXIS-1; i++) { 
+      prev_move_direction[i]=move_direction[i];
+    } 
+
+    //now WAIT if you are oscillating back & forth too fast in any given axis
+    if(osc_wait_remainder>0.0){
+      delay(osc_wait_remainder);
+      osc_wait_remainder=0.0;
+    }
+#endif
+
   //Calculate the full speed stepper interval for each axis
   for(int i=0; i < NUM_AXIS; i++) {
     if(move_steps_to_take[i]) axis_interval[i] = time_for_move / move_steps_to_take[i] * 100;
   }
-  
+
   #ifdef DEBUG_PREPARE_MOVE
     log_float("_PREPARE_MOVE - Move distance on the XY plane", xy_d);
     log_float("_PREPARE_MOVE - Move distance on the XYZ space", d);

@@ -9,6 +9,7 @@
 // Gen6 = 5, 
 // Sanguinololu up to 1.1 = 6
 // Sanguinololu 1.2 and above = 62
+// Gen 7 = 7
 // Teensylu (at90usb) = 8
 // Gen 3 Plus = 21
 // gen 3  Monolithic Electronics = 22
@@ -50,8 +51,12 @@ const bool Z_ENDSTOP_INVERT = false;
 // Comment out (using // at the start of the line) to disable SD support:
 #define SDSUPPORT
 
-
 //// ADVANCED SETTINGS - to tweak parameters
+
+#ifdef SDSUPPORT
+	//Fast transfer chunk size (> 1024 is unstable, change at your own risk).
+	#define SD_FAST_XFER_CHUNK_SIZE 1024
+#endif
 
 #include "thermistortables.h"
 
@@ -98,6 +103,12 @@ bool axis_relative_modes[] = {false, false, false, false};
 // Step delay over interval ratio. If you are still experiencing missing steps, try to uncomment the following line, but be aware this
 // If you enable this, make sure STEP_DELAY_MICROS is disabled. (except for Gen6: both need to be enabled.)
 //#define STEP_DELAY_RATIO 0.25
+
+///Oscillation reduction.  Forces x,y,or z axis to be stationary for ## ms before allowing axis to switch direcitons.  Alternative method to prevent skipping steps.  Uncomment the line below to activate.
+//#define RAPID_OSCILLATION_REDUCTION
+#ifdef RAPID_OSCILLATION_REDUCTION
+long min_time_before_dir_change = 30; //milliseconds
+#endif
 
 // Comment this to disable ramp acceleration
 #define RAMP_ACCELERATION

@@ -143,7 +143,6 @@
 
 #endif
 
-
 /****************************************************************************************
 * RepRap Motherboard  ****---NOOOOOO RS485/EXTRUDER CONTROLLER!!!!!!!!!!!!!!!!!---*******
 *
@@ -694,7 +693,7 @@
 #if MOTHERBOARD == 7
 #define KNOWN_BOARD 1
 
-#if !defined(__AVR_ATmega644P__) && !defined(__AVR_ATmega1284P__) 
+#if !defined(__AVR_ATmega644P__) && !defined(__AVR_ATmega1284P__) && !defined(__AVR_ATmega644__) 
     #error Oops!  Make sure you have 'Sanguino' selected from the 'Tools -> Boards' menu.
 #endif
 
@@ -736,7 +735,6 @@
     #define PS_ON_PIN       21    
 
 #endif
-
 
 /****************************************************************************************
 * Teensylu 0.7 pin assingments (ATMEGA90USB)
