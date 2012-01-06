@@ -32,13 +32,16 @@ From a fresh Ubuntu install how to update the firmware of your Prusa Mendel ?
 This version uses the http://reprap.org/wiki/Sanguinololu. 
 Some details may not fit your hardware, be sure to check what you are doing)
 
+Steps 3,10,11 are hardware-specific to the Sanguinololu and Bath Prusa and should be skipped or modified accordingly for other hardware such as the Arduino Mega 2560
+
 Software installation
 ----------------------
 
 1. Install the required packages (gcc-avr, avr-libc, etc.)
   sudo apt-get install arduino-core
 
-2. Get the arduino software version 0018, uncompress it in a directory
+2. Get the arduino software version 0018 (0023 works for RAMPS), uncompress it in a directory
+Arduino software v1 DOES NOT work with Sprinter yet!
    http://www.arduino.cc/en/Main/Software
 
 3. Get the sanguino software, version 0018
