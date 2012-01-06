@@ -685,17 +685,8 @@
 #define SDPOWER          -1
 #define SDSS          31
 
-<<<<<<< HEAD
-#ifndef KNOWN_BOARD
-#error Unknown MOTHERBOARD value in configuration.h
 #endif
 
-#endif
-
-
-=======
-#endif
->>>>>>> upstream/master
 
 /****************************************************************************************
 * Teensylu 0.7 pin assingments (ATMEGA90USB)
