@@ -991,7 +991,8 @@ inline void process_commands()
     
   }
   else{
-      Serial.println("Unknown command:");
+      Serial.println("// Unknown command:");
+      Serial.print("// ");
       Serial.println(cmdbuffer[bufindr]);
   }
   
