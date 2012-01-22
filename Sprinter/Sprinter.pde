@@ -980,7 +980,7 @@ inline void process_commands()
             Serial.print("T:");
             Serial.print( tt );
             Serial.print(" B:");
-            Serial.println( analog2temp(current_bed_raw) ); 
+            Serial.println(analog2tempBed(current_bed_raw)); 
             codenum = millis(); 
           }
             manage_heater();
