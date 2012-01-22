@@ -1284,10 +1284,33 @@ inline void linear_move(unsigned long axis_steps_remaining[]) // make linear mov
   //Only enable axis that are moving. If the axis doesn't need to move then it can stay disabled depending on configuration.
   // TODO: maybe it's better to refactor into a generic enable(int axis) function, that will probably take more ram,
   // but will reduce code size
+#ifdef DELAY_ENABLE
+  if(axis_steps_remaining[0])
+  {
+    enable_x();
+    delayMicroseconds(DELAY_ENABLE);
+  }
+  if(axis_steps_remaining[1])
+  {
+    enable_y();
+    delayMicroseconds(DELAY_ENABLE);
+  }
+  if(axis_steps_remaining[2])
+  {
+    enable_z();
+    delayMicroseconds(DELAY_ENABLE);
+  }
+  if(axis_steps_remaining[3])
+  {
+    enable_e();
+    delayMicroseconds(DELAY_ENABLE);
+  }
+#else
   if(axis_steps_remaining[0]) enable_x();
   if(axis_steps_remaining[1]) enable_y();
   if(axis_steps_remaining[2]) enable_z();
   if(axis_steps_remaining[3]) enable_e();
+#endif
 
     //Define variables that are needed for the Bresenham algorithm. Please note that  Z is not currently included in the Bresenham algorithm.
   unsigned long delta[] = {axis_steps_remaining[0], axis_steps_remaining[1], axis_steps_remaining[2], axis_steps_remaining[3]}; //TODO: implement a "for" to support N axes
