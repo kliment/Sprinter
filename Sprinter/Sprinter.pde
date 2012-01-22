@@ -971,7 +971,7 @@ inline void process_commands()
       break;
       case 190: // M190 - Wait bed for heater to reach target.
       #if TEMP_1_PIN > -1
-        if (code_seen('S')) target_bed_raw = temp2analogh(code_value());
+        if (code_seen('S')) target_bed_raw = temp2analogBed(code_value());
         codenum = millis(); 
         while(current_bed_raw < target_bed_raw) {
           if( (millis()-codenum) > 1000 ) //Print Temp Reading every 1 second while heating up.
