@@ -66,6 +66,9 @@ const bool Z_ENDSTOP_INVERT = false;
 #define Z_ENABLE_ON 0
 #define E_ENABLE_ON 0
 
+//Uncomment if you have problems with a stepper driver enabeling too late, this will also set how many microseconds delay there will be after enabeling the driver
+//#define DELAY_ENABLE 15
+
 // Disables axis when it's not being used.
 const bool DISABLE_X = false;
 const bool DISABLE_Y = false;
