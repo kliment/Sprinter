@@ -29,16 +29,14 @@
   
   Sprinter V2
 
-- Look Vorward Funktion -->  Es werden 16 Schritte im Voraus berechnet, übernommen von Marlin, Grbl
-- Stepper Ansteuerung ist Interruptgesteuert (Timer 1)
-- Extruder wird mit einem PID Regler und SOFT PWM gesteuert (kleinere Frequenz von 500 Hz und Timer 1 bleibt frei)
-- Druckgeschwindigkeit kann während des Drucken angepasst werden (+/- 50%)  (Command M220 Sxxx)
-- G2 und G3 Command vorhanden -->  Kreisberechnung (derzeit noch Test)
-- Baudrate auf 250 kbaud
-- Optimiert für Sanguinololu Board 
-- M30 Command kann files auf der SD löschen
-- Texte für Ausgabe ins Flash verlagert, mehr Speicher für Planner Funktion
-- Debug Temperatur für Repetier Host --> M203 Temperature monitor
+- Look Vorward Funktion -
+- Stepper Control with Timer 1
+- SOFT PWM for Extruder heating --> Free Timer 1
+- G2 / G3 Command for arc real arc
+- Baudrate 250 kbaud
+- M30 Command delete file on SD Card
+- Text moved to flash to free RAM
+- M203 Command for Temp debugging
 
 */
 
