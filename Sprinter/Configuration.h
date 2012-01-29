@@ -1,4 +1,4 @@
-#ifndef CONFIGURATION_H
+﻿#ifndef CONFIGURATION_H
 #define CONFIGURATION_H
 
 // BASIC SETTINGS: select your board type, thermistor type, axis scaling, and endstop configuration
@@ -14,7 +14,7 @@
 // Gen 3 Plus = 21
 // gen 3  Monolithic Electronics = 22
 // Gen3 PLUS for TechZone Gen3 Remix Motherboard = 23
-#define MOTHERBOARD 62
+#define MOTHERBOARD 3
 
 //// Thermistor settings:
 // 1 is 100k thermistor
@@ -27,16 +27,15 @@
 #define THERMISTORHEATER 1
 #define THERMISTORBED 1
 
-//// Calibration variables --> CHECK THIS VALUES FOR YOUR PRINTER !!!
-// X, Y, Z, E steps per unit - Metric Prusa Mendel with Wade extruder and alu pulleys:
-#define _AXIS_STEP_PER_UNIT {64, 64, 3200/1.25,766}
-
-// Metric Prusa Mendel with Makergear geared stepper extruder and printet pulleys:
+//// Calibration variables
+// X, Y, Z, E steps per unit - Metric Prusa Mendel with Wade extruder:
+#define _AXIS_STEP_PER_UNIT {80, 80, 3200/1.25,700}
+// Metric Prusa Mendel with Makergear geared stepper extruder:
 //#define _AXIS_STEP_PER_UNIT {80,80,3200/1.25,1380}
-
 // MakerGear Hybrid Prusa Mendel:
 // Z axis value is for .9 stepper(if you have 1.8 steppers for Z, you need to use 2272.7272)
 //#define _AXIS_STEP_PER_UNIT {104.987, 104.987, 4545.4544, 1487}
+
 
 //// Endstop Settings
 #define ENDSTOPPULLUPS // Comment this out (using // at the start of the line) to disable the endstop pullup resistors
@@ -48,8 +47,8 @@ const bool Y_ENDSTOP_INVERT = false;
 const bool Z_ENDSTOP_INVERT = false;
 
 // This determines the communication speed of the printer
-//#define BAUDRATE 115200
-#define BAUDRATE 250000
+#define BAUDRATE 115200
+//#define BAUDRATE 250000
 
 // Comment out (using // at the start of the line) to disable SD support:
 #define SDSUPPORT
@@ -67,17 +66,18 @@ const bool Z_ENDSTOP_INVERT = false;
 #define Z_ENABLE_ON 0
 #define E_ENABLE_ON 0
 
-// Disables axis when it's not being used.
+/ Disables axis when it's not being used.
 const bool DISABLE_X = false;
 const bool DISABLE_Y = false;
 const bool DISABLE_Z = true;
 const bool DISABLE_E = false;
 
 // Inverting axis direction
-const bool INVERT_X_DIR = true;
+const bool INVERT_X_DIR = false;
 const bool INVERT_Y_DIR = false;
 const bool INVERT_Z_DIR = true;
-const bool INVERT_E_DIR = true;
+const bool INVERT_E_DIR = false;
+
 
 //// ENDSTOP SETTINGS:
 // Sets direction of endstops when homing; 1=MAX, -1=MIN
@@ -85,21 +85,19 @@ const bool INVERT_E_DIR = true;
 #define Y_HOME_DIR -1
 #define Z_HOME_DIR -1
 
-const bool min_software_endstops = false; //If true, axis won't move to coordinates less than zero.
-const bool max_software_endstops = true;  //If true, axis won't move to coordinates greater than the defined lengths below.
 
-//Max Length for Prusa Mendel, check the ways of your axis and set this Values
-const int X_MAX_LENGTH = 165;
-const int Y_MAX_LENGTH = 181;
-const int Z_MAX_LENGTH = 90;
+const bool min_software_endstops = false; //If true, axis won't move to coordinates less than zero.
+const bool max_software_endstops = true; //If true, axis won't move to coordinates greater than the defined lengths below.
+const int X_MAX_LENGTH = 200;
+const int Y_MAX_LENGTH = 200;
+const int Z_MAX_LENGTH = 100;
 
 //// MOVEMENT SETTINGS
 const int NUM_AXIS = 4; // The axis order in all axis related arrays is X, Y, Z, E
-
-#define _MAX_FEEDRATE {24000, 24000, 180, 2700}  // (400,400,3,45) mm/sec --> Array Unit = mm / min
-#define _HOMING_FEEDRATE {1500,1500,120}         // ( 25, 25,2) mm/sec --> Array Unit = mm / min
-
+#define _MAX_FEEDRATE {200000, 200000, 240, 500000}
+#define _HOMING_FEEDRATE {1500,1500,120}
 #define _AXIS_RELATIVE_MODES {false, false, false, false}
+
 
 // Min step delay in microseconds. If you are experiencing missing steps, try to raise the delay microseconds, but be aware this
 // If you enable this, make sure STEP_DELAY_RATIO is disabled.
@@ -128,8 +126,7 @@ const int NUM_AXIS = 4; // The axis order in all axis related arrays is X, Y, Z,
 // Machine UUID
 // This may be useful if you have multiple machines and wish to identify them by using the M115 command. 
 // By default we set it to zeros.
-//#define _DEF_CHAR_UUID "00000000-0000-0000-0000-000000000000"
-#define _DEF_CHAR_UUID "55841315-4681-1640-0000-260479000000"
+#define _DEF_CHAR_UUID "00000000-0000-0000-0000-000000000000"
 
 
 
@@ -190,9 +187,9 @@ const int NUM_AXIS = 4; // The axis order in all axis related arrays is X, Y, Z,
 
 //PID Controler Settings
 #define PID_INTEGRAL_DRIVE_MAX 80 // too big, and heater will lag after changing temperature, too small and it might not compensate enough for long-term errors
-#define PID_PGAIN 2048 //256 is 1.0  // value of X means that error of 1 degree is changing PWM duty by X, probably no need to go over 25
+#define PID_PGAIN 2560 //256 is 1.0  // value of X means that error of 1 degree is changing PWM duty by X, probably no need to go over 25
 #define PID_IGAIN 64 //256 is 1.0  // value of X (e.g 0.25) means that each degree error over 1 sec (2 measurements) changes duty cycle by 2X (=0.5) units (verify?)
-#define PID_DGAIN 2048 //256 is 1.0  // value of X means that around reached setpoint, each degree change over one measurement (half second) adjusts PWM by X units to compensate
+#define PID_DGAIN 4096 //256 is 1.0  // value of X means that around reached setpoint, each degree change over one measurement (half second) adjusts PWM by X units to compensate
 
 // magic formula 1, to get approximate "zero error" PWM duty. Take few measurements with low PWM duty and make linear fit to get the formula
 // for my makergear hot-end: linear fit {50,10},{60,20},{80,30},{105,50},{176,100},{128,64},{208,128}
@@ -221,9 +218,9 @@ const int NUM_AXIS = 4; // The axis order in all axis related arrays is X, Y, Z,
 #define DISABLE_CHECK_DURING_TRAVEL 1000
 
 //// Temperature smoothing - only uncomment this if your temp readings are noisy (Gen6 without EvdZ's 5V hack)
-#define SMOOTHING
+//#define SMOOTHING
 //#define SMOOTHFACTOR 16 //best to use a power of two here - determines how many values are averaged together by the smoothing algorithm
-#define SMOOTHFACTOR 2 //best to use a power of two here - determines how many values are averaged together by the smoothing algorithm
+
 
 //// Experimental watchdog and minimal temp
 // The watchdog waits for the watchperiod in milliseconds whenever an M104 or M109 increases the target temperature
