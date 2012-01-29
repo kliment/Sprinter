@@ -29,14 +29,18 @@
   
   Sprinter V2
 
-- Look Vorward Funktion -
-- Stepper Control with Timer 1
-- SOFT PWM for Extruder heating --> Free Timer 1
-- G2 / G3 Command for arc real arc
-- Baudrate 250 kbaud
-- M30 Command delete file on SD Card
-- Text moved to flash to free RAM
-- M203 Command for Temp debugging
+  -  Look forward function --> calculate 16 Steps forward, get from Firmaware Marlin and Grbl
+  -  Stepper control with Timer 1 (Interrupt)
+  -  Extruder heating with PID use a Softpwm (Timer 2) with 500 hz to free Timer1 für Steppercontrol
+  -  command M220 Sxxx --> tune Printing speed online (+/- 50 %)
+  -  G2 / G3 command --> circle funktion
+  -  Baudrate set to 250 kbaud
+  -  Testet on Sanguinololu Board
+  -  M30 Command can delete files on SD Card
+  -  move string to flash to free RAM vor forward planner
+  -  M203 Temperature monitor for Repetier
+
+
 
 */
 
