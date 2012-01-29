@@ -2,52 +2,9 @@
 // Licence: GPL
 #include <WProgram.h>
 #include "fastio.h"
+
 extern "C" void __cxa_pure_virtual();
-void __cxa_pure_virtual(){};
-void get_command();
-void process_commands();
 
-void manage_inactivity(byte debug);
-void setup_acceleration();
-
-void manage_heater();
-
-#if defined HEATER_USES_THERMISTOR
-#define temp2analogh( c ) temp2analog_thermistor(c,temptable,NUMTEMPS)
-#define analog2temp( c ) analog2temp_thermistor(c,temptable,NUMTEMPS)
-#elif defined HEATER_USES_AD595
-#define temp2analogh( c ) temp2analog_ad595(c)
-#define analog2temp( c ) analog2temp_ad595(c)
-#elif defined HEATER_USES_MAX6675
-#define temp2analogh( c ) temp2analog_max6675(c)
-#define analog2temp( c ) analog2temp_max6675(c)
-#endif
-
-#if defined BED_USES_THERMISTOR
-#define temp2analogBed( c ) temp2analog_thermistor((c),bedtemptable,BNUMTEMPS)
-#define analog2tempBed( c ) analog2temp_thermistor((c),bedtemptable,BNUMTEMPS)
-#elif defined BED_USES_AD595
-#define temp2analogBed( c ) temp2analog_ad595(c)
-#define analog2tempBed( c ) analog2temp_ad595(c)
-#elif defined BED_USES_MAX6675
-#define temp2analogBed( c ) temp2analog_max6675(c)
-#define analog2tempBed( c ) analog2temp_max6675(c)
-#endif
-
-#if defined (HEATER_USES_THERMISTOR) || defined (BED_USES_THERMISTOR)
-int temp2analog_thermistor(int celsius, const short table[][2], int numtemps);
-int analog2temp_thermistor(int raw,const short table[][2], int numtemps);
-#endif
-
-#if defined (HEATER_USES_AD595) || defined (BED_USES_AD595)
-int temp2analog_ad595(int celsius);
-int analog2temp_ad595(int raw);
-#endif
-
-#if defined (HEATER_USES_MAX6675) || defined (BED_USES_MAX6675)
-int temp2analog_max6675(int celsius);
-int analog2temp_max6675(int raw);
-#endif
 
 #if X_ENABLE_PIN > -1
 #define  enable_x() WRITE(X_ENABLE_PIN, X_ENABLE_ON)
@@ -78,12 +35,80 @@ int analog2temp_max6675(int raw);
 #define disable_e() ;
 #endif
 
+#define X_AXIS 0
+#define Y_AXIS 1
+#define Z_AXIS 2
+#define E_AXIS 3
+
+
+// This struct is used when buffering the setup for each linear movement "nominal" values are as specified in 
+// the source g-code and may never actually be reached if acceleration management is active.
+typedef struct {
+  // Fields used by the bresenham algorithm for tracing the line
+  long steps_x, steps_y, steps_z, steps_e;  // Step count along each axis
+
+  long step_event_count;                    // The number of step events required to complete this block
+  volatile long accelerate_until;           // The index of the step event on which to stop acceleration
+  volatile long decelerate_after;           // The index of the step event on which to start decelerating
+  volatile long acceleration_rate;          // The acceleration rate used for acceleration calculation
+  unsigned char direction_bits;             // The direction bit set for this block (refers to *_DIRECTION_BIT in config.h)
+
+  #ifdef ADVANCE
+    long advance_rate;
+    volatile long initial_advance;
+    volatile long final_advance;
+    float advance;
+  #endif
+
+  // Fields used by the motion planner to manage acceleration
+  float speed_x, speed_y, speed_z, speed_e;          // Nominal mm/minute for each axis
+  float nominal_speed;                               // The nominal speed for this block in mm/min  
+  float millimeters;                                 // The total travel of this block in mm
+  float entry_speed;
+  float acceleration;                                // acceleration mm/sec^2
+
+  // Settings for the trapezoid generator
+  long nominal_rate;                                 // The nominal step rate for this block in step_events/sec 
+  volatile long initial_rate;                        // The jerk-adjusted step rate at start of block  
+  volatile long final_rate;                          // The minimal rate at exit
+  long acceleration_st;                              // acceleration steps/sec^2
+  volatile char busy;
+} block_t;
+
+
 void FlushSerialRequestResend();
 void ClearToSend();
 
+void showString (PGM_P s);
+
+void manage_inactivity(byte debug);
+
+
 void get_coordinates();
 void prepare_move();
-void linear_move(unsigned long steps_remaining[]);
-void do_step(int axis);
+void prepare_arc_move(char isclockwise);
+void plan_buffer_line(float x, float y, float z, float e, float feed_rate);
+
 void kill(byte debug);
 
+void check_axes_activity();
+void plan_init();
+void st_init();
+void tp_init();
+void plan_buffer_line(float x, float y, float z, float e, float feed_rate);
+void plan_set_position(float x, float y, float z, float e);
+void st_wake_up();
+void st_synchronize();
+
+void check_buffer_while_arc();
+
+
+#ifdef DEBUG
+void log_message(char*   message);
+void log_bool(char* message, bool value);
+void log_int(char* message, int value);
+void log_long(char* message, long value);
+void log_float(char* message, float value);
+void log_uint(char* message, unsigned int value);
+void log_ulong(char* message, unsigned long value);
+#endif
