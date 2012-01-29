@@ -662,21 +662,17 @@
 #define HEATER_0_PIN       13 // (extruder)
 
 #ifdef SANGUINOLOLU_V_1_2
-
 #define HEATER_1_PIN       12 // (bed)
 #define X_ENABLE_PIN       14
 #define Y_ENABLE_PIN       14
 #define Z_ENABLE_PIN       26
 #define E_ENABLE_PIN       14
-
 #else
-
 #define HEATER_1_PIN       14  // (bed)
 #define X_ENABLE_PIN       -1
 #define Y_ENABLE_PIN       -1
 #define Z_ENABLE_PIN       -1
 #define E_ENABLE_PIN       -1
-
 #endif
 
 #define TEMP_0_PIN          7   // MUST USE ANALOG INPUT NUMBERING NOT DIGITAL OUTPUT NUMBERING!!!!!!!!! (pin 33 extruder)

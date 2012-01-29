@@ -127,11 +127,11 @@ ALL_ASFLAGS = -mmcu=$(MCU) -I. -x assembler-with-cpp $(ASFLAGS)
 
 
 # Default target.
-all: applet_files build sizeafter
+all: build sizeafter
 
 build: elf hex 
 
-applet_files: $(TARGET).pde
+applet/$(TARGET).cpp: $(TARGET).pde
 	# Here is the "preprocessing".
 	# It creates a .cpp file based with the same name as the .pde file.
 	# On top of the new .cpp file comes the WProgram.h header.
@@ -155,7 +155,7 @@ upload: applet/$(TARGET).hex
 	$(AVRDUDE) $(AVRDUDE_FLAGS) $(AVRDUDE_WRITE_FLASH)
 
 
-	# Display size of file.
+# Display size of file.
 HEXSIZE = $(SIZE) --target=$(FORMAT) applet/$(TARGET).hex
 ELFSIZE = $(SIZE)  applet/$(TARGET).elf
 sizebefore:
@@ -198,8 +198,8 @@ extcoff: $(TARGET).elf
 .elf.sym:
 	$(NM) -n $< > $@
 
-	# Link: create ELF output file from library.
-applet/$(TARGET).elf: $(TARGET).pde applet/core.a 
+# Link: create ELF output file from library.
+applet/$(TARGET).elf: applet/core.a applet/$(TARGET).cpp
 	$(CC) $(ALL_CFLAGS) -Wl,--gc-sections -o $@ applet/$(TARGET).cpp -L. applet/core.a $(LDFLAGS)
 
 applet/core.a: $(OBJ)
@@ -244,4 +244,4 @@ depend:
 		>> $(MAKEFILE); \
 	$(CC) -M -mmcu=$(MCU) $(CDEFS) $(CINCS) $(SRC) $(ASRC) >> $(MAKEFILE)
 
-.PHONY:	all build elf hex eep lss sym program coff extcoff clean depend applet_files sizebefore sizeafter
+.PHONY:	all build elf hex eep lss sym program coff extcoff clean depend sizebefore sizeafter
