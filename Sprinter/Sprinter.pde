@@ -724,11 +724,22 @@ void loop()
   manage_inactivity(1);
 }
 
+//------------------------------------------------
+//Check Uart buffer while arc function ist calc a circle
+//------------------------------------------------
+
+void check_buffer_while_arc()
+{
+  if(buflen < (BUFSIZE-1))
+  {
+    get_command();
+  }
+}
 
 //------------------------------------------------
 //READ COMMAND FROM UART
 //------------------------------------------------
-inline void get_command() 
+void get_command() 
 { 
   while( Serial.available() > 0  && buflen < BUFSIZE)
   {

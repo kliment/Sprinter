@@ -100,6 +100,8 @@ void plan_set_position(float x, float y, float z, float e);
 void st_wake_up();
 void st_synchronize();
 
+void check_buffer_while_arc();
+
 
 #ifdef DEBUG
 void log_message(char*   message);
