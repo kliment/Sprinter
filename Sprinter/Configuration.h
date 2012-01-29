@@ -1,4 +1,4 @@
-﻿#ifndef CONFIGURATION_H
+#ifndef CONFIGURATION_H
 #define CONFIGURATION_H
 
 // BASIC SETTINGS: select your board type, thermistor type, axis scaling, and endstop configuration
@@ -14,7 +14,7 @@
 // Gen 3 Plus = 21
 // gen 3  Monolithic Electronics = 22
 // Gen3 PLUS for TechZone Gen3 Remix Motherboard = 23
-#define MOTHERBOARD 3
+#define MOTHERBOARD 62
 
 //// Thermistor settings:
 // 1 is 100k thermistor
@@ -56,9 +56,19 @@ const bool Z_ENDSTOP_INVERT = false;
 // Uncomment to make run init.g from SD on boot
 //#define SDINITFILE
 
+//#define SD_FAST_XFER_AKTIV
+
 //-----------------------------------------------------------------------
 //// ADVANCED SETTINGS - to tweak parameters
 //-----------------------------------------------------------------------
+
+#ifdef SDSUPPORT
+	#ifdef SD_FAST_XFER_AKTIV
+		//Fast transfer chunk size (> 1024 is unstable, change at your own risk).
+		#define SD_FAST_XFER_CHUNK_SIZE 1024
+	#endif
+#endif
+
 
 // For Inverting Stepper Enable Pins (Active Low) use 0, Non Inverting (Active High) use 1
 #define X_ENABLE_ON 0
@@ -66,7 +76,10 @@ const bool Z_ENDSTOP_INVERT = false;
 #define Z_ENABLE_ON 0
 #define E_ENABLE_ON 0
 
-/ Disables axis when it's not being used.
+//Uncomment if you have problems with a stepper driver enabeling too late, this will also set how many microseconds delay there will be after enabeling the driver
+//#define DELAY_ENABLE 15
+
+// Disables axis when it's not being used.
 const bool DISABLE_X = false;
 const bool DISABLE_Y = false;
 const bool DISABLE_Z = true;
@@ -88,6 +101,8 @@ const bool INVERT_E_DIR = false;
 
 const bool min_software_endstops = false; //If true, axis won't move to coordinates less than zero.
 const bool max_software_endstops = true; //If true, axis won't move to coordinates greater than the defined lengths below.
+
+//Max Length for Prusa Mendel, check the ways of your axis and set this Values
 const int X_MAX_LENGTH = 200;
 const int Y_MAX_LENGTH = 200;
 const int Z_MAX_LENGTH = 100;
@@ -106,6 +121,12 @@ const int NUM_AXIS = 4; // The axis order in all axis related arrays is X, Y, Z,
 // Step delay over interval ratio. If you are still experiencing missing steps, try to uncomment the following line, but be aware this
 // If you enable this, make sure STEP_DELAY_MICROS is disabled. (except for Gen6: both need to be enabled.)
 //#define STEP_DELAY_RATIO 0.25
+
+///Oscillation reduction.  Forces x,y,or z axis to be stationary for ## ms before allowing axis to switch direcitons.  Alternative method to prevent skipping steps.  Uncomment the line below to activate.
+//#define RAPID_OSCILLATION_REDUCTION
+#ifdef RAPID_OSCILLATION_REDUCTION
+long min_time_before_dir_change = 30; //milliseconds
+#endif
 
 // Comment this to disable ramp acceleration
 #define RAMP_ACCELERATION

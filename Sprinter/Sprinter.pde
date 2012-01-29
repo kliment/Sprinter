@@ -183,7 +183,12 @@ float offset[3] = {0.0, 0.0, 0.0};
   long long_step_delay_ratio = STEP_DELAY_RATIO * 100;
 #endif
 
-
+///oscillation reduction
+#ifdef RAPID_OSCILLATION_REDUCTION
+  float cumm_wait_time_in_dir[NUM_AXIS]={0.0,0.0,0.0,0.0};
+  bool prev_move_direction[NUM_AXIS]={1,1,1,1};
+  float osc_wait_remainder = 0.0;
+#endif
 
 // comm variables and Commandbuffer
 // BUFSIZE is reduced from 8 to 5 to free more RAM for the PLANNER
@@ -191,6 +196,13 @@ float offset[3] = {0.0, 0.0, 0.0};
 #define BUFSIZE 5 //8
 char cmdbuffer[BUFSIZE][MAX_CMD_SIZE];
 bool fromsd[BUFSIZE];
+
+//Need 1kb Ram --> only work with Atmega1284
+#ifdef SD_FAST_XFER_AKTIV
+  char fastxferbuffer[SD_FAST_XFER_CHUNK_SIZE + 1];
+  int lastxferchar;
+  long xferbytes;
+#endif
 
 int bufindr = 0;
 int bufindw = 0;
@@ -258,6 +270,104 @@ unsigned char manage_monitor = 255;
     
   #endif
   }
+  
+  #ifdef SD_FAST_XFER_AKTIV
+  void fast_xfer()
+  {
+    char *pstr;
+    boolean done = false;
+    
+    //force heater pins low
+    if(HEATER_0_PIN > -1) WRITE(HEATER_0_PIN,LOW);
+    if(HEATER_1_PIN > -1) WRITE(HEATER_1_PIN,LOW);
+    
+    lastxferchar = 1;
+    xferbytes = 0;
+    
+    pstr = strstr(strchr_pointer+4, " ");
+    
+    if(pstr == NULL)
+    {
+      Serial.println("invalid command");
+      return;
+    }
+    
+    *pstr = '\0';
+    
+    //check mode (currently only RAW is supported
+    if(strcmp(strchr_pointer+4, "RAW") != 0)
+    {
+      Serial.println("Invalid transfer codec");
+      return;
+    }else{
+      Serial.print("Selected codec: ");
+      Serial.println(strchr_pointer+4);
+    }
+    
+    if (!file.open(&root, pstr+1, O_CREAT | O_APPEND | O_WRITE | O_TRUNC))
+    {
+      Serial.print("open failed, File: ");
+      Serial.print(pstr+1);
+      Serial.print(".");
+    }else{
+      Serial.print("Writing to file: ");
+      Serial.println(pstr+1);
+    }
+        
+    Serial.println("ok");
+    
+    //RAW transfer codec
+    //Host sends \0 then up to SD_FAST_XFER_CHUNK_SIZE then \0
+    //when host is done, it sends \0\0.
+    //if a non \0 character is recieved at the beginning, host has failed somehow, kill the transfer.
+    
+    //read SD_FAST_XFER_CHUNK_SIZE bytes (or until \0 is recieved)
+    while(!done)
+    {
+      while(!Serial.available())
+      {
+      }
+      if(Serial.peek() != 0)
+      {
+        //host has failed, this isn't a RAW chunk, it's an actual command
+        file.sync();
+        file.close();
+        return;
+      }
+      //clear the initial 0
+      Serial.read();
+      for(int i=0;i<SD_FAST_XFER_CHUNK_SIZE+1;i++)
+      {
+        while(!Serial.available())
+        {
+        }
+        lastxferchar = Serial.read();
+        //buffer the data...
+        fastxferbuffer[i] = lastxferchar;
+        
+        xferbytes++;
+        
+        if(lastxferchar == 0)
+          break;
+      }
+      
+      if(fastxferbuffer[0] != 0)
+      {
+        fastxferbuffer[SD_FAST_XFER_CHUNK_SIZE] = 0;
+        file.write(fastxferbuffer);
+        Serial.println("ok");
+      }else{
+        Serial.print("Wrote ");
+        Serial.print(xferbytes);
+        Serial.println(" bytes.");
+        done = true;
+      }
+    }
+
+    file.sync();
+    file.close();
+  }
+  #endif
     
 
  void print_disk_info(void)
@@ -1051,6 +1161,7 @@ inline void process_commands()
         //processed in write to file routine above
         //savetosd = false;
         break;
+  #ifndef SD_FAST_XFER_AKTIV
       case 30: // M30 filename - Delete file
         if(sdactive)
         {
@@ -1072,6 +1183,15 @@ inline void process_commands()
             }
         }
         break;  
+   #else     
+      case 30: //M30 - fast SD transfer
+        fast_xfer();
+        break;
+      case 31: //M31 - high speed xfer capabilities
+        showString(PSTR("RAW:"));
+        Serial.println(SD_FAST_XFER_CHUNK_SIZE);
+        break;
+   #endif
         
 #endif
       case 42: //M42 -Change pin status via gcode
@@ -1912,11 +2032,35 @@ void plan_buffer_line(float x, float y, float z, float e, float feed_rate) {
     return; 
   };
   
+  
+ #ifdef DELAY_ENABLE
+  if(block->steps_x != 0)
+  {
+    enable_x();
+    delayMicroseconds(DELAY_ENABLE);
+  }
+  if(block->steps_y != 0)
+  {
+    enable_y();
+    delayMicroseconds(DELAY_ENABLE);
+  }
+  if(if(block->steps_z != 0))
+  {
+    enable_z();
+    delayMicroseconds(DELAY_ENABLE);
+  }
+  if(if(block->steps_e != 0))
+  {
+    enable_e();
+    delayMicroseconds(DELAY_ENABLE);
+  }
+ #else
   //enable active axes
   if(block->steps_x != 0) enable_x();
   if(block->steps_y != 0) enable_y();
   if(block->steps_z != 0) enable_z();
   if(block->steps_e != 0) enable_e();
+ #endif 
 
   float delta_x_mm = (target[X_AXIS]-position[X_AXIS])/axis_steps_per_unit[X_AXIS];
   float delta_y_mm = (target[Y_AXIS]-position[Y_AXIS])/axis_steps_per_unit[Y_AXIS];
