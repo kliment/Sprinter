@@ -104,6 +104,12 @@ void mc_arc(float *position, float *target, float *offset, uint8_t axis_0, uint8
   for (i = 1; i<segments; i++) 
   { // Increment (segments-1)
     
+    if((count == 10) || (count == 15))
+    {
+	  //Read the next two Commands while arc is calculating
+      check_buffer_while_arc();
+    }
+
     if (count < N_ARC_CORRECTION)  //25 pieces
     {
       // Apply vector rotation matrix 
@@ -129,13 +135,10 @@ void mc_arc(float *position, float *target, float *offset, uint8_t axis_0, uint8
     arc_target[axis_linear] += linear_per_segment;
     arc_target[E_AXIS] += extruder_per_segment;
     
-    //showString(PSTR("sec:"));
-    //Serial.println(i);
     plan_buffer_line(arc_target[X_AXIS], arc_target[Y_AXIS], arc_target[Z_AXIS], arc_target[E_AXIS], feed_rate);
     
   }
   // Ensure last segment arrives at target location.
-  //showString(PSTR("Last sec\r\n"));
   plan_buffer_line(target[X_AXIS], target[Y_AXIS], target[Z_AXIS], target[E_AXIS], feed_rate);
 
   //   plan_set_acceleration_manager_enabled(acceleration_manager_was_enabled);
