@@ -25,6 +25,7 @@
 #include "Configuration.h"
 #include "Sprinter.h"
 
+#ifdef USE_ARC_FUNCTION
 // The arc is approximated by generating a huge number of tiny, linear segments. The length of each 
 // segment is configured in settings.mm_per_arc_segment.  
 void mc_arc(float *position, float *target, float *offset, uint8_t axis_0, uint8_t axis_1, 
@@ -143,4 +144,4 @@ void mc_arc(float *position, float *target, float *offset, uint8_t axis_0, uint8
 
   //   plan_set_acceleration_manager_enabled(acceleration_manager_was_enabled);
 }
-
+#endif
