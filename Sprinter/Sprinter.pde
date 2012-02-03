@@ -850,7 +850,7 @@ inline void process_commands()
       #endif
           if( (millis() - codenum) > 1000 ) //Print Temp Reading every 1 second while heating up/cooling down
           {
-            Serial.print("T:");
+            Serial.print("// T:");
             Serial.println( analog2temp(current_raw) );
             codenum = millis();
           }
