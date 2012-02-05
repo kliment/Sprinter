@@ -56,7 +56,12 @@ const bool Z_ENDSTOP_INVERT = false;
 // Uncomment to make run init.g from SD on boot
 //#define SDINITFILE
 
+//Only work with Atmega1284 you need +1 kb ram
 //#define SD_FAST_XFER_AKTIV
+
+//Uncomment to aktivate the arc (circle) function (G2/G3 Command)
+//Without SD function an ARC function the used Flash is smaller 31 kb
+#define USE_ARC_FUNCTION
 
 //-----------------------------------------------------------------------
 //// ADVANCED SETTINGS - to tweak parameters
@@ -69,8 +74,9 @@ const bool Z_ENDSTOP_INVERT = false;
 	#endif
 #endif
 
-
+//-----------------------------------------------------------------------
 // For Inverting Stepper Enable Pins (Active Low) use 0, Non Inverting (Active High) use 1
+//-----------------------------------------------------------------------
 #define X_ENABLE_ON 0
 #define Y_ENABLE_ON 0
 #define Z_ENABLE_ON 0
@@ -79,40 +85,57 @@ const bool Z_ENDSTOP_INVERT = false;
 //Uncomment if you have problems with a stepper driver enabeling too late, this will also set how many microseconds delay there will be after enabeling the driver
 //#define DELAY_ENABLE 15
 
+//-----------------------------------------------------------------------
 // Disables axis when it's not being used.
+//-----------------------------------------------------------------------
 const bool DISABLE_X = false;
 const bool DISABLE_Y = false;
 const bool DISABLE_Z = true;
 const bool DISABLE_E = false;
 
+//-----------------------------------------------------------------------
 // Inverting axis direction
+//-----------------------------------------------------------------------
 const bool INVERT_X_DIR = false;
 const bool INVERT_Y_DIR = false;
 const bool INVERT_Z_DIR = true;
 const bool INVERT_E_DIR = false;
 
-
+//-----------------------------------------------------------------------
 //// ENDSTOP SETTINGS:
+//-----------------------------------------------------------------------
 // Sets direction of endstops when homing; 1=MAX, -1=MIN
 #define X_HOME_DIR -1
 #define Y_HOME_DIR -1
 #define Z_HOME_DIR -1
 
+//#define ENDSTOPS_ONLY_FOR_HOMING // If defined the endstops will only be used for homing
 
 const bool min_software_endstops = false; //If true, axis won't move to coordinates less than zero.
 const bool max_software_endstops = true; //If true, axis won't move to coordinates greater than the defined lengths below.
 
+
+//-----------------------------------------------------------------------
 //Max Length for Prusa Mendel, check the ways of your axis and set this Values
+//-----------------------------------------------------------------------
 const int X_MAX_LENGTH = 200;
 const int Y_MAX_LENGTH = 200;
 const int Z_MAX_LENGTH = 100;
 
+//-----------------------------------------------------------------------
 //// MOVEMENT SETTINGS
+//-----------------------------------------------------------------------
 const int NUM_AXIS = 4; // The axis order in all axis related arrays is X, Y, Z, E
-#define _MAX_FEEDRATE {200000, 200000, 240, 500000}
-#define _HOMING_FEEDRATE {1500,1500,120}
+#define _MAX_FEEDRATE {400, 400, 4, 45}       // (mm/sec)    
+#define _HOMING_FEEDRATE {1500,1500,120}      // (mm/min) !!
 #define _AXIS_RELATIVE_MODES {false, false, false, false}
 
+#define MAX_STEP_FREQUENCY 30000 // Max step frequency
+
+
+//-----------------------------------------------------------------------
+//// Not used at the Moment
+//-----------------------------------------------------------------------
 
 // Min step delay in microseconds. If you are experiencing missing steps, try to raise the delay microseconds, but be aware this
 // If you enable this, make sure STEP_DELAY_RATIO is disabled.
@@ -128,23 +151,35 @@ const int NUM_AXIS = 4; // The axis order in all axis related arrays is X, Y, Z,
 long min_time_before_dir_change = 30; //milliseconds
 #endif
 
-// Comment this to disable ramp acceleration
-#define RAMP_ACCELERATION
-
+//-----------------------------------------------------------------------
 //// Acceleration settings
-#ifdef RAMP_ACCELERATION
+//-----------------------------------------------------------------------
 // X, Y, Z, E maximum start speed for accelerated moves. E default values are good for skeinforge 40+, for older versions raise them a lot.
-#define _ACCELERATION 2000         // Normal acceleration mm/s^2
-#define _RETRACT_ACCELERATION 7000 // Normal acceleration mm/s^2
-#define _MAX_XY_JERK (20.0*60)
-#define _MAX_Z_JERK (0.4*60)
-#define _MAX_START_SPEED_UNITS_PER_SECOND {25.0,25.0,0.2,10.0}
-#define _MAX_ACCELERATION_UNITS_PER_SQ_SECOND {500,500,50,500} // X, Y, Z and E max acceleration in mm/s^2 for printing moves or retracts
-#define _MAX_TRAVEL_ACCELERATION_UNITS_PER_SQ_SECOND {500,500,50,500} // X, Y, Z max acceleration in mm/s^2 for travel moves
-#endif
+#define _ACCELERATION 1000         // Axis Normal acceleration mm/s^2
+#define _RETRACT_ACCELERATION 2000 // Extruder Normal acceleration mm/s^2
+#define _MAX_XY_JERK 20.0
+#define _MAX_Z_JERK 0.4
+//#define _MAX_START_SPEED_UNITS_PER_SECOND {25.0,25.0,0.2,10.0}
+#define _MAX_ACCELERATION_UNITS_PER_SQ_SECOND {5000,5000,50,5000}    // X, Y, Z and E max acceleration in mm/s^2 for printing moves or retracts
 
 
+// Minimum planner junction speed. Sets the default minimum speed the planner plans for at the end
+// of the buffer and all stops. This should not be much greater than zero and should only be changed
+// if unwanted behavior is observed on a user's machine when running at very slow speeds.
+#define MINIMUM_PLANNER_SPEED 2.0 // (mm/sec)
+
+#define DEFAULT_MINIMUMFEEDRATE       0.0     // minimum feedrate
+#define DEFAULT_MINTRAVELFEEDRATE     0.0
+
+// If defined the movements slow down when the look ahead buffer is only half full
+#define SLOWDOWN
+
+
+const int dropsegments=5; //everything with less than this number of steps will be ignored as move and joined with the next movement
+
+//-----------------------------------------------------------------------
 // Machine UUID
+//-----------------------------------------------------------------------
 // This may be useful if you have multiple machines and wish to identify them by using the M115 command. 
 // By default we set it to zeros.
 #define _DEF_CHAR_UUID "00000000-0000-0000-0000-000000000000"
@@ -290,7 +325,6 @@ long min_time_before_dir_change = 30; //milliseconds
 //#define DEBUG
 #ifdef DEBUG
   //#define DEBUG_PREPARE_MOVE //Enable this to debug prepare_move() function
-  //#define DEBUG_RAMP_ACCELERATION //Enable this to debug all constant acceleration info
   //#define DEBUG_MOVE_TIME //Enable this to time each move and print the result   
   //#define DEBUG_HEAT_MGMT //Enable this to debug heat management. WARNING, this will cause axes to jitter!
   //#define DEBUG_DISABLE_CHECK_DURING_TRAVEL //Debug the namesake feature, see above in this file

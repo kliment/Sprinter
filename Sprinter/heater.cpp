@@ -28,7 +28,9 @@
 #include "pins.h"
 #include "Sprinter.h"
 
-
+#ifdef CONTROLLERFAN_PIN
+  void controllerFan(void);
+#endif
 
 // Manage heater variables. For a thermistor or AD595 thermocouple, raw values refer to the 
 // reading from the analog pin. For a MAX6675 thermocouple, the raw value is the temperature in 0.25 
@@ -256,7 +258,18 @@ int read_max6675()
         showString(PSTR(" "));
         Serial.print(target_temp);
         showString(PSTR(" "));
+        #ifdef PIDTEMP
         Serial.println(heater_duty);
+        #else 
+          #if (HEATER_0_PIN > -1)
+          if(READ(HEATER_0_PIN))
+            Serial.println(255);
+          else
+            Serial.println(0);
+          #else
+          Serial.println(0);
+          #endif
+        #endif
       }
       #if THERMISTORBED!=0
       else
@@ -266,10 +279,14 @@ int read_max6675()
         showString(PSTR(" "));
         Serial.print(analog2tempBed(target_bed_raw));
         showString(PSTR(" "));
-        if(READ(HEATER_1_PIN))
-          Serial.println(255);
-        else
+        #if (HEATER_1_PIN > -1)
+          if(READ(HEATER_1_PIN))
+            Serial.println(255);
+          else
+            Serial.println(0);
+        #else
           Serial.println(0);
+        #endif  
       }
       #endif
       
