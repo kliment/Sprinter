@@ -17,7 +17,13 @@
  * along with the Arduino Sd2Card Library.  If not, see
  * <http://www.gnu.org/licenses/>.
  */
-#include <WProgram.h>
+ 
+ //Check Version of Arduino and then include the right libraries
+#if defined(ARDUINO) && ARDUINO >= 100
+  #include "Arduino.h"
+#else
+  #include <WProgram.h>  
+#endif
 #include "Sd2Card.h"
 //------------------------------------------------------------------------------
 #ifndef SOFTWARE_SPI

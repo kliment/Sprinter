@@ -283,7 +283,13 @@ class SdFile : public Print {
   }
   /** \return SdVolume that contains this file. */
   SdVolume* volume(void) const {return vol_;}
-  void write(uint8_t b);
+
+ //Check Version of Arduino, void write(uint8_t,... isn't support in 1.0
+  #if defined(ARDUINO) && ARDUINO >= 100
+    size_t write(uint8_t b);
+  #else
+    void write(uint8_t b);
+  #endif
   int16_t write(const void* buf, uint16_t nbyte);
   void write(const char* str);
   void write_P(PGM_P str);
