@@ -743,6 +743,62 @@
 
 #endif
 
+/****************************************************************************************
+* Printrboard Rev. B pin assingments (ATMEGA90USB1286)
+* Requires the Teensyduino software with Teensy2.0++ selected in arduino IDE!
+* See http://reprap.org/wiki/Printrboard for more info
+****************************************************************************************/
+#if MOTHERBOARD == 9
+#define MOTHERBOARD 9
+#define KNOWN_BOARD 1
+
+
+#define X_STEP_PIN          0
+#define X_DIR_PIN           1
+#define X_ENABLE_PIN       39
+#define X_MIN_PIN          35
+#define X_MAX_PIN          -1
+
+#define Y_STEP_PIN          2
+#define Y_DIR_PIN           3
+#define Y_ENABLE_PIN       38
+#define Y_MIN_PIN           8
+#define Y_MAX_PIN          -1
+
+#define Z_STEP_PIN          4
+#define Z_DIR_PIN           5
+#define Z_ENABLE_PIN       23
+#define Z_MIN_PIN          36
+#define Z_MAX_PIN          -1
+
+#define E_STEP_PIN          6
+#define E_DIR_PIN           7
+#define E_ENABLE_PIN       19
+
+
+
+#define HEATER_0_PIN       21  // Extruder
+#define HEATER_1_PIN       20  // Bed
+#define FAN_PIN            22  // Fan
+
+#define TEMP_0_PIN          1  // Extruder
+#define TEMP_1_PIN          0  // Bed
+
+#define SDPOWER            -1
+#define SDSS                26
+#define LED_PIN            -1
+#define PS_ON_PIN          -1
+#define KILL_PIN           -1
+
+#ifndef SDSUPPORT
+// these pins are defined in the SD library if building with SD support
+  #define SCK_PIN          9
+  #define MISO_PIN         11
+  #define MOSI_PIN         10
+#endif
+
+#endif
+
 #ifndef KNOWN_BOARD
 #error Unknown MOTHERBOARD value in configuration.h
 #endif
