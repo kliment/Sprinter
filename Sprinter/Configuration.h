@@ -126,7 +126,7 @@ const int Z_MAX_LENGTH = 100;
 //// MOVEMENT SETTINGS
 //-----------------------------------------------------------------------
 const int NUM_AXIS = 4; // The axis order in all axis related arrays is X, Y, Z, E
-#define _MAX_FEEDRATE {400, 400, 4, 45}       // (mm/sec)    
+#define _MAX_FEEDRATE {400, 400, 2, 45}       // (mm/sec)    
 #define _HOMING_FEEDRATE {1500,1500,120}      // (mm/min) !!
 #define _AXIS_RELATIVE_MODES {false, false, false, false}
 
