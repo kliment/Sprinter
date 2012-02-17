@@ -938,13 +938,13 @@ inline void process_commands()
         Serial.println(uuid);
         break;
       case 114: // M114
-	Serial.print("ok C: X:");
+        Serial.print("ok C: X:");
         Serial.print(current_position[0]);
-	Serial.print(" Y:");
+        Serial.print(" Y:");
         Serial.print(current_position[1]);
-	Serial.print(" Z:");
+        Serial.print(" Z:");
         Serial.print(current_position[2]);
-	Serial.print(" E:");
+        Serial.print(" E:");
         Serial.println(current_position[3]);
         return;
       case 119: // M119
