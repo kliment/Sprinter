@@ -59,6 +59,24 @@ const bool Z_ENDSTOP_INVERT = false;
 //Only work with Atmega1284 you need +1 kb ram
 //#define SD_FAST_XFER_AKTIV
 
+//-----------------------------------------------------------------------
+//// STORE SETTINGS TO EEPROM
+//-----------------------------------------------------------------------
+// the microcontroller can store settings in the EEPROM
+// M500 - stores paramters in EEPROM
+// M501 - reads parameters from EEPROM (if you need reset them after you changed them temporarily).
+// M502 - reverts to the default "factory settings". You still need to store them in EEPROM afterwards if you want to.
+// M503 - Print settings
+// define this to enable eeprom support
+//#define USE_EEPROM_SETTINGS
+
+// to disable EEPROM Serial responses and decrease program space by ~1000 byte: comment this out:
+// please keep turned on if you can.
+//#define PRINT_EEPROM_SETTING
+
+//-----------------------------------------------------------------------
+//// ARC Function (G2/G3 Command)
+//-----------------------------------------------------------------------
 //Uncomment to aktivate the arc (circle) function (G2/G3 Command)
 //Without SD function an ARC function the used Flash is smaller 31 kb
 #define USE_ARC_FUNCTION

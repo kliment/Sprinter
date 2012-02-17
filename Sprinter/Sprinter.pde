@@ -59,6 +59,13 @@
   - Corrected distance calculation. (thanks jv4779)
   - MAX Feed Rate for Z-Axis reduced to 2 mm/s some Printers had problems with 4 mm/s
   
+ Version 1.3.06T
+ - the microcontroller can store settings in the EEPROM
+ - M500 - stores paramters in EEPROM
+ - M501 - reads parameters from EEPROM (if you need reset them after you changed them temporarily).
+ - M502 - reverts to the default "factory settings". You still need to store them in EEPROM afterwards if you want to.
+ - M503 - Print settings
+  
 
 */
 
@@ -70,15 +77,19 @@
 #include "pins.h"
 #include "Sprinter.h"
 #include "speed_lookuptable.h"
+#include "heater.h"
+
 #ifdef USE_ARC_FUNCTION
   #include "arc_func.h"
 #endif
-#include "heater.h"
 
 #ifdef SDSUPPORT
-#include "SdFat.h"
+  #include "SdFat.h"
 #endif
 
+#ifdef USE_EEPROM_SETTINGS
+  #include "store_eeprom.h"
+#endif
 
 #ifndef CRITICAL_SECTION_START
 #define CRITICAL_SECTION_START  unsigned char _sreg = SREG; cli()
@@ -143,13 +154,18 @@ void __cxa_pure_virtual(){};
 
 // M220 - set speed factor override percentage S:factor in percent 
 
+// M500 - stores paramters in EEPROM
+// M501 - reads parameters from EEPROM (if you need reset them after you changed them temporarily).
+// M502 - reverts to the default "factory settings". You still need to store them in EEPROM afterwards if you want to.
+// M503 - Print settings
+
 // Debug feature / Testing the PID for Hotend
 // M601 - Show Temp jitter from Extruder (min / max value from Hotend Temperatur while printing)
 // M602 - Reset Temp jitter from Extruder (min / max val) --> Dont use it while Printing
 // M603 - Show Free Ram
 
 
-#define _VERSION_TEXT "1.3.05T / 15.02.2012"
+#define _VERSION_TEXT "1.3.06T / 17.02.2012"
 
 //Stepper Movement Variables
 char axis_codes[NUM_AXIS] = {'X', 'Y', 'Z', 'E'};
@@ -708,6 +724,12 @@ void setup()
 
   showString(PSTR("Stepper Timer init\r\n"));
   st_init();    // Initialize stepper
+
+  #ifdef USE_EEPROM_SETTINGS
+  //first Value --> Init with default
+  //second value --> Print settings to UART
+  EEPROM_RetrieveSettings(false,false);
+  #endif
 
   //Free Ram
   showString(PSTR("Free Ram: "));
@@ -1579,6 +1601,28 @@ FORCE_INLINE void process_commands()
         }
       }
       break;
+#ifdef USE_EEPROM_SETTINGS
+      case 500: // Store settings in EEPROM
+      {
+        EEPROM_StoreSettings();
+      }
+      break;
+      case 501: // Read settings from EEPROM
+      {
+        EEPROM_RetrieveSettings(false,true);
+      }
+      break;
+      case 502: // Revert to default settings
+      {
+        EEPROM_RetrieveSettings(true,true);
+      }
+      break;
+      case 503: // print settings currently in memory
+      {
+        EEPROM_printSettings();
+      }
+      break;  
+#endif      
 #ifdef DEBUG_HEATER_TEMP
       case 601: // M601  show Extruder Temp jitter
         #if (TEMP_0_PIN > -1) || defined (HEATER_USES_MAX6675)|| defined HEATER_USES_AD595
