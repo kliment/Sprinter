@@ -59,6 +59,24 @@ const bool Z_ENDSTOP_INVERT = false;
 //Only work with Atmega1284 you need +1 kb ram
 //#define SD_FAST_XFER_AKTIV
 
+//-----------------------------------------------------------------------
+//// STORE SETTINGS TO EEPROM
+//-----------------------------------------------------------------------
+// the microcontroller can store settings in the EEPROM
+// M500 - stores paramters in EEPROM
+// M501 - reads parameters from EEPROM (if you need reset them after you changed them temporarily).
+// M502 - reverts to the default "factory settings". You still need to store them in EEPROM afterwards if you want to.
+// M503 - Print settings
+// define this to enable eeprom support
+//#define USE_EEPROM_SETTINGS
+
+// to disable EEPROM Serial responses and decrease program space by ~1000 byte: comment this out:
+// please keep turned on if you can.
+//#define PRINT_EEPROM_SETTING
+
+//-----------------------------------------------------------------------
+//// ARC Function (G2/G3 Command)
+//-----------------------------------------------------------------------
 //Uncomment to aktivate the arc (circle) function (G2/G3 Command)
 //Without SD function an ARC function the used Flash is smaller 31 kb
 #define USE_ARC_FUNCTION
@@ -126,7 +144,7 @@ const int Z_MAX_LENGTH = 100;
 //// MOVEMENT SETTINGS
 //-----------------------------------------------------------------------
 const int NUM_AXIS = 4; // The axis order in all axis related arrays is X, Y, Z, E
-#define _MAX_FEEDRATE {400, 400, 4, 45}       // (mm/sec)    
+#define _MAX_FEEDRATE {400, 400, 2, 45}       // (mm/sec)    
 #define _HOMING_FEEDRATE {1500,1500,120}      // (mm/min) !!
 #define _AXIS_RELATIVE_MODES {false, false, false, false}
 
