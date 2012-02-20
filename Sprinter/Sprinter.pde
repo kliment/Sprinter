@@ -85,6 +85,8 @@ long gcode_N, gcode_LastN;
 bool relative_mode = false;  //Determines Absolute or Relative Coordinates
 bool relative_mode_e = false;  //Determines Absolute or Relative E Codes while in Absolute Coordinates mode. E is always relative in Relative Coordinates mode.
 long timediff = 0;
+bool is_homing = false;
+
 //experimental feedrate calc
 float d = 0;
 float axis_diff[NUM_AXIS] = {0, 0, 0, 0};
@@ -578,6 +580,7 @@ inline void process_commands()
           destination[i] = current_position[i];
         }
         feedrate = 0;
+        is_homing = true;
 
         home_all_axis = !((code_seen(axis_codes[0])) || (code_seen(axis_codes[1])) || (code_seen(axis_codes[2])));
 
@@ -646,6 +649,7 @@ inline void process_commands()
         }
         }
         
+        is_homing = false;
         feedrate = saved_feedrate;
         previous_millis_cmd = millis();
         break;
@@ -1042,17 +1046,18 @@ void prepare_move()
     else move_direction[i] = 0;
   }
   
-  
-  if (min_software_endstops) {
-    if (destination[0] < 0) destination[0] = 0.0;
-    if (destination[1] < 0) destination[1] = 0.0;
-    if (destination[2] < 0) destination[2] = 0.0;
-  }
+  if(!is_homing){
+    if (min_software_endstops) {
+      if (destination[0] < 0) destination[0] = 0.0;
+      if (destination[1] < 0) destination[1] = 0.0;
+      if (destination[2] < 0) destination[2] = 0.0;
+    }
 
-  if (max_software_endstops) {
-    if (destination[0] > X_MAX_LENGTH) destination[0] = X_MAX_LENGTH;
-    if (destination[1] > Y_MAX_LENGTH) destination[1] = Y_MAX_LENGTH;
-    if (destination[2] > Z_MAX_LENGTH) destination[2] = Z_MAX_LENGTH;
+    if (max_software_endstops) {
+      if (destination[0] > X_MAX_LENGTH) destination[0] = X_MAX_LENGTH;
+      if (destination[1] > Y_MAX_LENGTH) destination[1] = Y_MAX_LENGTH;
+      if (destination[2] > Z_MAX_LENGTH) destination[2] = Z_MAX_LENGTH;
+    }
   }
 
   for(int i=0; i < NUM_AXIS; i++) {
