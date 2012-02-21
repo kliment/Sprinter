@@ -39,7 +39,7 @@
   -  move string to flash to free RAM vor forward planner
   -  M203 Temperature monitor for Repetier
 
-  
+ Version 1.3.04T
   - Implement Plannercode from Marlin V1 big thanks to Erik
   - Stepper interrupt with Step loops
   - Stepperfrequenz 30 Khz
@@ -53,6 +53,20 @@
   - Option to deaktivate ARC (G2/G3) function (save flash)
   - Removed modulo (%) operator, which uses an expensive divide
 
+ Version 1.3.05T
+  - changed homing function to not conflict with min_software_endstops/max_software_endstops (thanks rGlory)
+  - Changed check in arc_func
+  - Corrected distance calculation. (thanks jv4779)
+  - MAX Feed Rate for Z-Axis reduced to 2 mm/s some Printers had problems with 4 mm/s
+  
+ Version 1.3.06T
+ - the microcontroller can store settings in the EEPROM
+ - M500 - stores paramters in EEPROM
+ - M501 - reads parameters from EEPROM (if you need reset them after you changed them temporarily).
+ - M502 - reverts to the default "factory settings". You still need to store them in EEPROM afterwards if you want to.
+ - M503 - Print settings
+  
+
 */
 
 #include <avr/pgmspace.h>
@@ -63,15 +77,19 @@
 #include "pins.h"
 #include "Sprinter.h"
 #include "speed_lookuptable.h"
+#include "heater.h"
+
 #ifdef USE_ARC_FUNCTION
   #include "arc_func.h"
 #endif
-#include "heater.h"
 
 #ifdef SDSUPPORT
-#include "SdFat.h"
+  #include "SdFat.h"
 #endif
 
+#ifdef USE_EEPROM_SETTINGS
+  #include "store_eeprom.h"
+#endif
 
 #ifndef CRITICAL_SECTION_START
 #define CRITICAL_SECTION_START  unsigned char _sreg = SREG; cli()
@@ -136,19 +154,24 @@ void __cxa_pure_virtual(){};
 
 // M220 - set speed factor override percentage S:factor in percent 
 
+// M500 - stores paramters in EEPROM
+// M501 - reads parameters from EEPROM (if you need reset them after you changed them temporarily).
+// M502 - reverts to the default "factory settings". You still need to store them in EEPROM afterwards if you want to.
+// M503 - Print settings
+
 // Debug feature / Testing the PID for Hotend
 // M601 - Show Temp jitter from Extruder (min / max value from Hotend Temperatur while printing)
 // M602 - Reset Temp jitter from Extruder (min / max val) --> Dont use it while Printing
 // M603 - Show Free Ram
 
 
-#define _VERSION_TEXT "1.3.04T / 04.02.2012"
+#define _VERSION_TEXT "1.3.06T / 17.02.2012"
 
 //Stepper Movement Variables
 char axis_codes[NUM_AXIS] = {'X', 'Y', 'Z', 'E'};
-float axis_steps_per_unit[] = _AXIS_STEP_PER_UNIT; 
+float axis_steps_per_unit[4] = _AXIS_STEP_PER_UNIT; 
 
-float max_feedrate[] = _MAX_FEEDRATE;
+float max_feedrate[4] = _MAX_FEEDRATE;
 float homing_feedrate[] = _HOMING_FEEDRATE;
 bool axis_relative_modes[] = _AXIS_RELATIVE_MODES;
 
@@ -157,7 +180,7 @@ float retract_acceleration = _RETRACT_ACCELERATION; // Normal acceleration mm/s^
 float max_xy_jerk = _MAX_XY_JERK;
 float max_z_jerk = _MAX_Z_JERK;
 
-long  max_acceleration_units_per_sq_second[] = _MAX_ACCELERATION_UNITS_PER_SQ_SECOND; // X, Y, Z and E max acceleration in mm/s^2 for printing moves or retracts
+long  max_acceleration_units_per_sq_second[4] = _MAX_ACCELERATION_UNITS_PER_SQ_SECOND; // X, Y, Z and E max acceleration in mm/s^2 for printing moves or retracts
 
 //float max_start_speed_units_per_second[] = _MAX_START_SPEED_UNITS_PER_SECOND;
 //long  max_travel_acceleration_units_per_sq_second[] = _MAX_TRAVEL_ACCELERATION_UNITS_PER_SQ_SECOND; // X, Y, Z max acceleration in mm/s^2 for travel moves
@@ -517,7 +540,7 @@ void setup()
 { 
   
   Serial.begin(BAUDRATE);
-  showString(PSTR("SprinterV2\r\n"));
+  showString(PSTR("Sprinter\r\n"));
   showString(PSTR(_VERSION_TEXT));
   showString(PSTR("\r\n"));
   showString(PSTR("start\r\n"));
@@ -701,6 +724,12 @@ void setup()
 
   showString(PSTR("Stepper Timer init\r\n"));
   st_init();    // Initialize stepper
+
+  #ifdef USE_EEPROM_SETTINGS
+  //first Value --> Init with default
+  //second value --> Print settings to UART
+  EEPROM_RetrieveSettings(false,false);
+  #endif
 
   //Free Ram
   showString(PSTR("Free Ram: "));
@@ -997,20 +1026,22 @@ FORCE_INLINE void process_commands()
           if ((X_MIN_PIN > -1 && X_HOME_DIR==-1) || (X_MAX_PIN > -1 && X_HOME_DIR==1))
           {
             st_synchronize();
-            current_position[X_AXIS] = 0;
+            current_position[X_AXIS] = -1.5 * X_MAX_LENGTH * X_HOME_DIR;
             plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);
-            destination[X_AXIS] = 1.5 * X_MAX_LENGTH * X_HOME_DIR;
+            destination[X_AXIS] = 0;
             feedrate = homing_feedrate[X_AXIS];
             prepare_move();
   
             st_synchronize();        
-            current_position[X_AXIS] = 0;
+            current_position[X_AXIS] = 5 * X_HOME_DIR;
             plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);
-            destination[X_AXIS] = -5 * X_HOME_DIR;
+            destination[X_AXIS] = 0;
             prepare_move();
   
-            st_synchronize();         
-            destination[X_AXIS] = 10 * X_HOME_DIR;
+            st_synchronize();       
+            current_position[X_AXIS] = -10 * X_HOME_DIR;
+            plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);  
+            destination[X_AXIS] = 0;
             feedrate = homing_feedrate[X_AXIS]/2 ;
             prepare_move();
             st_synchronize();
@@ -1027,20 +1058,22 @@ FORCE_INLINE void process_commands()
         {
           if ((Y_MIN_PIN > -1 && Y_HOME_DIR==-1) || (Y_MAX_PIN > -1 && Y_HOME_DIR==1))
           {
-            current_position[Y_AXIS] = 0;
+            current_position[Y_AXIS] = -1.5 * Y_MAX_LENGTH * Y_HOME_DIR;
             plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);
-            destination[Y_AXIS] = 1.5 * Y_MAX_LENGTH * Y_HOME_DIR;
+            destination[Y_AXIS] = 0;
             feedrate = homing_feedrate[Y_AXIS];
             prepare_move();
             st_synchronize();
   
-            current_position[Y_AXIS] = 0;
+            current_position[Y_AXIS] = 5 * Y_HOME_DIR;
             plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);
-            destination[Y_AXIS] = -5 * Y_HOME_DIR;
+            destination[Y_AXIS] = 0;
             prepare_move();
             st_synchronize();
   
-            destination[Y_AXIS] = 10 * Y_HOME_DIR;
+            current_position[Y_AXIS] = -10 * Y_HOME_DIR;
+            plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);
+            destination[Y_AXIS] = 0;
             feedrate = homing_feedrate[Y_AXIS]/2;
             prepare_move();
             st_synchronize();
@@ -1057,20 +1090,22 @@ FORCE_INLINE void process_commands()
         {
           if ((Z_MIN_PIN > -1 && Z_HOME_DIR==-1) || (Z_MAX_PIN > -1 && Z_HOME_DIR==1))
           {
-            current_position[Z_AXIS] = 0;
+            current_position[Z_AXIS] = -1.5 * Z_MAX_LENGTH * Z_HOME_DIR;
             plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);
-            destination[Z_AXIS] = 1.5 * Z_MAX_LENGTH * Z_HOME_DIR;
+            destination[Z_AXIS] = 0;
             feedrate = homing_feedrate[Z_AXIS];
             prepare_move();
             st_synchronize();
   
-            current_position[Z_AXIS] = 0;
+            current_position[Z_AXIS] = 2 * Z_HOME_DIR;
             plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);
-            destination[Z_AXIS] = -2 * Z_HOME_DIR;
+            destination[Z_AXIS] = 0;
             prepare_move();
             st_synchronize();
   
-            destination[Z_AXIS] = 3 * Z_HOME_DIR;
+            current_position[Z_AXIS] = -3 * Z_HOME_DIR;
+            plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);
+            destination[Z_AXIS] = 0;
             feedrate = homing_feedrate[Z_AXIS]/2;
             prepare_move();
             st_synchronize();
@@ -1470,7 +1505,7 @@ FORCE_INLINE void process_commands()
 //        }
         break;
       case 115: // M115
-        showString(PSTR("FIRMWARE_NAME: SprinterV2 PROTOCOL_VERSION:1.0 MACHINE_TYPE:Mendel EXTRUDER_COUNT:1\r\n"));
+        showString(PSTR("FIRMWARE_NAME: Sprinter Experimental PROTOCOL_VERSION:1.0 MACHINE_TYPE:Mendel EXTRUDER_COUNT:1\r\n"));
         //Serial.println(uuid);
         showString(PSTR(_DEF_CHAR_UUID));
         showString(PSTR("\r\n"));
@@ -1566,6 +1601,28 @@ FORCE_INLINE void process_commands()
         }
       }
       break;
+#ifdef USE_EEPROM_SETTINGS
+      case 500: // Store settings in EEPROM
+      {
+        EEPROM_StoreSettings();
+      }
+      break;
+      case 501: // Read settings from EEPROM
+      {
+        EEPROM_RetrieveSettings(false,true);
+      }
+      break;
+      case 502: // Revert to default settings
+      {
+        EEPROM_RetrieveSettings(true,true);
+      }
+      break;
+      case 503: // print settings currently in memory
+      {
+        EEPROM_printSettings();
+      }
+      break;  
+#endif      
 #ifdef DEBUG_HEATER_TEMP
       case 601: // M601  show Extruder Temp jitter
         #if (TEMP_0_PIN > -1) || defined (HEATER_USES_MAX6675)|| defined HEATER_USES_AD595
@@ -2185,8 +2242,13 @@ void plan_buffer_line(float x, float y, float z, float e, float feed_rate)
   delta_mm[Y_AXIS] = (target[Y_AXIS]-position[Y_AXIS])/axis_steps_per_unit[Y_AXIS];
   delta_mm[Z_AXIS] = (target[Z_AXIS]-position[Z_AXIS])/axis_steps_per_unit[Z_AXIS];
   delta_mm[E_AXIS] = (target[E_AXIS]-position[E_AXIS])/axis_steps_per_unit[E_AXIS];
-  block->millimeters = sqrt(square(delta_mm[X_AXIS]) + square(delta_mm[Y_AXIS]) +
-                            square(delta_mm[Z_AXIS]) + square(delta_mm[E_AXIS]));
+  
+  if ( block->steps_x == 0 && block->steps_y == 0 && block->steps_z == 0 ) {
+    block->millimeters = fabs(delta_mm[E_AXIS]);
+  } else {
+    block->millimeters = sqrt(square(delta_mm[X_AXIS]) + square(delta_mm[Y_AXIS]) + square(delta_mm[Z_AXIS]));
+  }
+  
   float inverse_millimeters = 1.0/block->millimeters;  // Inverse millimeters to remove multiple divides 
   
   // Calculate speed in mm/second for each axis. No divide by zero due to previous checks.
@@ -2205,10 +2267,10 @@ void plan_buffer_line(float x, float y, float z, float e, float feed_rate)
     	if(feed_rate<minimumfeedrate) feed_rate=minimumfeedrate;
   } 
 
-#ifdef SLOWDOWN
+
   // slow down when de buffer starts to empty, rather than wait at the corner for a buffer refill
   int moves_queued=(block_buffer_head-block_buffer_tail + BLOCK_BUFFER_SIZE) & (BLOCK_BUFFER_SIZE - 1);
-  
+#ifdef SLOWDOWN  
   if(moves_queued < (BLOCK_BUFFER_SIZE * 0.5) && moves_queued > 1) feed_rate = feed_rate*moves_queued / (BLOCK_BUFFER_SIZE * 0.5); 
 #endif
 
@@ -2326,7 +2388,7 @@ void plan_buffer_line(float x, float y, float z, float e, float feed_rate)
     vmax_junction = max_z_jerk/2;
   vmax_junction = min(vmax_junction, block->nominal_speed);
 
-  if ((block_buffer_head != block_buffer_tail) && (previous_nominal_speed > 0.0)) {
+  if ((moves_queued > 1) && (previous_nominal_speed > 0.0)) {
     float jerk = sqrt(pow((current_speed[X_AXIS]-previous_speed[X_AXIS]), 2)+pow((current_speed[Y_AXIS]-previous_speed[Y_AXIS]), 2));
     if((previous_speed[X_AXIS] != 0.0) || (previous_speed[Y_AXIS] != 0.0)) {
       vmax_junction = block->nominal_speed;
