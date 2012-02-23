@@ -95,10 +95,14 @@ void showString (PGM_P s);
 
 void manage_inactivity(byte debug);
 
-
+void get_command();
 void get_coordinates();
 void prepare_move();
 void prepare_arc_move(char isclockwise);
+FORCE_INLINE void process_commands();
+#ifdef USE_ARC_FUNCTION
+  FORCE_INLINE void get_arc_coordinates();
+#endif
 
 void kill(byte debug);
 
@@ -110,9 +114,13 @@ void plan_buffer_line(float x, float y, float z, float e, float feed_rate);
 void plan_set_position(float x, float y, float z, float e);
 void st_wake_up();
 void st_synchronize();
+void st_set_position(const long &x, const long &y, const long &z, const long &e);
 
 void check_buffer_while_arc();
 
+#ifdef SDSUPPORT
+void print_disk_info(void);
+#endif //SDSUPPORT
 
 #ifdef DEBUG
 void log_message(char*   message);
