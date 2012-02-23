@@ -414,9 +414,11 @@ inline void get_command()
     serial_char = Serial.read();
     if(serial_char == '\n' || serial_char == '\r' || serial_char == ':' || serial_count >= (MAX_CMD_SIZE - 1) ) 
     {
-      if(!serial_count) return; //if empty line
+      if(!serial_count) { //if empty line
+        comment_mode = false; // for new command
+        return;
+      }
       cmdbuffer[bufindw][serial_count] = 0; //terminate string
-      if(!comment_mode){
     fromsd[bufindw] = false;
   if(strstr(cmdbuffer[bufindw], "N") != NULL)
   {
@@ -488,7 +490,6 @@ inline void get_command()
         bufindw = (bufindw + 1)%BUFSIZE;
         buflen += 1;
         
-      }
       comment_mode = false; //for new command
       serial_count = 0; //clear buffer
     }
