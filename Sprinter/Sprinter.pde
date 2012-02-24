@@ -71,7 +71,13 @@
  - Remove unused Code from Interrupt --> faster ~ 22 us per step
  - Replace abs with fabs --> Faster and smaler
  - Add "store_eeprom.cpp" to makefile
- - 
+
+ Version 1.3.08T
+ - If a line starts with ';', it is ignored but comment_mode is reset.
+   A ';' inside a line ignores just the portion following the ';' character.
+   The beginning of the line is still interpreted.
+   
+ - Same fix for SD Card, testet and work
   
 
 */
@@ -172,7 +178,7 @@ void __cxa_pure_virtual(){};
 // M603 - Show Free Ram
 
 
-#define _VERSION_TEXT "1.3.07T / 24.02.2012"
+#define _VERSION_TEXT "1.3.08T / 24.02.2012"
 
 //Stepper Movement Variables
 char axis_codes[NUM_AXIS] = {'X', 'Y', 'Z', 'E'};
@@ -296,7 +302,7 @@ unsigned char manage_monitor = 255;
   bool sdmode = false;
   bool sdactive = false;
   bool savetosd = false;
-  int16_t read_char_n;
+  int16_t read_char_int;
   
   void initsd()
   {
@@ -819,10 +825,12 @@ void get_command()
     serial_char = Serial.read();
     if(serial_char == '\n' || serial_char == '\r' || serial_char == ':' || serial_count >= (MAX_CMD_SIZE - 1) ) 
     {
-      if(!serial_count) return; //if empty line
+      if(!serial_count) { //if empty line
+        comment_mode = false; // for new command
+        return;
+      }
       cmdbuffer[bufindw][serial_count] = 0; //terminate string
-      if(!comment_mode)
-      {
+
         fromsd[bufindw] = false;
         if(strstr(cmdbuffer[bufindw], "N") != NULL)
         {
@@ -901,12 +909,12 @@ void get_command()
             break;
           }
         }
-		//Removed modulo (%) operator, which uses an expensive divide and multiplication
+        //Removed modulo (%) operator, which uses an expensive divide and multiplication
         //bufindw = (bufindw + 1)%BUFSIZE;
         bufindw++;
         if(bufindw == BUFSIZE) bufindw = 0;
         buflen += 1;
-      }
+
       comment_mode = false; //for new command
       serial_count = 0; //clear buffer
     }
@@ -923,9 +931,10 @@ void get_command()
   }
   while( filesize > sdpos  && buflen < BUFSIZE)
   {
-    read_char_n = file.read();
-    serial_char = (char)read_char_n;
-    if(serial_char == '\n' || serial_char == '\r' || serial_char == ':' || serial_count >= (MAX_CMD_SIZE - 1) || read_char_n == -1) 
+    serial_char = file.read();
+    read_char_int = (int)serial_char;
+    
+    if(serial_char == '\n' || serial_char == '\r' || serial_char == ':' || serial_count >= (MAX_CMD_SIZE - 1) || read_char_int == -1) 
     {
         sdpos = file.curPosition();
         if(sdpos >= filesize)
@@ -933,18 +942,21 @@ void get_command()
             sdmode = false;
             showString(PSTR("Done printing file\r\n"));
         }
-        if(!serial_count) return; //if empty line
+       
+        if(!serial_count) { //if empty line
+          comment_mode = false; // for new command
+          return;
+        }
+        
         cmdbuffer[bufindw][serial_count] = 0; //terminate string
-        if(!comment_mode)
-        {
+
           fromsd[bufindw] = true;
           buflen += 1;
-		  //Removed modulo (%) operator, which uses an expensive divide and multiplication	
+          //Removed modulo (%) operator, which uses an expensive divide and multiplication	
           //bufindw = (bufindw + 1)%BUFSIZE;
           bufindw++;
           if(bufindw == BUFSIZE) bufindw = 0;
-          
-        }
+
         comment_mode = false; //for new command
         serial_count = 0; //clear buffer
     }
