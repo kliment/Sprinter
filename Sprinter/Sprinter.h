@@ -114,6 +114,7 @@ void plan_buffer_line(float x, float y, float z, float e, float feed_rate);
 void plan_set_position(float x, float y, float z, float e);
 void st_wake_up();
 void st_synchronize();
+void st_set_position(const long &x, const long &y, const long &z, const long &e);
 
 void check_buffer_while_arc();
 
