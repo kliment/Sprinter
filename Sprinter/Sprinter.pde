@@ -65,6 +65,13 @@
  - M501 - reads parameters from EEPROM (if you need reset them after you changed them temporarily).
  - M502 - reverts to the default "factory settings". You still need to store them in EEPROM afterwards if you want to.
  - M503 - Print settings
+ 
+ Version 1.3.07T
+ - Optimize Variable Size (faster Code)
+ - Remove unused Code from Interrupt --> faster ~ 22 us per step
+ - Replace abs with fabs --> Faster and smaler
+ - Add "store_eeprom.cpp" to makefile
+ - 
   
 
 */
@@ -165,7 +172,7 @@ void __cxa_pure_virtual(){};
 // M603 - Show Free Ram
 
 
-#define _VERSION_TEXT "1.3.06T / 17.02.2012"
+#define _VERSION_TEXT "1.3.07T / 24.02.2012"
 
 //Stepper Movement Variables
 char axis_codes[NUM_AXIS] = {'X', 'Y', 'Z', 'E'};
@@ -2298,16 +2305,16 @@ void plan_buffer_line(float x, float y, float z, float e, float feed_rate)
   // Limit speed per axis
   float speed_factor = 1.0; //factor <=1 do decrease speed
   for(int i=0; i < 4; i++) {
-    if(abs(current_speed[i]) > max_feedrate[i])
-      speed_factor = min(speed_factor, max_feedrate[i] / abs(current_speed[i]));
+    if(fabs(current_speed[i]) > max_feedrate[i])
+      speed_factor = min(speed_factor, max_feedrate[i] / fabs(current_speed[i]));
   }
 
   // Correct the speed  
   if( speed_factor < 1.0) {
 //    Serial.print("speed factor : "); Serial.println(speed_factor);
     for(int i=0; i < 4; i++) {
-    if(abs(current_speed[i]) > max_feedrate[i])
-      speed_factor = min(speed_factor, max_feedrate[i] / abs(current_speed[i]));
+    if(fabs(current_speed[i]) > max_feedrate[i])
+      speed_factor = min(speed_factor, max_feedrate[i] / fabs(current_speed[i]));
  /*     
       if(speed_factor < 0.1) {
         Serial.print("speed factor : "); Serial.println(speed_factor);
@@ -2384,7 +2391,7 @@ void plan_buffer_line(float x, float y, float z, float e, float feed_rate)
 #endif
   // Start with a safe speed
   float vmax_junction = max_xy_jerk/2;  
-  if(abs(current_speed[Z_AXIS]) > max_z_jerk/2) 
+  if(fabs(current_speed[Z_AXIS]) > max_z_jerk/2) 
     vmax_junction = max_z_jerk/2;
   vmax_junction = min(vmax_junction, block->nominal_speed);
 
@@ -2396,8 +2403,8 @@ void plan_buffer_line(float x, float y, float z, float e, float feed_rate)
     if (jerk > max_xy_jerk) {
       vmax_junction *= (max_xy_jerk/jerk);
     } 
-    if(abs(current_speed[Z_AXIS] - previous_speed[Z_AXIS]) > max_z_jerk) {
-      vmax_junction *= (max_z_jerk/abs(current_speed[Z_AXIS] - previous_speed[Z_AXIS]));
+    if(fabs(current_speed[Z_AXIS] - previous_speed[Z_AXIS]) > max_z_jerk) {
+      vmax_junction *= (max_z_jerk/fabs(current_speed[Z_AXIS] - previous_speed[Z_AXIS]));
     } 
   }
   block->max_entry_speed = vmax_junction;
@@ -2468,7 +2475,7 @@ void plan_set_position(float x, float y, float z, float e)
   position[Y_AXIS] = lround(y*axis_steps_per_unit[Y_AXIS]);
   position[Z_AXIS] = lround(z*axis_steps_per_unit[Z_AXIS]);     
   position[E_AXIS] = lround(e*axis_steps_per_unit[E_AXIS]);  
-  st_set_position(position[X_AXIS], position[Y_AXIS], position[Z_AXIS], position[E_AXIS]);
+
   previous_nominal_speed = 0.0; // Resets planner junction speeds. Assumes start from rest.
   previous_speed[0] = 0.0;
   previous_speed[1] = 0.0;
@@ -2612,17 +2619,17 @@ static long counter_x,       // Counter variables for the bresenham line tracer
             counter_z,       
             counter_e;
 static unsigned long step_events_completed; // The number of step events executed in the current block
-static long advance_rate, advance, final_advance = 0;
-static short old_advance = 0;
+#ifdef ADVANCE
+  static long advance_rate, advance, final_advance = 0;
+  static short old_advance = 0;
+#endif
 static short e_steps;
 static unsigned char busy = false; // TRUE when SIG_OUTPUT_COMPARE1A is being serviced. Used to avoid retriggering that handler.
 static long acceleration_time, deceleration_time;
-//static long accelerate_until, decelerate_after, acceleration_rate, initial_rate, final_rate, nominal_rate;
 static unsigned short acc_step_rate; // needed for deccelaration start point
 static char step_loops;
 static unsigned short OCR1A_nominal;
 
-volatile long endstops_trigsteps[3]={0,0,0};
 static volatile bool endstop_x_hit=false;
 static volatile bool endstop_y_hit=false;
 static volatile bool endstop_z_hit=false;
@@ -2636,8 +2643,6 @@ static bool old_z_max_endstop=false;
 
 static bool check_endstops = true;
 
-volatile long count_position[NUM_AXIS] = { 0, 0, 0, 0};
-volatile char count_direction[NUM_AXIS] = { 1, 1, 1, 1};
 
 
 //         __________________________
@@ -2760,13 +2765,11 @@ ISR(TIMER1_COMPA_vect)
     // Set direction en check limit switches
     if ((out_bits & (1<<X_AXIS)) != 0) {   // -direction
       WRITE(X_DIR_PIN, INVERT_X_DIR);
-      count_direction[X_AXIS]=-1;
       CHECK_ENDSTOPS
       {
         #if X_MIN_PIN > -1
           bool x_min_endstop=(READ(X_MIN_PIN) != X_ENDSTOP_INVERT);
           if(x_min_endstop && old_x_min_endstop && (current_block->steps_x > 0)) {
-            endstops_trigsteps[X_AXIS] = count_position[X_AXIS];
             endstop_x_hit=true;
             step_events_completed = current_block->step_event_count;
           }
@@ -2776,13 +2779,11 @@ ISR(TIMER1_COMPA_vect)
     }
     else { // +direction 
       WRITE(X_DIR_PIN,!INVERT_X_DIR);
-      count_direction[X_AXIS]=1;
       CHECK_ENDSTOPS 
       {
         #if X_MAX_PIN > -1
           bool x_max_endstop=(READ(X_MAX_PIN) != X_ENDSTOP_INVERT);
           if(x_max_endstop && old_x_max_endstop && (current_block->steps_x > 0)){
-            endstops_trigsteps[X_AXIS] = count_position[X_AXIS];
             endstop_x_hit=true;
             step_events_completed = current_block->step_event_count;
           }
@@ -2793,13 +2794,11 @@ ISR(TIMER1_COMPA_vect)
 
     if ((out_bits & (1<<Y_AXIS)) != 0) {   // -direction
       WRITE(Y_DIR_PIN,INVERT_Y_DIR);
-      count_direction[Y_AXIS]=-1;
       CHECK_ENDSTOPS
       {
         #if Y_MIN_PIN > -1
           bool y_min_endstop=(READ(Y_MIN_PIN) != Y_ENDSTOP_INVERT);
           if(y_min_endstop && old_y_min_endstop && (current_block->steps_y > 0)) {
-            endstops_trigsteps[Y_AXIS] = count_position[Y_AXIS];
             endstop_y_hit=true;
             step_events_completed = current_block->step_event_count;
           }
@@ -2808,14 +2807,12 @@ ISR(TIMER1_COMPA_vect)
       }
     }
     else { // +direction
-    WRITE(Y_DIR_PIN,!INVERT_Y_DIR);
-      count_direction[Y_AXIS]=1;
+      WRITE(Y_DIR_PIN,!INVERT_Y_DIR);
       CHECK_ENDSTOPS
       {
         #if Y_MAX_PIN > -1
           bool y_max_endstop=(READ(Y_MAX_PIN) != Y_ENDSTOP_INVERT);
           if(y_max_endstop && old_y_max_endstop && (current_block->steps_y > 0)){
-            endstops_trigsteps[Y_AXIS] = count_position[Y_AXIS];
             endstop_y_hit=true;
             step_events_completed = current_block->step_event_count;
           }
@@ -2826,13 +2823,11 @@ ISR(TIMER1_COMPA_vect)
 
     if ((out_bits & (1<<Z_AXIS)) != 0) {   // -direction
       WRITE(Z_DIR_PIN,INVERT_Z_DIR);
-      count_direction[Z_AXIS]=-1;
       CHECK_ENDSTOPS
       {
         #if Z_MIN_PIN > -1
           bool z_min_endstop=(READ(Z_MIN_PIN) != Z_ENDSTOP_INVERT);
           if(z_min_endstop && old_z_min_endstop && (current_block->steps_z > 0)) {
-            endstops_trigsteps[Z_AXIS] = count_position[Z_AXIS];
             endstop_z_hit=true;
             step_events_completed = current_block->step_event_count;
           }
@@ -2842,13 +2837,11 @@ ISR(TIMER1_COMPA_vect)
     }
     else { // +direction
       WRITE(Z_DIR_PIN,!INVERT_Z_DIR);
-      count_direction[Z_AXIS]=1;
       CHECK_ENDSTOPS
       {
         #if Z_MAX_PIN > -1
           bool z_max_endstop=(READ(Z_MAX_PIN) != Z_ENDSTOP_INVERT);
           if(z_max_endstop && old_z_max_endstop && (current_block->steps_z > 0)) {
-            endstops_trigsteps[Z_AXIS] = count_position[Z_AXIS];
             endstop_z_hit=true;
             step_events_completed = current_block->step_event_count;
           }
@@ -2860,18 +2853,15 @@ ISR(TIMER1_COMPA_vect)
     #ifndef ADVANCE
       if ((out_bits & (1<<E_AXIS)) != 0) {  // -direction
         WRITE(E_DIR_PIN,INVERT_E_DIR);
-        count_direction[E_AXIS]=-1;
       }
       else { // +direction
         WRITE(E_DIR_PIN,!INVERT_E_DIR);
-        count_direction[E_AXIS]=-1;
       }
     #endif //!ADVANCE
     
 
     
     for(int8_t i=0; i < step_loops; i++) { // Take multiple steps per interrupt (For high speed moves) 
-      //MSerial.checkRx(); // Check for serial chars. 
       
       #ifdef ADVANCE
       counter_e += current_block->steps_e;
@@ -2891,7 +2881,6 @@ ISR(TIMER1_COMPA_vect)
         WRITE(X_STEP_PIN, HIGH);
         counter_x -= current_block->step_event_count;
         WRITE(X_STEP_PIN, LOW);
-        count_position[X_AXIS]+=count_direction[X_AXIS];   
       }
 
       counter_y += current_block->steps_y;
@@ -2899,7 +2888,6 @@ ISR(TIMER1_COMPA_vect)
         WRITE(Y_STEP_PIN, HIGH);
         counter_y -= current_block->step_event_count;
         WRITE(Y_STEP_PIN, LOW);
-        count_position[Y_AXIS]+=count_direction[Y_AXIS];
       }
 
       counter_z += current_block->steps_z;
@@ -2907,7 +2895,6 @@ ISR(TIMER1_COMPA_vect)
         WRITE(Z_STEP_PIN, HIGH);
         counter_z -= current_block->step_event_count;
         WRITE(Z_STEP_PIN, LOW);
-        count_position[Z_AXIS]+=count_direction[Z_AXIS];
       }
 
       #ifndef ADVANCE
@@ -2915,8 +2902,7 @@ ISR(TIMER1_COMPA_vect)
         if (counter_e > 0) {
           WRITE(E_STEP_PIN, HIGH);
           counter_e -= current_block->step_event_count;
-           WRITE(E_STEP_PIN, LOW);
-          count_position[E_AXIS]+=count_direction[E_AXIS];
+          WRITE(E_STEP_PIN, LOW);
         }
       #endif //!ADVANCE
       step_events_completed += 1;  
@@ -3061,16 +3047,6 @@ void st_synchronize()
     manage_heater();
     manage_inactivity(1);
   }   
-}
-
-void st_set_position(const long &x, const long &y, const long &z, const long &e)
-{
-  CRITICAL_SECTION_START;
-  count_position[X_AXIS] = x;
-  count_position[Y_AXIS] = y;
-  count_position[Z_AXIS] = z;
-  count_position[E_AXIS] = e;
-  CRITICAL_SECTION_END;
 }
 
 
