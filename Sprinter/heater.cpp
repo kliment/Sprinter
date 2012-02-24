@@ -48,7 +48,7 @@ int current_bed_raw = 0;
 unsigned long previous_millis_heater, previous_millis_bed_heater, previous_millis_monitor;
 
 #ifdef PIDTEMP
-  int g_heater_pwm_val = 0;
+  volatile unsigned char g_heater_pwm_val = 0;
  
   unsigned char PWM_off_time = 0;
   unsigned char PWM_out_on = 0;
@@ -402,7 +402,7 @@ int read_max6675()
       heater_duty = constrain(heater_duty, 0, HEATER_CURRENT);
 
       #ifdef PID_SOFT_PWM
-        g_heater_pwm_val = heater_duty;
+        g_heater_pwm_val = (unsigned char)heater_duty;
       #else
         analogWrite(HEATER_0_PIN, heater_duty);
     

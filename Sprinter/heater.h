@@ -75,7 +75,7 @@ extern unsigned long previous_millis_heater, previous_millis_bed_heater;
 extern unsigned char manage_monitor;
 
 #ifdef PIDTEMP
-  extern int g_heater_pwm_val;
+  extern volatile unsigned char g_heater_pwm_val;
  
   extern unsigned char PWM_off_time;
   extern unsigned char PWM_out_on;
