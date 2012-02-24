@@ -176,7 +176,7 @@ const short temptable_3[NUMTEMPS_3][2] = {
 #if (THERMISTORHEATER == 4) || (THERMISTORBED == 4) //10k thermistor
 
 #define NUMTEMPS_4 20
-short temptable_4[NUMTEMPS_4][2] = {
+const short temptable_4[NUMTEMPS_4][2] = {
    {1, 430},
    {54, 137},
    {107, 107},
