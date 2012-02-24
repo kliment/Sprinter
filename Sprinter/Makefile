@@ -199,7 +199,7 @@ extcoff: $(TARGET).elf
 	$(NM) -n $< > $@
 
 # Link: create ELF output file from library.
-applet/$(TARGET).elf: applet/core.a applet/$(TARGET).cpp
+applet/$(TARGET).elf: applet/$(TARGET).cpp applet/core.a
 	$(CC) $(ALL_CFLAGS) -Wl,--gc-sections -o $@ applet/$(TARGET).cpp -L. applet/core.a $(LDFLAGS)
 
 applet/core.a: $(OBJ)
