@@ -222,21 +222,22 @@ void setup()
 
   
   //Initialize Dir Pins
-  #if X_DIR_PIN > -1
+/*  #if X_DIR_PIN > -1
     SET_OUTPUT(X_DIR_PIN);
   #endif
   #if Y_DIR_PIN > -1 
     SET_OUTPUT(Y_DIR_PIN);
   #endif
+ */
   #if Z_DIR_PIN > -1 
     SET_OUTPUT(Z_DIR_PIN);
   #endif
-  #if E_DIR_PIN > -1 
+  /*#if E_DIR_PIN > -1 
     SET_OUTPUT(E_DIR_PIN);
   #endif
-  
+  */
   //Initialize Enable Pins - steppers default to disabled.
-  
+  /*
   #if (X_ENABLE_PIN > -1)
     SET_OUTPUT(X_ENABLE_PIN);
   if(!X_ENABLE_ON) WRITE(X_ENABLE_PIN,HIGH);
@@ -245,22 +246,23 @@ void setup()
     SET_OUTPUT(Y_ENABLE_PIN);
   if(!Y_ENABLE_ON) WRITE(Y_ENABLE_PIN,HIGH);
   #endif
+*/
   #if (Z_ENABLE_PIN > -1)
     SET_OUTPUT(Z_ENABLE_PIN);
   if(!Z_ENABLE_ON) WRITE(Z_ENABLE_PIN,HIGH);
   #endif
-  #if (E_ENABLE_PIN > -1)
+  /*#if (E_ENABLE_PIN > -1)
     SET_OUTPUT(E_ENABLE_PIN);
   if(!E_ENABLE_ON) WRITE(E_ENABLE_PIN,HIGH);
   #endif
-  
+  */
   #ifdef CONTROLLERFAN_PIN
     SET_OUTPUT(CONTROLLERFAN_PIN); //Set pin used for driver cooling fan
   #endif
   
   //endstops and pullups
   #ifdef ENDSTOPPULLUPS
-  #if X_MIN_PIN > -1
+  /*#if X_MIN_PIN > -1
     SET_INPUT(X_MIN_PIN); 
     WRITE(X_MIN_PIN,HIGH);
   #endif
@@ -276,6 +278,7 @@ void setup()
     SET_INPUT(Y_MAX_PIN); 
     WRITE(Y_MAX_PIN,HIGH);
   #endif
+  */
   #if Z_MIN_PIN > -1
     SET_INPUT(Z_MIN_PIN); 
     WRITE(Z_MIN_PIN,HIGH);
@@ -285,7 +288,7 @@ void setup()
     WRITE(Z_MAX_PIN,HIGH);
   #endif
   #else
-  #if X_MIN_PIN > -1
+  /*#if X_MIN_PIN > -1
     SET_INPUT(X_MIN_PIN); 
   #endif
   #if X_MAX_PIN > -1
@@ -297,6 +300,7 @@ void setup()
   #if Y_MAX_PIN > -1
     SET_INPUT(Y_MAX_PIN); 
   #endif
+  */
   #if Z_MIN_PIN > -1
     SET_INPUT(Z_MIN_PIN); 
   #endif
@@ -309,11 +313,11 @@ void setup()
     SET_OUTPUT(HEATER_0_PIN);
     WRITE(HEATER_0_PIN,LOW);
   #endif  
-  #if (HEATER_1_PIN > -1) 
+  /*#if (HEATER_1_PIN > -1) 
     SET_OUTPUT(HEATER_1_PIN);
     WRITE(HEATER_1_PIN,LOW);
   #endif  
-  
+  */
   //Initialize Fan Pin
   #if (FAN_PIN > -1) 
     SET_OUTPUT(FAN_PIN);
@@ -332,18 +336,20 @@ void setup()
   #endif
   
 //Initialize Step Pins
-  #if (X_STEP_PIN > -1) 
+  /*#if (X_STEP_PIN > -1) 
     SET_OUTPUT(X_STEP_PIN);
   #endif  
   #if (Y_STEP_PIN > -1) 
     SET_OUTPUT(Y_STEP_PIN);
   #endif  
+  */
   #if (Z_STEP_PIN > -1) 
     SET_OUTPUT(Z_STEP_PIN);
   #endif  
-  #if (E_STEP_PIN > -1) 
+  /*#if (E_STEP_PIN > -1) 
     SET_OUTPUT(E_STEP_PIN);
   #endif  
+*/  
   #ifdef RAMP_ACCELERATION
     setup_acceleration();
   #endif
@@ -582,7 +588,7 @@ inline void process_commands()
 
         home_all_axis = !((code_seen(axis_codes[0])) || (code_seen(axis_codes[1])) || (code_seen(axis_codes[2])));
 
-        if((home_all_axis) || (code_seen(axis_codes[0]))) {
+/*        if((home_all_axis) || (code_seen(axis_codes[0]))) {
           if ((X_MIN_PIN > -1 && X_HOME_DIR==-1) || (X_MAX_PIN > -1 && X_HOME_DIR==1)){
             current_position[0] = -1.5 * X_MAX_LENGTH * X_HOME_DIR;
             destination[0] = 0;
@@ -624,7 +630,7 @@ inline void process_commands()
             feedrate = 0;
           }
         }
-        
+  */      
         if((home_all_axis) || (code_seen(axis_codes[2]))) {
           if ((Z_MIN_PIN > -1 && Z_HOME_DIR==-1) || (Z_MAX_PIN > -1 && Z_HOME_DIR==1)){
             current_position[2] = -1.5 * Z_MAX_LENGTH * Z_HOME_DIR;
@@ -922,7 +928,7 @@ inline void process_commands()
         break;
       case 84:
         if(code_seen('S')){ stepper_inactive_time = code_value() * 1000; }
-        else{ disable_x(); disable_y(); disable_z(); disable_e(); }
+        else{ /*disable_x(); disable_y();*/ disable_z(); /*disable_e();*/ }
         break;
       case 85: // M85
         code_seen('S');
@@ -953,7 +959,7 @@ inline void process_commands()
         Serial.println(current_position[3]);
         break;
       case 119: // M119
-      	#if (X_MIN_PIN > -1)
+/*      	#if (X_MIN_PIN > -1)
       	Serial.print("x_min:");
         Serial.print((READ(X_MIN_PIN)^X_ENDSTOP_INVERT)?"H ":"L ");
       	#endif
@@ -969,6 +975,7 @@ inline void process_commands()
       	Serial.print("y_max:");
         Serial.print((READ(Y_MAX_PIN)^Y_ENDSTOP_INVERT)?"H ":"L ");
       	#endif
+*/
       	#if (Z_MIN_PIN > -1)
       	Serial.print("z_min:");
         Serial.print((READ(Z_MIN_PIN)^Z_ENDSTOP_INVERT)?"H ":"L ");
@@ -1045,16 +1052,19 @@ void prepare_move()
   
   
   if (min_software_endstops) {
-    if (destination[0] < 0) destination[0] = 0.0;
-    if (destination[1] < 0) destination[1] = 0.0;
+//    if (destination[0] < 0) destination[0] = 0.0;
+//    if (destination[1] < 0) destination[1] = 0.0;
     if (destination[2] < 0) destination[2] = 0.0;
   }
 
   if (max_software_endstops) {
-    if (destination[0] > X_MAX_LENGTH) destination[0] = X_MAX_LENGTH;
-    if (destination[1] > Y_MAX_LENGTH) destination[1] = Y_MAX_LENGTH;
+//    if (destination[0] > X_MAX_LENGTH) destination[0] = X_MAX_LENGTH;
+//    if (destination[1] > Y_MAX_LENGTH) destination[1] = Y_MAX_LENGTH;
     if (destination[2] > Z_MAX_LENGTH) destination[2] = Z_MAX_LENGTH;
   }
+
+  destination[0]=destination[1]=destination[3]=0.0;
+  current_position[0]=current_position[1]=current_position[3]=0.0;
 
   for(int i=0; i < NUM_AXIS; i++) {
     axis_diff[i] = destination[i] - current_position[i];
@@ -1062,18 +1072,18 @@ void prepare_move()
   }
   if(feedrate < 10)
       feedrate = 10;
-  
   //Feedrate calc based on XYZ travel distance
   float xy_d;
   //Check for cases where only one axis is moving - handle those without float sqrt
-  if(abs(axis_diff[0]) > 0 && abs(axis_diff[1]) == 0 && abs(axis_diff[2])==0)
+/*  if(abs(axis_diff[0]) > 0 && abs(axis_diff[1]) == 0 && abs(axis_diff[2])==0)
     d=abs(axis_diff[0]);
   else if(abs(axis_diff[0]) == 0 && abs(axis_diff[1]) > 0 && abs(axis_diff[2])==0)
     d=abs(axis_diff[1]);
   else if(abs(axis_diff[0]) == 0 && abs(axis_diff[1]) == 0 && abs(axis_diff[2])>0)
+*/    
     d=abs(axis_diff[2]);
   //two or three XYZ axes moving
-  else if(abs(axis_diff[0]) > 0 || abs(axis_diff[1]) > 0) { //X or Y or both
+/*  else if(abs(axis_diff[0]) > 0 || abs(axis_diff[1]) > 0) { //X or Y or both
     xy_d = sqrt(axis_diff[0] * axis_diff[0] + axis_diff[1] * axis_diff[1]);
     //check if Z involved - if so interpolate that too
     d = (abs(axis_diff[2])>0)?sqrt(xy_d * xy_d + axis_diff[2] * axis_diff[2]):xy_d;
@@ -1081,6 +1091,8 @@ void prepare_move()
   else if(abs(axis_diff[3]) > 0)
     d = abs(axis_diff[3]);
   else{ //zero length move
+*/
+  if(d==0){
   #ifdef DEBUG_PREPARE_MOVE
     
       log_message("_PREPARE_MOVE - No steps to take!");
@@ -1120,30 +1132,35 @@ void prepare_move()
 inline void linear_move(unsigned long axis_steps_remaining[]) // make linear move with preset speeds and destinations, see G0 and G1
 {
   //Determine direction of movement
-  if (destination[0] > current_position[0]) WRITE(X_DIR_PIN,!INVERT_X_DIR);
+ /* if (destination[0] > current_position[0]) WRITE(X_DIR_PIN,!INVERT_X_DIR);
   else WRITE(X_DIR_PIN,INVERT_X_DIR);
   if (destination[1] > current_position[1]) WRITE(Y_DIR_PIN,!INVERT_Y_DIR);
   else WRITE(Y_DIR_PIN,INVERT_Y_DIR);
+ */
   if (destination[2] > current_position[2]) WRITE(Z_DIR_PIN,!INVERT_Z_DIR);
   else WRITE(Z_DIR_PIN,INVERT_Z_DIR);
-  if (destination[3] > current_position[3]) WRITE(E_DIR_PIN,!INVERT_E_DIR);
+ /* if (destination[3] > current_position[3]) WRITE(E_DIR_PIN,!INVERT_E_DIR);
   else WRITE(E_DIR_PIN,INVERT_E_DIR);
+ */ 
   movereset:
-  #if (X_MIN_PIN > -1) 
+ /* #if (X_MIN_PIN > -1) 
     if(!move_direction[0]) if(READ(X_MIN_PIN) != X_ENDSTOP_INVERT) axis_steps_remaining[0]=0;
   #endif
   #if (Y_MIN_PIN > -1) 
     if(!move_direction[1]) if(READ(Y_MIN_PIN) != Y_ENDSTOP_INVERT) axis_steps_remaining[1]=0;
   #endif
+  */
   #if (Z_MIN_PIN > -1) 
     if(!move_direction[2]) if(READ(Z_MIN_PIN) != Z_ENDSTOP_INVERT) axis_steps_remaining[2]=0;
   #endif
+  /*
   #if (X_MAX_PIN > -1) 
     if(move_direction[0]) if(READ(X_MAX_PIN) != X_ENDSTOP_INVERT) axis_steps_remaining[0]=0;
   #endif
   #if (Y_MAX_PIN > -1) 
     if(move_direction[1]) if(READ(Y_MAX_PIN) != Y_ENDSTOP_INVERT) axis_steps_remaining[1]=0;
   #endif
+  */
   # if(Z_MAX_PIN > -1) 
     if(move_direction[2]) if(READ(Z_MAX_PIN) != Z_ENDSTOP_INVERT) axis_steps_remaining[2]=0;
   #endif
@@ -1152,11 +1169,13 @@ inline void linear_move(unsigned long axis_steps_remaining[]) // make linear mov
   //Only enable axis that are moving. If the axis doesn't need to move then it can stay disabled depending on configuration.
   // TODO: maybe it's better to refactor into a generic enable(int axis) function, that will probably take more ram,
   // but will reduce code size
-  if(axis_steps_remaining[0]) enable_x();
+  /*if(axis_steps_remaining[0]) enable_x();
   if(axis_steps_remaining[1]) enable_y();
+  */
   if(axis_steps_remaining[2]) enable_z();
+  /*
   if(axis_steps_remaining[3]) enable_e();
-
+  */
     //Define variables that are needed for the Bresenham algorithm. Please note that  Z is not currently included in the Bresenham algorithm.
   unsigned long delta[] = {axis_steps_remaining[0], axis_steps_remaining[1], axis_steps_remaining[2], axis_steps_remaining[3]}; //TODO: implement a "for" to support N axes
   long axis_error[NUM_AXIS];
@@ -1320,7 +1339,7 @@ inline void linear_move(unsigned long axis_steps_remaining[]) // make linear mov
 
     //If there are x or y steps remaining, perform Bresenham algorithm
     if(axis_steps_remaining[primary_axis]) {
-      #if (X_MIN_PIN > -1) 
+    /*  #if (X_MIN_PIN > -1) 
         if(!move_direction[0]) if(READ(X_MIN_PIN) != X_ENDSTOP_INVERT) if(primary_axis==0) break; else if(axis_steps_remaining[0]) axis_steps_remaining[0]=0;
       #endif
       #if (Y_MIN_PIN > -1) 
@@ -1332,6 +1351,7 @@ inline void linear_move(unsigned long axis_steps_remaining[]) // make linear mov
       #if (Y_MAX_PIN > -1) 
         if(move_direction[1]) if(READ(Y_MAX_PIN) != Y_ENDSTOP_INVERT) if(primary_axis==1) break; else if(axis_steps_remaining[1]) axis_steps_remaining[1]=0;
       #endif
+     */
       #if (Z_MIN_PIN > -1) 
         if(!move_direction[2]) if(READ(Z_MIN_PIN) != Z_ENDSTOP_INVERT) if(primary_axis==2) break; else if(axis_steps_remaining[2]) axis_steps_remaining[2]=0;
       #endif
@@ -1369,11 +1389,12 @@ inline void linear_move(unsigned long axis_steps_remaining[]) // make linear mov
     log_ulong("_MOVE_TIME - This move took", micros()-startmove);
   #endif
   
-  if(DISABLE_X) disable_x();
+  /*if(DISABLE_X) disable_x();
   if(DISABLE_Y) disable_y();
+  */
   if(DISABLE_Z) disable_z();
-  if(DISABLE_E) disable_e();
-  
+  /*if(DISABLE_E) disable_e();
+  */
   // Update current position partly based on direction, we probably can combine this with the direction code above...
   for(int i=0; i < NUM_AXIS; i++) {
     if (destination[i] > current_position[i]) current_position[i] = current_position[i] + steps_taken[i] /  axis_steps_per_unit[i];
@@ -1383,24 +1404,28 @@ inline void linear_move(unsigned long axis_steps_remaining[]) // make linear mov
 
 void do_step(int axis) {
   switch(axis){
-  case 0:
+  /*case 0:
     WRITE(X_STEP_PIN, HIGH);
     break;
   case 1:
     WRITE(Y_STEP_PIN, HIGH);
     break;
+  */
   case 2:
     WRITE(Z_STEP_PIN, HIGH);
     break;
-  case 3:
+  /*case 3:
     WRITE(E_STEP_PIN, HIGH);
     break;
+ */ 
   }
   steps_taken[axis]+=1;
-  WRITE(X_STEP_PIN, LOW);
+  /*WRITE(X_STEP_PIN, LOW);
   WRITE(Y_STEP_PIN, LOW);
+  */
   WRITE(Z_STEP_PIN, LOW);
-  WRITE(E_STEP_PIN, LOW);
+ /* WRITE(E_STEP_PIN, LOW);
+*/
 }
 
 #define HEAT_INTERVAL 250
@@ -1715,18 +1740,18 @@ inline void kill()
   target_bed_raw=0;
   if(HEATER_1_PIN > -1) WRITE(HEATER_1_PIN,LOW);
   #endif
-  disable_x();
+/*  disable_x();
   disable_y();
-  disable_z();
-  disable_e();
-  
+*/  disable_z();
+ /* disable_e();
+  */
   if(PS_ON_PIN > -1) pinMode(PS_ON_PIN,INPUT);
   
 }
 
 inline void manage_inactivity(byte debug) { 
 if( (millis()-previous_millis_cmd) >  max_inactive_time ) if(max_inactive_time) kill(); 
-if( (millis()-previous_millis_cmd) >  stepper_inactive_time ) if(stepper_inactive_time) { disable_x(); disable_y(); disable_z(); disable_e(); }
+if( (millis()-previous_millis_cmd) >  stepper_inactive_time ) if(stepper_inactive_time) { /*disable_x(); disable_y();*/ disable_z(); /*disable_e();*/ }
 }
 
 #ifdef RAMP_ACCELERATION

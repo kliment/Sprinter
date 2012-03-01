@@ -13,7 +13,8 @@
 // Gen 3 Plus = 21
 // gen 3  Monolithic Electronics = 22
 // Gen3 PLUS for TechZone Gen3 Remix Motherboard = 23
-#define MOTHERBOARD 3 
+// Teensy 2.0 driving lemon curry = 10
+#define MOTHERBOARD 10 
 
 //// Thermistor settings:
 // 1 is 100k thermistor
@@ -24,7 +25,7 @@
 // 6 is EPCOS 100k
 // 7 is 100k Honeywell thermistor 135-104LAG-J01
 #define THERMISTORHEATER 1
-#define THERMISTORBED 1
+//#define THERMISTORBED 1
 
 //// Calibration variables
 // X, Y, Z, E steps per unit - Metric Prusa Mendel with Wade extruder:
@@ -48,7 +49,7 @@ const bool Z_ENDSTOP_INVERT = false;
 #define BAUDRATE 115200
 
 // Comment out (using // at the start of the line) to disable SD support:
-#define SDSUPPORT
+//#define SDSUPPORT
 // Uncomment to make Sprinter run init.g from SD on boot
 //#define SDINITFILE
 
