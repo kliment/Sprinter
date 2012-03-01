@@ -5,7 +5,7 @@
 #include "Configuration.h"
 #include "pins.h"
 #include "Sprinter.h"
-
+#define SERVO 1
 #ifdef SDSUPPORT
 #include "SdFat.h"
 #endif
@@ -202,7 +202,11 @@ unsigned long stepper_inactive_time = 0;
   }
 #endif
 
-
+#ifdef SERVO
+#define SERVOCOUNT 13
+#include <Servo.h> 
+static Servo servos[SERVOCOUNT];
+#endif
 void setup()
 { 
   Serial.begin(BAUDRATE);
@@ -361,6 +365,28 @@ void setup()
     WRITE(SDPOWER,HIGH);
   #endif
   initsd();
+
+#endif
+
+
+#ifdef SERVO
+servos[0].attach(23);
+servos[1].attach(25);
+servos[2].attach(27);
+servos[3].attach(29);
+servos[4].attach(31);
+servos[5].attach(33);
+servos[6].attach(35);
+servos[7].attach(37);
+servos[8].attach(39);
+servos[9].attach(41);
+servos[10].attach(43);
+servos[11].attach(45);
+servos[12].attach(47);
+int i;
+for(i=0;i<12;++i)
+  servos[i].write(180);
+servos[12].write(90);
 
 #endif
 
@@ -771,6 +797,23 @@ inline void process_commands()
           }
         }
         break;
+#ifdef SERVO
+      case 43:
+        if (code_seen('S'))
+        {
+          int pin_status = code_value();
+          if (code_seen('P') && pin_status >= 0 && pin_status <= 180)
+          {
+            
+            int pin_number = code_value();
+            if (pin_number > -1 && pin_number<SERVOCOUNT)
+            {              
+              servos[pin_number].write(pin_status);
+            }
+          }
+        }
+        break;
+#endif
       case 104: // M104
         if (code_seen('S')) target_raw = temp2analogh(target_temp = code_value());
         #ifdef WATCHPERIOD
@@ -1110,10 +1153,11 @@ inline void linear_move(unsigned long axis_steps_remaining[]) // make linear mov
   else WRITE(X_DIR_PIN,INVERT_X_DIR);
   if (destination[1] > current_position[1]) WRITE(Y_DIR_PIN,!INVERT_Y_DIR);
   else WRITE(Y_DIR_PIN,INVERT_Y_DIR);
-  if (destination[2] > current_position[2]) WRITE(Z_DIR_PIN,!INVERT_Z_DIR);
+ /* if (destination[2] > current_position[2]) WRITE(Z_DIR_PIN,!INVERT_Z_DIR);
   else WRITE(Z_DIR_PIN,INVERT_Z_DIR);
   if (destination[3] > current_position[3]) WRITE(E_DIR_PIN,!INVERT_E_DIR);
   else WRITE(E_DIR_PIN,INVERT_E_DIR);
+ */
   movereset:
   #if (X_MIN_PIN > -1) 
     if(!move_direction[0]) if(READ(X_MIN_PIN) != X_ENDSTOP_INVERT) axis_steps_remaining[0]=0;
@@ -1376,17 +1420,17 @@ void do_step(int axis) {
     WRITE(Y_STEP_PIN, HIGH);
     break;
   case 2:
-    WRITE(Z_STEP_PIN, HIGH);
+//    WRITE(Z_STEP_PIN, HIGH);
     break;
   case 3:
-    WRITE(E_STEP_PIN, HIGH);
+//    WRITE(E_STEP_PIN, HIGH);
     break;
   }
   steps_taken[axis]+=1;
   WRITE(X_STEP_PIN, LOW);
   WRITE(Y_STEP_PIN, LOW);
-  WRITE(Z_STEP_PIN, LOW);
-  WRITE(E_STEP_PIN, LOW);
+ // WRITE(Z_STEP_PIN, LOW);
+ // WRITE(E_STEP_PIN, LOW);
 }
 
 #define HEAT_INTERVAL 250
@@ -1552,16 +1596,16 @@ void manage_heater()
     #else
       if(current_raw >= target_raw)
       {
-        WRITE(HEATER_0_PIN,LOW);
-        analogWrite(HEATER_0_PIN, 0);
+        //WRITE(HEATER_0_PIN,LOW);
+        //analogWrite(HEATER_0_PIN, 0);
         #if LED_PIN>-1
             WRITE(LED_PIN,LOW);
         #endif
       }
       else 
       {
-        WRITE(HEATER_0_PIN,HIGH);
-        analogWrite(HEATER_0_PIN, HEATER_CURRENT);
+        //WRITE(HEATER_0_PIN,HIGH);
+        //analogWrite(HEATER_0_PIN, HEATER_CURRENT);
         #if LED_PIN > -1
             WRITE(LED_PIN,HIGH);
         #endif
@@ -1695,11 +1739,11 @@ inline void kill()
 {
   #if TEMP_0_PIN > -1
   target_raw=0;
-  WRITE(HEATER_0_PIN,LOW);
+//  WRITE(HEATER_0_PIN,LOW);
   #endif
   #if TEMP_1_PIN > -1
   target_bed_raw=0;
-  if(HEATER_1_PIN > -1) WRITE(HEATER_1_PIN,LOW);
+  //if(HEATER_1_PIN > -1) WRITE(HEATER_1_PIN,LOW);
   #endif
   disable_x();
   disable_y();

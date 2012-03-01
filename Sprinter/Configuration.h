@@ -13,7 +13,7 @@
 // Gen 3 Plus = 21
 // gen 3  Monolithic Electronics = 22
 // Gen3 PLUS for TechZone Gen3 Remix Motherboard = 23
-#define MOTHERBOARD 3 
+#define MOTHERBOARD 31 
 
 //// Thermistor settings:
 // 1 is 100k thermistor

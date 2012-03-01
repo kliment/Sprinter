@@ -517,6 +517,80 @@
 
 
 #endif
+
+/****************************************************************************************
+* Splotbot pin assignment
+*
+****************************************************************************************/
+
+#if MOTHERBOARD == 31
+#define KNOWN_BOARD 1
+
+//////////////////FIX THIS//////////////
+#ifndef __AVR_ATmega1280__
+ #ifndef __AVR_ATmega2560__
+ #error Oops!  Make sure you have 'Arduino Mega' selected from the 'Tools -> Boards' menu.
+ #endif
+#endif
+
+// uncomment one of the following lines for RAMPS v1.3 or v1.0, comment both for v1.2 or 1.1
+// #define RAMPS_V_1_3
+// #define RAMPS_V_1_0
+
+
+#define X_STEP_PIN         17//20
+#define X_DIR_PIN          18//21
+#define X_ENABLE_PIN       16//19
+#define X_MIN_PIN           2
+#define X_MAX_PIN          -1   //2 //Max endstops default to disabled "-1", set to commented value to enable.
+
+#define Y_STEP_PIN         20//17
+#define Y_DIR_PIN          21//18
+#define Y_ENABLE_PIN       19//16
+#define Y_MIN_PIN          44
+#define Y_MAX_PIN          -1   //15
+
+#define Z_STEP_PIN         -1
+#define Z_DIR_PIN          -1
+#define Z_ENABLE_PIN       -1
+#define Z_MIN_PIN          -1
+#define Z_MAX_PIN          -1   //19
+
+#define E_STEP_PIN         -1
+#define E_DIR_PIN          -1
+#define E_ENABLE_PIN       -1
+
+#define E_1_STEP_PIN         -1
+#define E_1_DIR_PIN          -1
+#define E_1_ENABLE_PIN       -1
+
+#define SDPOWER            -1
+#define SDSS               -1
+#define LED_PIN            13
+#define FAN_PIN            -1
+#define PS_ON_PIN          -1
+#define KILL_PIN           -1
+#define ALARM_PIN          -1
+
+#define HEATER_0_PIN       -1
+#define HEATER_1_PIN       -1
+#define TEMP_0_PIN         0   // ANALOG NUMBERING
+#define TEMP_1_PIN         -1   // ANALOG NUMBERING
+#define TEMP_2_PIN         -1   // ANALOG NUMBERING
+
+
+#ifndef SDSUPPORT
+// these pins are defined in the SD library if building with SD support  
+  #define SCK_PIN          -1
+  #define MISO_PIN         -1
+  #define MOSI_PIN         -1
+  #define MAX6675_SS       -1
+#else
+  #define MAX6675_SS       -1
+#endif
+
+
+#endif
 /****************************************************************************************
 * Duemilanove w/ ATMega328P pin assignment
 *
