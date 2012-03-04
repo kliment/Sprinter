@@ -78,6 +78,9 @@
    The beginning of the line is still interpreted.
    
  - Same fix for SD Card, testet and work
+
+ Version 1.3.09T
+ - Move SLOWDOWN Function up
   
 
 */
@@ -178,7 +181,7 @@ void __cxa_pure_virtual(){};
 // M603 - Show Free Ram
 
 
-#define _VERSION_TEXT "1.3.08T / 24.02.2012"
+#define _VERSION_TEXT "1.3.09T / 04.03.2012"
 
 //Stepper Movement Variables
 char axis_codes[NUM_AXIS] = {'X', 'Y', 'Z', 'E'};
@@ -2256,6 +2259,12 @@ void plan_buffer_line(float x, float y, float z, float e, float feed_rate)
   if(block->steps_e != 0) enable_e();
  #endif 
 
+  // slow down when de buffer starts to empty, rather than wait at the corner for a buffer refill
+  int moves_queued=(block_buffer_head-block_buffer_tail + BLOCK_BUFFER_SIZE) & (BLOCK_BUFFER_SIZE - 1);
+#ifdef SLOWDOWN  
+  if(moves_queued < (BLOCK_BUFFER_SIZE * 0.5) && moves_queued > 1) feed_rate = feed_rate*moves_queued / (BLOCK_BUFFER_SIZE * 0.5); 
+#endif
+
   float delta_mm[4];
   delta_mm[X_AXIS] = (target[X_AXIS]-position[X_AXIS])/axis_steps_per_unit[X_AXIS];
   delta_mm[Y_AXIS] = (target[Y_AXIS]-position[Y_AXIS])/axis_steps_per_unit[Y_AXIS];
@@ -2286,12 +2295,6 @@ void plan_buffer_line(float x, float y, float z, float e, float feed_rate)
     	if(feed_rate<minimumfeedrate) feed_rate=minimumfeedrate;
   } 
 
-
-  // slow down when de buffer starts to empty, rather than wait at the corner for a buffer refill
-  int moves_queued=(block_buffer_head-block_buffer_tail + BLOCK_BUFFER_SIZE) & (BLOCK_BUFFER_SIZE - 1);
-#ifdef SLOWDOWN  
-  if(moves_queued < (BLOCK_BUFFER_SIZE * 0.5) && moves_queued > 1) feed_rate = feed_rate*moves_queued / (BLOCK_BUFFER_SIZE * 0.5); 
-#endif
 
 /*
   //  segment time im micro seconds
