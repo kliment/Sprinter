@@ -40,8 +40,8 @@ Software installation
 1. Install the required packages (gcc-avr, avr-libc, etc.)
   sudo apt-get install arduino-core
 
-2. Get the arduino software version 0018 (0023 works for RAMPS), uncompress it in a directory
-Arduino software v1 DOES NOT work with Sprinter yet!
+2. Get the arduino software version 0018 (0023 works for RAMPS), uncompress it in a directory.
+Arduino software v1 has not been tested much, but is known to work with some boards.
    http://www.arduino.cc/en/Main/Software
 
 3. Get the sanguino software, version 0018
