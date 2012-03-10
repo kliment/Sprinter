@@ -687,6 +687,11 @@
 * Gen7 pin assignment
 *
 ****************************************************************************************/
+#if MOTHERBOARD == 71    //GEN7 with 20 Mhz
+#define MOTHERBOARD 7
+#define QUARZ_20MHZ
+#endif
+
 #if MOTHERBOARD == 7
 #define KNOWN_BOARD 1
 
