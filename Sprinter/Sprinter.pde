@@ -2258,6 +2258,13 @@ void plan_buffer_line(float x, float y, float z, float e, float feed_rate)
   if(block->steps_z != 0) enable_z();
   if(block->steps_e != 0) enable_e();
  #endif 
+ 
+  if (block->steps_e == 0) {
+        if(feed_rate<mintravelfeedrate) feed_rate=mintravelfeedrate;
+  }
+  else {
+    	if(feed_rate<minimumfeedrate) feed_rate=minimumfeedrate;
+  } 
 
   // slow down when de buffer starts to empty, rather than wait at the corner for a buffer refill
   int moves_queued=(block_buffer_head-block_buffer_tail + BLOCK_BUFFER_SIZE) & (BLOCK_BUFFER_SIZE - 1);
@@ -2288,14 +2295,7 @@ void plan_buffer_line(float x, float y, float z, float e, float feed_rate)
   
  
 
-  if (block->steps_e == 0) {
-        if(feed_rate<mintravelfeedrate) feed_rate=mintravelfeedrate;
-  }
-  else {
-    	if(feed_rate<minimumfeedrate) feed_rate=minimumfeedrate;
-  } 
-
-
+  
 /*
   //  segment time im micro seconds
   long segment_time = lround(1000000.0/inverse_second);
