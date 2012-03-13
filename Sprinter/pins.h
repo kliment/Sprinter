@@ -708,21 +708,21 @@
     #define X_DIR_PIN       18
     #define X_ENABLE_PIN    24
     #define X_MIN_PIN       7
-    #define X_MAX_PIN       -1
+    #define X_MAX_PIN       -1      //X - Maxpin is 6
 
     //y axis pins
     #define Y_STEP_PIN      23
     #define Y_DIR_PIN       22
     #define Y_ENABLE_PIN    24
     #define Y_MIN_PIN       5
-    #define Y_MAX_PIN       -1
+    #define Y_MAX_PIN       -1      //Y - Maxpin is 2
 
     //z axis pins
     #define Z_STEP_PIN      26
     #define Z_DIR_PIN       25
     #define Z_ENABLE_PIN    24
     #define Z_MIN_PIN       1
-    #define Z_MAX_PIN       -1
+    #define Z_MAX_PIN       -1      //Z - Maxpin is 0
 
     //extruder pins
     #define E_STEP_PIN      28     
