@@ -686,7 +686,11 @@
 /****************************************************************************************
 * Gen7 pin assignment
 *
-****************************************************************************************/
+****************************************************************************************
+* for Gen7 to work properly, you should reset your fuses to lfuse= 0xF7 ; hfuse = 0xD4 ; efuse = FD;
+* else you will always get a "brown out reset" loop resetting the firmware
+* you need a programmer to set the fuses
+**/
 #if MOTHERBOARD == 71    //GEN7 with 20 Mhz
 #define MOTHERBOARD 7
 #define QUARZ_20MHZ
@@ -702,28 +706,28 @@
 //x axis pins
     #define X_STEP_PIN      19
     #define X_DIR_PIN       18
-    #define X_ENABLE_PIN    -1
+    #define X_ENABLE_PIN    24
     #define X_MIN_PIN       7
-    #define X_MAX_PIN       6
+    #define X_MAX_PIN       -1
 
     //y axis pins
     #define Y_STEP_PIN      23
     #define Y_DIR_PIN       22
-    #define Y_ENABLE_PIN    -1
+    #define Y_ENABLE_PIN    24
     #define Y_MIN_PIN       5
-    #define Y_MAX_PIN       2
+    #define Y_MAX_PIN       -1
 
     //z axis pins
     #define Z_STEP_PIN      26
     #define Z_DIR_PIN       25
     #define Z_ENABLE_PIN    24
     #define Z_MIN_PIN       1
-    #define Z_MAX_PIN       0
+    #define Z_MAX_PIN       -1
 
     //extruder pins
     #define E_STEP_PIN      28     
     #define E_DIR_PIN       27     
-    #define E_ENABLE_PIN    -1     
+    #define E_ENABLE_PIN    24     
     #define TEMP_0_PIN      1    // Extruder 
     #define HEATER_0_PIN     4    // Extruder
     #define HEATER_1_PIN     3    // Bed
