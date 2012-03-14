@@ -81,6 +81,13 @@
 
  Version 1.3.09T
  - Move SLOWDOWN Function up
+ 
+ Version 1.3.10T
+- Add info to GEN7 Pins
+- Update pins.h for gen7, working setup for 20MHz
+- calculate feedrate without extrude before planner block is set
+- New Board --> GEN7 @ 20 Mhz …
+- ENDSTOPS_ONLY_FOR_HOMING Option ignore Endstop always --> fault is cleared
   
 
 */
@@ -181,7 +188,7 @@ void __cxa_pure_virtual(){};
 // M603 - Show Free Ram
 
 
-#define _VERSION_TEXT "1.3.09T / 04.03.2012"
+#define _VERSION_TEXT "1.3.10T / 14.03.2012"
 
 //Stepper Movement Variables
 char axis_codes[NUM_AXIS] = {'X', 'Y', 'Z', 'E'};
@@ -1033,7 +1040,11 @@ FORCE_INLINE void process_commands()
       case 28: //G28 Home all Axis one at a time
         saved_feedrate = feedrate;
         saved_feedmultiply = feedmultiply;
-        feedmultiply = 100;      
+        previous_millis_cmd = millis();
+        
+        feedmultiply = 100;    
+      
+        enable_endstops(true);
       
         for(int i=0; i < NUM_AXIS; i++) 
         {
@@ -1139,7 +1150,11 @@ FORCE_INLINE void process_commands()
           }
         }    
    
-        //showString(PSTR("HOME Z AXIS\r\n"));   
+        //showString(PSTR("HOME Z AXIS\r\n"));  
+        
+        #ifdef ENDSTOPS_ONLY_FOR_HOMING
+            enable_endstops(false);
+      	#endif
       
         feedrate = saved_feedrate;
         feedmultiply = saved_feedmultiply;
