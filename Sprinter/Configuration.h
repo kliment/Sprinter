@@ -1,4 +1,4 @@
-#ifndef CONFIGURATION_H
+﻿#ifndef CONFIGURATION_H
 #define CONFIGURATION_H
 
 // BASIC SETTINGS: select your board type, thermistor type, axis scaling, and endstop configuration
@@ -10,6 +10,7 @@
 // Sanguinololu up to 1.1 = 6
 // Sanguinololu 1.2 and above = 62
 // Gen 7 @ 16MHZ only= 7
+// Gen 7 @ 20MHZ only= 71
 // Teensylu (at90usb) = 8
 // Gen 3 Plus = 21
 // gen 3  Monolithic Electronics = 22
