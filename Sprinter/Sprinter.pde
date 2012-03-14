@@ -81,6 +81,13 @@
 
  Version 1.3.09T
  - Move SLOWDOWN Function up
+ 
+ Version 1.3.10T
+- Add info to GEN7 Pins
+- Update pins.h for gen7, working setup for 20MHz
+- calculate feedrate without extrude before planner block is set
+- New Board --> GEN7 @ 20 Mhz …
+- ENDSTOPS_ONLY_FOR_HOMING Option ignore Endstop always --> fault is cleared
   
 
 */
@@ -181,7 +188,7 @@ void __cxa_pure_virtual(){};
 // M603 - Show Free Ram
 
 
-#define _VERSION_TEXT "1.3.09T / 04.03.2012"
+#define _VERSION_TEXT "1.3.10T / 14.03.2012"
 
 //Stepper Movement Variables
 char axis_codes[NUM_AXIS] = {'X', 'Y', 'Z', 'E'};
@@ -1033,7 +1040,11 @@ FORCE_INLINE void process_commands()
       case 28: //G28 Home all Axis one at a time
         saved_feedrate = feedrate;
         saved_feedmultiply = feedmultiply;
-        feedmultiply = 100;      
+        previous_millis_cmd = millis();
+        
+        feedmultiply = 100;    
+      
+        enable_endstops(true);
       
         for(int i=0; i < NUM_AXIS; i++) 
         {
@@ -1139,7 +1150,11 @@ FORCE_INLINE void process_commands()
           }
         }    
    
-        //showString(PSTR("HOME Z AXIS\r\n"));   
+        //showString(PSTR("HOME Z AXIS\r\n"));  
+        
+        #ifdef ENDSTOPS_ONLY_FOR_HOMING
+            enable_endstops(false);
+      	#endif
       
         feedrate = saved_feedrate;
         feedmultiply = saved_feedmultiply;
@@ -2258,6 +2273,13 @@ void plan_buffer_line(float x, float y, float z, float e, float feed_rate)
   if(block->steps_z != 0) enable_z();
   if(block->steps_e != 0) enable_e();
  #endif 
+ 
+  if (block->steps_e == 0) {
+        if(feed_rate<mintravelfeedrate) feed_rate=mintravelfeedrate;
+  }
+  else {
+    	if(feed_rate<minimumfeedrate) feed_rate=minimumfeedrate;
+  } 
 
   // slow down when de buffer starts to empty, rather than wait at the corner for a buffer refill
   int moves_queued=(block_buffer_head-block_buffer_tail + BLOCK_BUFFER_SIZE) & (BLOCK_BUFFER_SIZE - 1);
@@ -2288,14 +2310,7 @@ void plan_buffer_line(float x, float y, float z, float e, float feed_rate)
   
  
 
-  if (block->steps_e == 0) {
-        if(feed_rate<mintravelfeedrate) feed_rate=mintravelfeedrate;
-  }
-  else {
-    	if(feed_rate<minimumfeedrate) feed_rate=minimumfeedrate;
-  } 
-
-
+  
 /*
   //  segment time im micro seconds
   long segment_time = lround(1000000.0/inverse_second);
