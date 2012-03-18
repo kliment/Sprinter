@@ -855,7 +855,7 @@ inline void process_commands()
       #endif
           if( (millis() - codenum) > 1000 ) //Print Temp Reading every 1 second while heating up/cooling down
           {
-            Serial.print("T:");
+            Serial.print("// T:");
             Serial.println( analog2temp(current_raw) );
             codenum = millis();
           }
@@ -943,15 +943,15 @@ inline void process_commands()
         Serial.println(uuid);
         break;
       case 114: // M114
-	Serial.print("X:");
+        Serial.print("ok C: X:");
         Serial.print(current_position[0]);
-	Serial.print("Y:");
+        Serial.print(" Y:");
         Serial.print(current_position[1]);
-	Serial.print("Z:");
+        Serial.print(" Z:");
         Serial.print(current_position[2]);
-	Serial.print("E:");
+        Serial.print(" E:");
         Serial.println(current_position[3]);
-        break;
+        return;
       case 119: // M119
       	#if (X_MIN_PIN > -1)
       	Serial.print("x_min:");
@@ -996,7 +996,8 @@ inline void process_commands()
     
   }
   else{
-      Serial.println("Unknown command:");
+      Serial.println("// Unknown command:");
+      Serial.print("// ");
       Serial.println(cmdbuffer[bufindr]);
   }
   
