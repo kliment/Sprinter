@@ -13,8 +13,7 @@
 // Gen 3 Plus = 21
 // gen 3  Monolithic Electronics = 22
 // Gen3 PLUS for TechZone Gen3 Remix Motherboard = 23
-#define MOTHERBOARD 3 
-
+#define MOTHERBOARD 8
 //// Thermistor settings:
 // 1 is 100k thermistor
 // 2 is 200k thermistor
@@ -23,12 +22,12 @@
 // 5 is ParCan supplied 104GT-2 100K
 // 6 is EPCOS 100k
 // 7 is 100k Honeywell thermistor 135-104LAG-J01
-#define THERMISTORHEATER 1
+#define THERMISTORHEATER 3
 #define THERMISTORBED 1
 
 //// Calibration variables
-// X, Y, Z, E steps per unit - Metric Prusa Mendel with Wade extruder:
-float axis_steps_per_unit[] = {80, 80, 3200/1.25,700}; 
+// X, Y, Z, E steps per unit - Metric Prusa Mendel with Wade extruder
+float axis_steps_per_unit[] = {34.242, 41.754, 3200/2.5,380};
 // Metric Prusa Mendel with Makergear geared stepper extruder:
 //float axis_steps_per_unit[] = {80,80,3200/1.25,1380}; 
 // MakerGear Hybrid Prusa Mendel:
@@ -70,8 +69,8 @@ const bool DISABLE_Z = true;
 const bool DISABLE_E = false;
 
 // Inverting axis direction
-const bool INVERT_X_DIR = false;
-const bool INVERT_Y_DIR = false;
+const bool INVERT_X_DIR = true;
+const bool INVERT_Y_DIR = true;
 const bool INVERT_Z_DIR = true;
 const bool INVERT_E_DIR = false;
 
@@ -83,8 +82,8 @@ const bool INVERT_E_DIR = false;
 
 const bool min_software_endstops = false; //If true, axis won't move to coordinates less than zero.
 const bool max_software_endstops = true;  //If true, axis won't move to coordinates greater than the defined lengths below.
-const int X_MAX_LENGTH = 200;
-const int Y_MAX_LENGTH = 200;
+const int X_MAX_LENGTH = 190;
+const int Y_MAX_LENGTH = 190;
 const int Z_MAX_LENGTH = 100;
 
 //// MOVEMENT SETTINGS
@@ -138,7 +137,7 @@ char uuid[] = "00000000-0000-0000-0000-000000000000";
 #define HEATER_CURRENT 255
 
 // How often should the heater check for new temp readings, in milliseconds
-#define HEATER_CHECK_INTERVAL 500
+#define HEATER_CHECK_INTERVAL 100
 #define BED_CHECK_INTERVAL 5000
 // Comment the following line to enable heat management during acceleration
 #define DISABLE_CHECK_DURING_ACC
