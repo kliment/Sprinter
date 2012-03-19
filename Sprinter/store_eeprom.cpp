@@ -19,7 +19,7 @@
 #include <avr/pgmspace.h>
 #include <inttypes.h>
 
-#include "sprinter.h"
+#include "Sprinter.h"
 #include "store_eeprom.h"
 #include "Configuration.h"
 
