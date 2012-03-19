@@ -12,6 +12,7 @@
 // Gen 7 @ 16MHZ only= 7
 // Gen 7 @ 20MHZ only= 71
 // Teensylu (at90usb) = 8
+// Printrboard Rev. B (ATMEGA90USB1286) = 9
 // Gen 3 Plus = 21
 // gen 3  Monolithic Electronics = 22
 // Gen3 PLUS for TechZone Gen3 Remix Motherboard = 23
