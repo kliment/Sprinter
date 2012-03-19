@@ -252,6 +252,8 @@ bool relative_mode = false;  //Determines Absolute or Relative Coordinates
 //bool relative_mode_e = false;  //Determines Absolute or Relative E Codes while in Absolute Coordinates mode. E is always relative in Relative Coordinates mode.
 //long timediff = 0;
 
+bool is_homing = false;
+
 //experimental feedrate calc
 //float d = 0;
 //float axis_diff[NUM_AXIS] = {0, 0, 0, 0};
@@ -1059,6 +1061,7 @@ FORCE_INLINE void process_commands()
           destination[i] = current_position[i];
         }
         feedrate = 0;
+        is_homing = true;
 
         home_all_axis = !((code_seen(axis_codes[0])) || (code_seen(axis_codes[1])) || (code_seen(axis_codes[2])));
 
@@ -1164,6 +1167,7 @@ FORCE_INLINE void process_commands()
             enable_endstops(false);
       	#endif
       
+        is_homing = false;
         feedrate = saved_feedrate;
         feedmultiply = saved_feedmultiply;
       
@@ -1764,20 +1768,22 @@ void prepare_move()
 {
   long help_feedrate = 0;
 
-  if (min_software_endstops) 
-  {
-    if (destination[X_AXIS] < 0) destination[X_AXIS] = 0.0;
-    if (destination[Y_AXIS] < 0) destination[Y_AXIS] = 0.0;
-    if (destination[Z_AXIS] < 0) destination[Z_AXIS] = 0.0;
-  }
+  if(!is_homing){
+    if (min_software_endstops) 
+    {
+      if (destination[X_AXIS] < 0) destination[X_AXIS] = 0.0;
+      if (destination[Y_AXIS] < 0) destination[Y_AXIS] = 0.0;
+      if (destination[Z_AXIS] < 0) destination[Z_AXIS] = 0.0;
+    }
 
-  if (max_software_endstops) 
-  {
-    if (destination[X_AXIS] > X_MAX_LENGTH) destination[X_AXIS] = X_MAX_LENGTH;
-    if (destination[Y_AXIS] > Y_MAX_LENGTH) destination[Y_AXIS] = Y_MAX_LENGTH;
-    if (destination[Z_AXIS] > Z_MAX_LENGTH) destination[Z_AXIS] = Z_MAX_LENGTH;
+    if (max_software_endstops) 
+    {
+      if (destination[X_AXIS] > X_MAX_LENGTH) destination[X_AXIS] = X_MAX_LENGTH;
+      if (destination[Y_AXIS] > Y_MAX_LENGTH) destination[Y_AXIS] = Y_MAX_LENGTH;
+      if (destination[Z_AXIS] > Z_MAX_LENGTH) destination[Z_AXIS] = Z_MAX_LENGTH;
+    }
   }
-
+  
   help_feedrate = ((long)feedrate*(long)feedmultiply);
   plan_buffer_line(destination[X_AXIS], destination[Y_AXIS], destination[Z_AXIS], destination[E_AXIS], help_feedrate/6000.0);
   

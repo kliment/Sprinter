@@ -143,6 +143,7 @@
 
 #endif
 
+
 /****************************************************************************************
 * RepRap Motherboard  ****---NOOOOOO RS485/EXTRUDER CONTROLLER!!!!!!!!!!!!!!!!!---*******
 *
@@ -662,17 +663,20 @@
 #define HEATER_0_PIN       13 // (extruder)
 
 #ifdef SANGUINOLOLU_V_1_2
+
 #define HEATER_1_PIN       12 // (bed)
 #define X_ENABLE_PIN       14
 #define Y_ENABLE_PIN       14
 #define Z_ENABLE_PIN       26
 #define E_ENABLE_PIN       14
 #else
+
 #define HEATER_1_PIN       14  // (bed)
 #define X_ENABLE_PIN       -1
 #define Y_ENABLE_PIN       -1
 #define Z_ENABLE_PIN       -1
 #define E_ENABLE_PIN       -1
+
 #endif
 
 #define TEMP_0_PIN          7   // MUST USE ANALOG INPUT NUMBERING NOT DIGITAL OUTPUT NUMBERING!!!!!!!!! (pin 33 extruder)
@@ -681,7 +685,6 @@
 #define SDSS          31
 
 #endif
-
 
 /****************************************************************************************
 * Gen7 pin assignment
@@ -773,8 +776,6 @@
 #define E_DIR_PIN          35
 #define E_ENABLE_PIN       13
 
-
-
 #define HEATER_0_PIN       15  // Extruder
 #define HEATER_1_PIN       14  // Bed
 #define FAN_PIN            16  // Fan   
@@ -829,8 +830,6 @@
 #define E_STEP_PIN         34
 #define E_DIR_PIN          35
 #define E_ENABLE_PIN       13
-
-
 
 #define HEATER_0_PIN       15  // Extruder
 #define HEATER_1_PIN       14  // Bed
