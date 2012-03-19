@@ -88,6 +88,14 @@
 - calculate feedrate without extrude before planner block is set
 - New Board --> GEN7 @ 20 Mhz …
 - ENDSTOPS_ONLY_FOR_HOMING Option ignore Endstop always --> fault is cleared
+
+ Version 1.3.11T
+- fix for broken include in store_eeprom.cpp  --> Thanks to kmeehl (issue #145)
+- Make fastio & Arduino pin numbering consistent for AT90USB128x. --> Thanks to lincomatic
+- Select Speedtable with F_CPU
+- Use same Values for Speedtables as Marlin 
+- 
+
   
 
 */
@@ -188,7 +196,7 @@ void __cxa_pure_virtual(){};
 // M603 - Show Free Ram
 
 
-#define _VERSION_TEXT "1.3.10T / 14.03.2012"
+#define _VERSION_TEXT "1.3.11T / 19.03.2012"
 
 //Stepper Movement Variables
 char axis_codes[NUM_AXIS] = {'X', 'Y', 'Z', 'E'};
@@ -2720,8 +2728,8 @@ FORCE_INLINE unsigned short calc_timer(unsigned short step_rate)
     step_loops = 1;
   } 
   
-  if(step_rate < 32) step_rate = 32;
-  step_rate -= 32; // Correct for minimal speed
+  if(step_rate < (F_CPU/500000)) step_rate = (F_CPU/500000);
+  step_rate -= (F_CPU/500000); // Correct for minimal speed
   
   if(step_rate >= (8*256)) // higher step rate 
   { // higher step rate 
@@ -3046,6 +3054,12 @@ void st_init()
   // output mode = 00 (disconnected)
   TCCR1A &= ~(3<<COM1A0); 
   TCCR1A &= ~(3<<COM1B0); 
+
+  // Set the timer pre-scaler
+  // Generally we use a divider of 8, resulting in a 2MHz timer
+  // frequency on a 16MHz MCU. If you are going to change this, be
+  // sure to regenerate speed_lookuptable.h with
+  // create_speed_lookuptable.py
   TCCR1B = (TCCR1B & ~(0x07<<CS10)) | (2<<CS10); // 2MHz timer
 
   OCR1A = 0x4000;
