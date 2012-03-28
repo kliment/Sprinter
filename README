@@ -1,4 +1,4 @@
-The leading developers of Sprinter are currently Kliment and caru, though many others contribute with their patches.
+The leading developers of Sprinter are currently Kliment, caru and midopple, though many others contribute with their patches.
 
 This is a firmware for RAMPS and other reprap single-processor electronics setups. It supports printing from SD card, active heatbed control, and ATmega internal pullups.
 
