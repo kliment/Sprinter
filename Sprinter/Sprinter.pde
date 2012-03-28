@@ -990,6 +990,12 @@ void get_command()
 
 }
 
+static bool check_endstops = true;
+
+void enable_endstops(bool check)
+{
+  check_endstops = check;
+}
 
 FORCE_INLINE float code_value() { return (strtod(&cmdbuffer[bufindr][strchr_pointer - cmdbuffer[bufindr] + 1], NULL)); }
 FORCE_INLINE long code_value_long() { return (strtol(&cmdbuffer[bufindr][strchr_pointer - cmdbuffer[bufindr] + 1], NULL, 10)); }
@@ -2685,8 +2691,6 @@ static bool old_y_max_endstop=false;
 static bool old_z_min_endstop=false;
 static bool old_z_max_endstop=false;
 
-static bool check_endstops = true;
-
 
 
 //         __________________________
@@ -2710,11 +2714,6 @@ void st_wake_up()
   //  TCNT1 = 0;
   if(busy == false) 
   ENABLE_STEPPER_DRIVER_INTERRUPT();  
-}
-
-void enable_endstops(bool check)
-{
-  check_endstops = check;
 }
 
 FORCE_INLINE unsigned short calc_timer(unsigned short step_rate)
