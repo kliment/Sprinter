@@ -94,7 +94,10 @@
 - Make fastio & Arduino pin numbering consistent for AT90USB128x. --> Thanks to lincomatic
 - Select Speedtable with F_CPU
 - Use same Values for Speedtables as Marlin 
-- 
+-
+
+ Version 1.3.12T
+- Fixed arc offset.
 
   
 
@@ -196,7 +199,7 @@ void __cxa_pure_virtual(){};
 // M603 - Show Free Ram
 
 
-#define _VERSION_TEXT "1.3.11T / 19.03.2012"
+#define _VERSION_TEXT "1.3.12T / 27.03.2012"
 
 //Stepper Movement Variables
 char axis_codes[NUM_AXIS] = {'X', 'Y', 'Z', 'E'};
@@ -1761,13 +1764,24 @@ FORCE_INLINE void get_coordinates()
 }
 
 #ifdef USE_ARC_FUNCTION
-FORCE_INLINE void get_arc_coordinates()
+void get_arc_coordinates()
 {
    get_coordinates();
-   if(code_seen('I')) offset[0] = code_value();
-   if(code_seen('J')) offset[1] = code_value();
+   if(code_seen('I')) {
+     offset[0] = code_value();
+   } 
+   else {
+     offset[0] = 0.0;
+   }
+   if(code_seen('J')) {
+     offset[1] = code_value();
+   }
+   else {
+     offset[1] = 0.0;
+   }
 }
 #endif
+
 
 
 void prepare_move()
