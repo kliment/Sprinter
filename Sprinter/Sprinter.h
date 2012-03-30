@@ -91,6 +91,7 @@ typedef struct {
 void FlushSerialRequestResend();
 void ClearToSend();
 
+void analogWrite_check(uint8_t check_pin, int val);
 void showString (PGM_P s);
 
 void manage_inactivity(byte debug);
