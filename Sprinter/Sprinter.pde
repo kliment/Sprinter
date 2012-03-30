@@ -558,6 +558,39 @@ int FreeRam1(void)
 }
 
 //------------------------------------------------
+//Function the check the Analog OUT pin for not using the Timer1
+//------------------------------------------------
+void analogWrite_check(uint8_t check_pin, int val)
+{
+  #if defined(__AVR_ATmega168__) || defined(__AVR_ATmega328P__) 
+  //Atmega168 / 328 can not useed OCR1A and OCR1B
+  //This are PINS PB1 / PB2 or on Ardurino D9 / D10
+    if((check_pin != 9) && (check_pin != 10))
+    {
+        analogWrite(check_pin, val);
+    }
+  #endif
+  
+  #if defined(__AVR_ATmega644P__) || defined(__AVR_ATmega1284P__) 
+  //Atmega664P / 1284P can not useed OCR1A and OCR1B
+  //This are PINS PD4 / PD5 or on Ardurino D12 / D13
+    if((check_pin != 12) && (check_pin != 13))
+    {
+        analogWrite(check_pin, val);
+    }
+  #endif
+
+  #if defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__) 
+  //Atmega1280 / 2560 can not useed OCR1A, OCR1B and OCR1C
+  //This are PINS PB5,PB6,PB7 or on Ardurino D11,D12,and D13
+    if((check_pin != 11) && (check_pin != 12) && (check_pin != 13))
+    {
+        analogWrite(check_pin, val);
+    }
+  #endif  
+}
+
+//------------------------------------------------
 //Print a String from Flash to Serial (save RAM)
 //------------------------------------------------
 void showString (PGM_P s) 
@@ -1502,16 +1535,16 @@ FORCE_INLINE void process_commands()
         if (code_seen('S'))
         {
             WRITE(FAN_PIN, HIGH);
-            //analogWrite(FAN_PIN, constrain(code_value(),0,255) );
+            analogWrite_check(FAN_PIN, constrain(code_value(),0,255) );
         }
         else 
         {
             WRITE(FAN_PIN, HIGH);
-            //analogWrite(FAN_PIN, 255 );
+            analogWrite_check(FAN_PIN, 255 );
         }
         break;
       case 107: //M107 Fan Off
-          //analogWrite(FAN_PIN, 0);
+          analogWrite_check(FAN_PIN, 0);
           WRITE(FAN_PIN, LOW);
         break;
       #endif
