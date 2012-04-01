@@ -28,6 +28,9 @@
   https://github.com/ErikZalm/Marlin-non-gen6
   
   Sprinter Changelog
+  
+  -  Added M93 command. Sends current steps for all axis.
+  
   -  Look forward function --> calculate 16 Steps forward, get from Firmaware Marlin and Grbl
   -  Stepper control with Timer 1 (Interrupt)
   -  Extruder heating with PID use a Softpwm (Timer 2) with 500 hz to free Timer1 für Steppercontrol
@@ -173,6 +176,7 @@ void __cxa_pure_virtual(){};
 //        or use S<seconds> to specify an inactivity timeout, after which the steppers will be disabled.  S0 to disable the timeout.
 // M85  - Set inactivity shutdown timer with parameter S<seconds>. To disable set zero (default)
 // M92  - Set axis_steps_per_unit - same syntax as G92
+// M93  - Send axis_steps_per_unit
 // M115	- Capabilities string
 // M119 - Show Endstopper State 
 // M140 - Set bed target temp
@@ -1591,6 +1595,17 @@ FORCE_INLINE void process_commands()
 //          axis_max_interval[i] = 100000000.0 / (max_start_speed_units_per_second[i] * axis_steps_per_unit[i]);//TODO: do this for
 //          all steps_per_unit related variables
 //        }
+        break;
+      case 93: // M93 show current axis steps.
+	showString(PSTR("ok "));
+	showString(PSTR("X:"));
+        Serial.print(axis_steps_per_unit[0]);
+	showString(PSTR("Y:"));
+        Serial.print(axis_steps_per_unit[1]);
+	showString(PSTR("Z:"));
+        Serial.print(axis_steps_per_unit[2]);
+	showString(PSTR("E:"));
+        Serial.println(axis_steps_per_unit[3]);
         break;
       case 115: // M115
         showString(PSTR("FIRMWARE_NAME: Sprinter Experimental PROTOCOL_VERSION:1.0 MACHINE_TYPE:Mendel EXTRUDER_COUNT:1\r\n"));
