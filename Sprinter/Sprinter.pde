@@ -106,7 +106,11 @@
 - Added M93 command. Sends current steps for all axis.
 - New Option --> FAN_SOFT_PWM, with this option the FAN PWM can use every digital I/O
 
+ Version 1.3.14T
+- When endstop is hit count the virtual steps, so the print lose no position when endstop is hit
 
+ 
+  
 
 */
 
@@ -208,7 +212,7 @@ void __cxa_pure_virtual(){};
 // M603 - Show Free Ram
 
 
-#define _VERSION_TEXT "1.3.13T / 19.04.2012"
+#define _VERSION_TEXT "1.3.14T / 20.04.2012"
 
 //Stepper Movement Variables
 char axis_codes[NUM_AXIS] = {'X', 'Y', 'Z', 'E'};
@@ -251,6 +255,9 @@ volatile int extrudemultiply=100; //100->1 200->2
 float destination[NUM_AXIS] = {0.0, 0.0, 0.0, 0.0};
 float current_position[NUM_AXIS] = {0.0, 0.0, 0.0, 0.0};
 
+static unsigned short virtual_steps_x = 0;
+static unsigned short virtual_steps_y = 0;
+static unsigned short virtual_steps_z = 0;
 
 bool home_all_axis = true;
 //unsigned ?? ToDo: Check
@@ -2639,6 +2646,10 @@ void plan_set_position(float x, float y, float z, float e)
   position[Z_AXIS] = lround(z*axis_steps_per_unit[Z_AXIS]);     
   position[E_AXIS] = lround(e*axis_steps_per_unit[E_AXIS]);  
 
+  virtual_steps_x = 0;
+  virtual_steps_y = 0;
+  virtual_steps_z = 0;
+
   previous_nominal_speed = 0.0; // Resets planner junction speeds. Assumes start from rest.
   previous_speed[0] = 0.0;
   previous_speed[1] = 0.0;
@@ -2929,10 +2940,18 @@ ISR(TIMER1_COMPA_vect)
         #if X_MIN_PIN > -1
           bool x_min_endstop=(READ(X_MIN_PIN) != X_ENDSTOP_INVERT);
           if(x_min_endstop && old_x_min_endstop && (current_block->steps_x > 0)) {
-            endstop_x_hit=true;
-            step_events_completed = current_block->step_event_count;
+            if(!is_homing)
+              endstop_x_hit=true;
+            else  
+              step_events_completed = current_block->step_event_count;
+          }
+          else
+          {
+            endstop_x_hit=false;
           }
           old_x_min_endstop = x_min_endstop;
+        #else
+          endstop_x_hit=false;
         #endif
       }
     }
@@ -2943,10 +2962,18 @@ ISR(TIMER1_COMPA_vect)
         #if X_MAX_PIN > -1
           bool x_max_endstop=(READ(X_MAX_PIN) != X_ENDSTOP_INVERT);
           if(x_max_endstop && old_x_max_endstop && (current_block->steps_x > 0)){
-            endstop_x_hit=true;
-            step_events_completed = current_block->step_event_count;
+            if(!is_homing)
+              endstop_x_hit=true;
+            else    
+              step_events_completed = current_block->step_event_count;
+          }
+          else
+          {
+            endstop_x_hit=false;
           }
           old_x_max_endstop = x_max_endstop;
+        #else
+          endstop_x_hit=false;
         #endif
       }
     }
@@ -2958,10 +2985,18 @@ ISR(TIMER1_COMPA_vect)
         #if Y_MIN_PIN > -1
           bool y_min_endstop=(READ(Y_MIN_PIN) != Y_ENDSTOP_INVERT);
           if(y_min_endstop && old_y_min_endstop && (current_block->steps_y > 0)) {
-            endstop_y_hit=true;
-            step_events_completed = current_block->step_event_count;
+            if(!is_homing)
+              endstop_y_hit=true;
+            else
+              step_events_completed = current_block->step_event_count;
+          }
+          else
+          {
+            endstop_y_hit=false;
           }
           old_y_min_endstop = y_min_endstop;
+        #else
+          endstop_y_hit=false;  
         #endif
       }
     }
@@ -2972,10 +3007,18 @@ ISR(TIMER1_COMPA_vect)
         #if Y_MAX_PIN > -1
           bool y_max_endstop=(READ(Y_MAX_PIN) != Y_ENDSTOP_INVERT);
           if(y_max_endstop && old_y_max_endstop && (current_block->steps_y > 0)){
-            endstop_y_hit=true;
-            step_events_completed = current_block->step_event_count;
+            if(!is_homing)
+              endstop_y_hit=true;
+            else  
+              step_events_completed = current_block->step_event_count;
+          }
+          else
+          {
+            endstop_y_hit=false;
           }
           old_y_max_endstop = y_max_endstop;
+        #else
+          endstop_y_hit=false;  
         #endif
       }
     }
@@ -2987,10 +3030,18 @@ ISR(TIMER1_COMPA_vect)
         #if Z_MIN_PIN > -1
           bool z_min_endstop=(READ(Z_MIN_PIN) != Z_ENDSTOP_INVERT);
           if(z_min_endstop && old_z_min_endstop && (current_block->steps_z > 0)) {
-            endstop_z_hit=true;
-            step_events_completed = current_block->step_event_count;
+            if(!is_homing)  
+              endstop_z_hit=true;
+            else  
+              step_events_completed = current_block->step_event_count;
+          }
+          else
+          {
+            endstop_z_hit=false;
           }
           old_z_min_endstop = z_min_endstop;
+        #else
+          endstop_z_hit=false;  
         #endif
       }
     }
@@ -3001,10 +3052,18 @@ ISR(TIMER1_COMPA_vect)
         #if Z_MAX_PIN > -1
           bool z_max_endstop=(READ(Z_MAX_PIN) != Z_ENDSTOP_INVERT);
           if(z_max_endstop && old_z_max_endstop && (current_block->steps_z > 0)) {
-            endstop_z_hit=true;
-            step_events_completed = current_block->step_event_count;
+            if(!is_homing)
+              endstop_z_hit=true;
+            else  
+              step_events_completed = current_block->step_event_count;
+          }
+          else
+          {
+            endstop_z_hit=false;
           }
           old_z_max_endstop = z_max_endstop;
+        #else
+          endstop_z_hit=false;  
         #endif
       }
     }
@@ -3034,24 +3093,52 @@ ISR(TIMER1_COMPA_vect)
         }
       }    
       #endif //ADVANCE
-      
+
+
       counter_x += current_block->steps_x;
       if (counter_x > 0) {
-        WRITE(X_STEP_PIN, HIGH);
+        if(!endstop_x_hit)
+        {
+          if(virtual_steps_x)
+            virtual_steps_x--;
+          else
+            WRITE(X_STEP_PIN, HIGH);
+        }
+        else
+          virtual_steps_x++;
+          
         counter_x -= current_block->step_event_count;
         WRITE(X_STEP_PIN, LOW);
       }
 
       counter_y += current_block->steps_y;
       if (counter_y > 0) {
-        WRITE(Y_STEP_PIN, HIGH);
+        if(!endstop_y_hit)
+        {
+          if(virtual_steps_y)
+            virtual_steps_y--;
+          else
+            WRITE(Y_STEP_PIN, HIGH);
+        }
+        else
+          virtual_steps_y++;
+            
         counter_y -= current_block->step_event_count;
         WRITE(Y_STEP_PIN, LOW);
       }
 
       counter_z += current_block->steps_z;
       if (counter_z > 0) {
-        WRITE(Z_STEP_PIN, HIGH);
+        if(!endstop_z_hit)
+        {
+          if(virtual_steps_z)
+            virtual_steps_z--;
+          else
+            WRITE(Z_STEP_PIN, HIGH);
+        }
+        else
+          virtual_steps_z++;
+          
         counter_z -= current_block->step_event_count;
         WRITE(Z_STEP_PIN, LOW);
       }
