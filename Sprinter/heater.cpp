@@ -50,8 +50,8 @@ unsigned long previous_millis_heater, previous_millis_bed_heater, previous_milli
 #ifdef PIDTEMP
   volatile unsigned char g_heater_pwm_val = 0;
  
-  unsigned char PWM_off_time = 0;
-  unsigned char PWM_out_on = 0;
+  //unsigned char PWM_off_time = 0;
+  //unsigned char PWM_out_on = 0;
   
   int temp_iState = 0;
   int temp_dState = 0;
@@ -66,6 +66,10 @@ unsigned long previous_millis_heater, previous_millis_bed_heater, previous_milli
   const int temp_iState_max = 256L * PID_INTEGRAL_DRIVE_MAX / PID_IGAIN;
 #endif
 
+
+#if defined(FAN_SOFT_PWM) && (FAN_PIN > -1)
+  volatile unsigned char g_fan_pwm_val = 0;
+#endif
 
 #ifdef AUTOTEMP
     float autotemp_max=AUTO_TEMP_MAX;
@@ -155,90 +159,142 @@ int read_max6675()
 #endif
 
 
-#ifdef PID_SOFT_PWM
+//------------------------------------------------------------------------
+// Soft PWM for Heater and FAN
+//------------------------------------------------------------------------
 
+#if defined(PID_SOFT_PWM) || (defined(FAN_SOFT_PWM) && (FAN_PIN > -1))
  void init_Timer2_softpwm(void)
  {
   // This is a simple SOFT PWM with 500 Hz for Extruder Heating
 
- 
   TIFR2 = (1 << TOV2);          // clear interrupt flag
   TCCR2B = (1 << CS22) | (1 << CS20);         // start timer (ck/128 prescalar)
-  TCCR2A = (1 << WGM21);        // CTC mode
-  OCR2A = 128;                  // We want to have at least 30Hz or else it gets choppy
-  TIMSK2 = (1 << OCIE2A);       // enable timer2 output compare match interrupt
-
+  TCCR2A = 0;//(1 << WGM21);        // Normal mode
+  
+   TIMSK2 |= (1 << TOIE2);
+  
+  #ifdef PID_SOFT_PWM
+   OCR2A = 128;                  // We want to have at least 500Hz or else it gets choppy
+   TIMSK2 |= (1 << OCIE2A);       // enable timer2 output compare match interrupt
+  #endif
+  
+  #if defined(FAN_SOFT_PWM) && (FAN_PIN > -1)
+   OCR2B = 128;                  // We want to have at least 500Hz or else it gets choppy
+   TIMSK2 |= (1 << OCIE2B);       // enable timer2 output compare match interrupt
+  #endif
+ 
  }
+#endif
 
-
- ISR(TIMER2_COMPA_vect)
- {
-
-    
-    if(g_heater_pwm_val < 2)
-    {
-      #if LED_PIN > -1
-        WRITE(LED_PIN,LOW);
-      #endif
-      WRITE(HEATER_0_PIN,LOW);
-      PWM_out_on = 0;
-      OCR2A = 128; 
-    }
-    else if(g_heater_pwm_val > 253)
+#if defined(PID_SOFT_PWM) || (defined(FAN_SOFT_PWM) && (FAN_PIN > -1))
+ISR(TIMER2_OVF_vect)
+{
+  
+  //--------------------------------------
+  // Soft PWM, Heater, start PWM cycle
+  //--------------------------------------
+  #ifdef PID_SOFT_PWM
+    if(g_heater_pwm_val >= 2)
     {
       #if LED_PIN > -1
         WRITE(LED_PIN,HIGH);
       #endif
       WRITE(HEATER_0_PIN,HIGH);
-      PWM_out_on = 1;
-      OCR2A = 128; 
+
+      if(g_heater_pwm_val <= 253)
+        OCR2A = g_heater_pwm_val; 
+      else
+        OCR2A = 192; 
     }
     else
     {
-
-       if(PWM_out_on == 1)
-       {
-
-         #if LED_PIN > -1
-           WRITE(LED_PIN,LOW);
-         #endif
-         WRITE(HEATER_0_PIN,LOW);
-         PWM_out_on = 0;
-         OCR2A = PWM_off_time;
-       }
-       else
-       {
-
-         #if LED_PIN > -1
-           WRITE(LED_PIN,HIGH);
-         #endif
-         WRITE(HEATER_0_PIN,HIGH);
-         PWM_out_on = 1;
-         
-         if(g_heater_pwm_val > 253)
-         {
-           OCR2A = 253;
-           PWM_off_time = 2;
-         }
-         else if(g_heater_pwm_val < 2)
-         {
-           OCR2A = 2;
-           PWM_off_time = 253;
-         }
-         else
-         {
-           OCR2A =  g_heater_pwm_val;
-           PWM_off_time = 255 - g_heater_pwm_val;
-         }
-         
-       }
+      #if LED_PIN > -1
+        WRITE(LED_PIN,LOW);
+      #endif
+      WRITE(HEATER_0_PIN,LOW);
+      OCR2A = 192; 
     }
-    
+  #endif
   
+  //--------------------------------------
+  // Soft PWM, Fan, start PWM cycle
+  //--------------------------------------
+  #if defined(FAN_SOFT_PWM) && (FAN_PIN > -1)
+    if(g_fan_pwm_val >= 2)
+    {
+      #if (FAN_PIN > -1) 
+        WRITE(FAN_PIN,HIGH);
+      #endif  
+      
+      if(g_fan_pwm_val <= 253)
+        OCR2B = g_fan_pwm_val; 
+      else
+        OCR2B = 128; 
+    }
+    else
+    {
+      #if (FAN_PIN > -1) 
+        WRITE(FAN_PIN,LOW);
+      #endif  
+      
+      OCR2B = 128; 
+    }
+  #endif
+  
+
+}
+#endif
+
+
+ #ifdef PID_SOFT_PWM
+ ISR(TIMER2_COMPA_vect)
+ {
+
+
+   if(g_heater_pwm_val > 253)
+   {
+     #if LED_PIN > -1
+       WRITE(LED_PIN,HIGH);
+     #endif
+     WRITE(HEATER_0_PIN,HIGH);
+   }
+   else
+   {
+     #if LED_PIN > -1
+       WRITE(LED_PIN,LOW);
+     #endif
+     WRITE(HEATER_0_PIN,LOW);
+   }
+   
+
  }
  #endif
  
- 
+
+ #if defined(FAN_SOFT_PWM) && (FAN_PIN > -1)
+ ISR(TIMER2_COMPB_vect)
+ {
+
+   
+   if(g_fan_pwm_val > 253)
+   {
+     #if (FAN_PIN > -1) 
+       WRITE(FAN_PIN,HIGH);
+     #endif
+   }
+   else
+   {
+     #if (FAN_PIN > -1) 
+       WRITE(FAN_PIN,LOW);
+     #endif
+   }  
+
+
+ }  
+ #endif
+ //--------------------END SOFT PWM---------------------------
+
  
  void manage_heater()
  {
@@ -247,6 +303,8 @@ int read_max6675()
   if((millis() - previous_millis_monitor) > 250 )
   {
     previous_millis_monitor = millis();
+
+
     if(manage_monitor <= 1)
     {
       showString(PSTR("MTEMP:"));

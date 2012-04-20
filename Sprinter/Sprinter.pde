@@ -28,9 +28,6 @@
   https://github.com/ErikZalm/Marlin-non-gen6
   
   Sprinter Changelog
-  
-  -  Added M93 command. Sends current steps for all axis.
-  
   -  Look forward function --> calculate 16 Steps forward, get from Firmaware Marlin and Grbl
   -  Stepper control with Timer 1 (Interrupt)
   -  Extruder heating with PID use a Softpwm (Timer 2) with 500 hz to free Timer1 für Steppercontrol
@@ -102,7 +99,14 @@
  Version 1.3.12T
 - Fixed arc offset.
 
-  
+ Version 1.3.13T
+- Extrudmultiply with code M221 Sxxx (S100 original Extrude value)
+- use Feedratefaktor only when Extrude > 0
+- M106 / M107 can drive the FAN with PWM + Port check for not using Timer 1
+- Added M93 command. Sends current steps for all axis.
+- New Option --> FAN_SOFT_PWM, with this option the FAN PWM can use every digital I/O
+
+
 
 */
 
@@ -191,6 +195,7 @@ void __cxa_pure_virtual(){};
 // M205 - advanced settings:  minimum travel speed S=while printing T=travel only,  X= maximum xy jerk, Z=maximum Z jerk
 
 // M220 - set speed factor override percentage S:factor in percent 
+// M221 - set extruder multiply factor S100 --> original Extrude Speed 
 
 // M500 - stores paramters in EEPROM
 // M501 - reads parameters from EEPROM (if you need reset them after you changed them temporarily).
@@ -203,7 +208,7 @@ void __cxa_pure_virtual(){};
 // M603 - Show Free Ram
 
 
-#define _VERSION_TEXT "1.3.12T / 27.03.2012"
+#define _VERSION_TEXT "1.3.13T / 19.04.2012"
 
 //Stepper Movement Variables
 char axis_codes[NUM_AXIS] = {'X', 'Y', 'Z', 'E'};
@@ -239,6 +244,7 @@ unsigned long plateau_steps;
 volatile int feedmultiply=100; //100->original / 200-> Faktor 2 / 50 -> Faktor 0.5
 int saved_feedmultiply;
 volatile bool feedmultiplychanged=false;
+volatile int extrudemultiply=100; //100->1 200->2
 
 //boolean acceleration_enabled = false, accelerating = false;
 //unsigned long interval;
@@ -787,7 +793,7 @@ void setup()
 
 #endif
 
-  #ifdef PID_SOFT_PWM
+  #if defined(PID_SOFT_PWM) || (defined(FAN_SOFT_PWM) && (FAN_PIN > -1))
   showString(PSTR("Soft PWM Init\r\n"));
   init_Timer2_softpwm();
   #endif
@@ -880,7 +886,7 @@ void check_buffer_while_arc()
 //------------------------------------------------
 void get_command() 
 { 
-  while( Serial.available() > 0  && buflen < BUFSIZE)
+  while( Serial.available() > 0 && buflen < BUFSIZE)
   {
     serial_char = Serial.read();
     if(serial_char == '\n' || serial_char == '\r' || serial_char == ':' || serial_count >= (MAX_CMD_SIZE - 1) ) 
@@ -989,7 +995,7 @@ void get_command()
   {
     return;
   }
-  while( filesize > sdpos  && buflen < BUFSIZE)
+  while( filesize > sdpos && buflen < BUFSIZE)
   {
     serial_char = file.read();
     read_char_int = (int)serial_char;
@@ -1538,18 +1544,30 @@ FORCE_INLINE void process_commands()
       case 106: //M106 Fan On
         if (code_seen('S'))
         {
-            WRITE(FAN_PIN, HIGH);
-            analogWrite_check(FAN_PIN, constrain(code_value(),0,255) );
+            #if defined(FAN_SOFT_PWM) && (FAN_PIN > -1)
+              g_fan_pwm_val = constrain(code_value(),0,255);
+            #else
+              WRITE(FAN_PIN, HIGH);
+              analogWrite_check(FAN_PIN, constrain(code_value(),0,255) );
+            #endif
         }
         else 
         {
-            WRITE(FAN_PIN, HIGH);
-            analogWrite_check(FAN_PIN, 255 );
+            #if defined(FAN_SOFT_PWM) && (FAN_PIN > -1)
+              g_fan_pwm_val = 255;
+            #else
+              WRITE(FAN_PIN, HIGH);
+              analogWrite_check(FAN_PIN, 255 );
+            #endif
         }
         break;
       case 107: //M107 Fan Off
-          analogWrite_check(FAN_PIN, 0);
-          WRITE(FAN_PIN, LOW);
+          #if defined(FAN_SOFT_PWM) && (FAN_PIN > -1)
+            g_fan_pwm_val = 0;
+          #else
+            analogWrite_check(FAN_PIN, 0);
+            WRITE(FAN_PIN, LOW);
+          #endif
         break;
       #endif
       #if (PS_ON_PIN > -1)
@@ -1701,12 +1719,21 @@ FORCE_INLINE void process_commands()
         if(code_seen('S')) 
         {
           feedmultiply = code_value() ;
-          if(feedmultiply < 20) feedmultiply = 20;
-          if(feedmultiply > 200) feedmultiply = 200;
+          feedmultiply = constrain(feedmultiply, 20, 200);
           feedmultiplychanged=true;
         }
       }
       break;
+      case 221: // M221 S<factor in percent>- set extrude factor override percentage
+      {
+        if(code_seen('S')) 
+        {
+          extrudemultiply = code_value() ;
+          extrudemultiply = constrain(extrudemultiply, 40, 200);
+        }
+      }
+      break;
+
 #ifdef USE_EEPROM_SETTINGS
       case 500: // Store settings in EEPROM
       {
@@ -1851,8 +1878,16 @@ void prepare_move()
       if (destination[Z_AXIS] > Z_MAX_LENGTH) destination[Z_AXIS] = Z_MAX_LENGTH;
     }
   }
+
+  if(destination[E_AXIS] > current_position[E_AXIS])
+  {
+    help_feedrate = ((long)feedrate*(long)feedmultiply);
+  }
+  else
+  {
+    help_feedrate = ((long)feedrate*(long)100);
+  }
   
-  help_feedrate = ((long)feedrate*(long)feedmultiply);
   plan_buffer_line(destination[X_AXIS], destination[Y_AXIS], destination[Z_AXIS], destination[E_AXIS], help_feedrate/6000.0);
   
   for(int i=0; i < NUM_AXIS; i++)
@@ -1869,8 +1904,15 @@ void prepare_arc_move(char isclockwise)
   float r = hypot(offset[X_AXIS], offset[Y_AXIS]); // Compute arc radius for mc_arc
   long help_feedrate = 0;
 
-  
-  help_feedrate = ((long)feedrate*(long)feedmultiply);
+  if(destination[E_AXIS] > current_position[E_AXIS])
+  {
+    help_feedrate = ((long)feedrate*(long)feedmultiply);
+  }
+  else
+  {
+    help_feedrate = ((long)feedrate*(long)100);
+  }
+
   // Trace the arc
   mc_arc(current_position, destination, offset, X_AXIS, Y_AXIS, Z_AXIS, help_feedrate/6000.0, r, isclockwise);
   
@@ -2314,6 +2356,8 @@ void plan_buffer_line(float x, float y, float z, float e, float feed_rate)
   block->steps_y = labs(target[Y_AXIS]-position[Y_AXIS]);
   block->steps_z = labs(target[Z_AXIS]-position[Z_AXIS]);
   block->steps_e = labs(target[E_AXIS]-position[E_AXIS]);
+  block->steps_e *= extrudemultiply;
+  block->steps_e /= 100;
   block->step_event_count = max(block->steps_x, max(block->steps_y, max(block->steps_z, block->steps_e)));
 
   // Bail if this is a zero-length block
@@ -2373,7 +2417,8 @@ void plan_buffer_line(float x, float y, float z, float e, float feed_rate)
   delta_mm[X_AXIS] = (target[X_AXIS]-position[X_AXIS])/axis_steps_per_unit[X_AXIS];
   delta_mm[Y_AXIS] = (target[Y_AXIS]-position[Y_AXIS])/axis_steps_per_unit[Y_AXIS];
   delta_mm[Z_AXIS] = (target[Z_AXIS]-position[Z_AXIS])/axis_steps_per_unit[Z_AXIS];
-  delta_mm[E_AXIS] = (target[E_AXIS]-position[E_AXIS])/axis_steps_per_unit[E_AXIS];
+  //delta_mm[E_AXIS] = (target[E_AXIS]-position[E_AXIS])/axis_steps_per_unit[E_AXIS];
+  delta_mm[E_AXIS] = ((target[E_AXIS]-position[E_AXIS])/axis_steps_per_unit[E_AXIS])*extrudemultiply/100.0;
   
   if ( block->steps_x == 0 && block->steps_y == 0 && block->steps_z == 0 ) {
     block->millimeters = fabs(delta_mm[E_AXIS]);
@@ -2581,6 +2626,12 @@ void plan_buffer_line(float x, float y, float z, float e, float feed_rate)
   st_wake_up();
 }
 
+int calc_plannerpuffer_fill(void)
+{
+  int moves_queued=(block_buffer_head-block_buffer_tail + BLOCK_BUFFER_SIZE) & (BLOCK_BUFFER_SIZE - 1);
+  return(moves_queued);
+}
+
 void plan_set_position(float x, float y, float z, float e)
 {
   position[X_AXIS] = lround(x*axis_steps_per_unit[X_AXIS]);
@@ -2604,16 +2655,19 @@ void getHighESpeed()
   if((target_temp+2) < autotemp_min)  //probably temperature set to zero.
     return; //do nothing
   
-  float high=0;
+  float high=0.0;
   uint8_t block_index = block_buffer_tail;
   
-  while(block_index != block_buffer_head)
-  {
-    float se=block_buffer[block_index].steps_e/float(block_buffer[block_index].step_event_count)*block_buffer[block_index].nominal_rate;
-    //se; units steps/sec;
-    if(se>high)
-    {
-      high=se;
+  while(block_index != block_buffer_head) {
+    if((block_buffer[block_index].steps_x != 0) ||
+       (block_buffer[block_index].steps_y != 0) ||
+       (block_buffer[block_index].steps_z != 0)) {
+      float se=(float(block_buffer[block_index].steps_e)/float(block_buffer[block_index].step_event_count))*block_buffer[block_index].nominal_speed;
+      //se; units steps/sec;
+      if(se>high)
+      {
+        high=se;
+      }
     }
     block_index = (block_index+1) & (BLOCK_BUFFER_SIZE - 1);
   }
