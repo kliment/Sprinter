@@ -240,6 +240,17 @@ const int dropsegments=5; //everything with less than this number of steps will 
 //every Digital output for it, main usage for Sanguinololu
 #define FAN_SOFT_PWM
 
+//-----------------------------------------------------------------------
+//// MINIMUM START SPEED FOR FAN
+//-----------------------------------------------------------------------
+
+//Minimum start speed for FAN when the last speed was zero
+//Set to 0 to deaktivate
+//If value is set the fan will drive with this minimum speed for MINIMUM_FAN_START_TIME
+#define MINIMUM_FAN_START_SPEED  0
+
+//This is the time how long the minimum FAN speed is set
+#define MINIMUM_FAN_START_TIME  6000    //6sec
 
 //-----------------------------------------------------------------------
 //// HEATERCONTROL AND PID PARAMETERS
