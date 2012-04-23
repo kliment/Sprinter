@@ -910,7 +910,7 @@ void get_command()
   while( Serial.available() > 0 && buflen < BUFSIZE)
   {
     serial_char = Serial.read();
-    if(serial_char == '\n' || serial_char == '\r' || serial_char == ':' || serial_count >= (MAX_CMD_SIZE - 1) ) 
+    if(serial_char == '\n' || serial_char == '\r' || (serial_char == ':' && comment_mode == false) || serial_count >= (MAX_CMD_SIZE - 1) ) 
     {
       if(!serial_count) { //if empty line
         comment_mode = false; // for new command
@@ -1021,7 +1021,7 @@ void get_command()
     serial_char = file.read();
     read_char_int = (int)serial_char;
     
-    if(serial_char == '\n' || serial_char == '\r' || serial_char == ':' || serial_count >= (MAX_CMD_SIZE - 1) || read_char_int == -1) 
+    if(serial_char == '\n' || serial_char == '\r' || (serial_char == ':' && comment_mode == false) || serial_count >= (MAX_CMD_SIZE - 1) || read_char_int == -1) 
     {
         sdpos = file.curPosition();
         if(sdpos >= filesize)
