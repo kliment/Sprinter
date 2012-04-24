@@ -99,7 +99,7 @@ void EEPROM_printSettings()
       Serial.println(axis_steps_per_unit[3]);
       
       showString(PSTR("Maximum feedrates (mm/s):\r\n"));
-      showString(PSTR("  M203 X"));
+      showString(PSTR("  M202 X"));
       Serial.print(max_feedrate[0]);
       showString(PSTR(" Y"));
       Serial.print(max_feedrate[1]); 
