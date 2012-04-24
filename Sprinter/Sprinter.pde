@@ -113,6 +113,9 @@
 - M206 - set additional homeing offset 
 - Option for minimum FAN start speed --> #define MINIMUM_FAN_START_SPEED  50  (set it to zero to deaktivate)
   
+ Version 1.3.16T
+- Extra Max Feedrate for Retract (MAX_RETRACT_FEEDRATE)
+
 
 */
 
@@ -215,7 +218,7 @@ void __cxa_pure_virtual(){};
 // M603 - Show Free Ram
 
 
-#define _VERSION_TEXT "1.3.15T / 22.04.2012"
+#define _VERSION_TEXT "1.3.16T / 24.04.2012"
 
 //Stepper Movement Variables
 char axis_codes[NUM_AXIS] = {'X', 'Y', 'Z', 'E'};
@@ -1724,7 +1727,7 @@ FORCE_INLINE void process_commands()
       
         showString(PSTR("\r\n"));
       	break;
-      case 201: // M201
+      case 201: // M201  Set maximum acceleration in units/s^2 for print moves (M201 X1000 Y1000)
 
         for(int8_t i=0; i < NUM_AXIS; i++) 
         {
@@ -2397,6 +2400,9 @@ void check_axes_activity() {
 
 
 float junction_deviation = 0.1;
+float max_E_feedrate_calc = MAX_RETRACT_FEEDRATE;
+bool retract_feedrate_aktiv = false;
+
 // Add a new linear movement to the buffer. steps_x, _y and _z is the absolute position in 
 // mm. Microseconds specify how many microseconds the move should take to perform. To aid acceleration
 // calculation the caller must also provide the physical length of the line in millimeters.
@@ -2447,7 +2453,25 @@ void plan_buffer_line(float x, float y, float z, float e, float feed_rate)
   if (target[X_AXIS] < position[X_AXIS]) { block->direction_bits |= (1<<X_AXIS); }
   if (target[Y_AXIS] < position[Y_AXIS]) { block->direction_bits |= (1<<Y_AXIS); }
   if (target[Z_AXIS] < position[Z_AXIS]) { block->direction_bits |= (1<<Z_AXIS); }
-  if (target[E_AXIS] < position[E_AXIS]) { block->direction_bits |= (1<<E_AXIS); }
+  if (target[E_AXIS] < position[E_AXIS]) 
+  { 
+    block->direction_bits |= (1<<E_AXIS); 
+    //High Feedrate for retract
+    max_E_feedrate_calc = MAX_RETRACT_FEEDRATE;
+    retract_feedrate_aktiv = true;
+  }
+  else
+  {
+     if(retract_feedrate_aktiv)
+     {
+       if(block->steps_e > 0)
+         retract_feedrate_aktiv = false;
+     }
+     else
+     {
+       max_E_feedrate_calc = max_feedrate[E_AXIS]; 
+     }
+  }
   
 
  #ifdef DELAY_ENABLE
@@ -2532,32 +2556,24 @@ void plan_buffer_line(float x, float y, float z, float e, float feed_rate)
 */
 
 
- // Calculate speed in mm/sec for each axis
+ // Calculate and limit speed in mm/sec for each axis
   float current_speed[4];
-  for(int i=0; i < 4; i++) {
-    current_speed[i] = delta_mm[i] * inverse_second;
-  }
-
-  // Limit speed per axis
   float speed_factor = 1.0; //factor <=1 do decrease speed
-  for(int i=0; i < 4; i++) {
+  for(int i=0; i < 3; i++) 
+  {
+    current_speed[i] = delta_mm[i] * inverse_second;
     if(fabs(current_speed[i]) > max_feedrate[i])
       speed_factor = min(speed_factor, max_feedrate[i] / fabs(current_speed[i]));
   }
+  
+  current_speed[E_AXIS] = delta_mm[E_AXIS] * inverse_second;
+  if(fabs(current_speed[E_AXIS]) > max_E_feedrate_calc)
+    speed_factor = min(speed_factor, max_E_feedrate_calc / fabs(current_speed[E_AXIS]));
+
 
   // Correct the speed  
-  if( speed_factor < 1.0) {
-//    Serial.print("speed factor : "); Serial.println(speed_factor);
-    for(int i=0; i < 4; i++) {
-    if(fabs(current_speed[i]) > max_feedrate[i])
-      speed_factor = min(speed_factor, max_feedrate[i] / fabs(current_speed[i]));
- /*     
-      if(speed_factor < 0.1) {
-        Serial.print("speed factor : "); Serial.println(speed_factor);
-        Serial.print("current_speed"); Serial.print(i); Serial.print(" : "); Serial.println(current_speed[i]);
-      }
- */
-  }
+  if( speed_factor < 1.0) 
+  {
     for(unsigned char i=0; i < 4; i++) {
       current_speed[i] *= speed_factor;
     }
