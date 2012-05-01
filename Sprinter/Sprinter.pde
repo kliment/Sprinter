@@ -359,7 +359,7 @@ unsigned char manage_monitor = 255;
   #ifdef SD_FAST_XFER_AKTIV
   
   #ifdef PIDTEMP
-    extern int g_heater_pwm_val;
+    extern volatile unsigned char g_heater_pwm_val;
   #endif
   
   void fast_xfer()
@@ -371,7 +371,9 @@ unsigned char manage_monitor = 255;
     if(HEATER_0_PIN > -1) WRITE(HEATER_0_PIN,LOW);
     if(HEATER_1_PIN > -1) WRITE(HEATER_1_PIN,LOW);
     
+  #ifdef PIDTEMP
     g_heater_pwm_val = 0;
+  #endif
     
     lastxferchar = 1;
     xferbytes = 0;
