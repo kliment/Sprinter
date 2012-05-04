@@ -287,6 +287,10 @@ const int dropsegments=5; //everything with less than this number of steps will 
 //Command M601 / Command M602 Reset the MIN/MAX Value
 //#define DEBUG_HEATER_TEMP
 
+// M303 - PID relay autotune S<temperature> sets the target temperature. 
+// (default target temperature = 150C)
+#define PID_AUTOTUNE
+
 //PID Controler Settings
 #define PID_INTEGRAL_DRIVE_MAX 80 // too big, and heater will lag after changing temperature, too small and it might not compensate enough for long-term errors
 #define PID_PGAIN 2560 //256 is 1.0  // value of X means that error of 1 degree is changing PWM duty by X, probably no need to go over 25

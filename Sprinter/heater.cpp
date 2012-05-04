@@ -295,6 +295,203 @@ ISR(TIMER2_OVF_vect)
  #endif
  //--------------------END SOFT PWM---------------------------
 
+//-------------------- START PID AUTOTUNE ---------------------------
+// Based on PID relay test 
+// Thanks to Erik van der Zalm for this idea to use it for Marlin
+// Some information see:
+// http://brettbeauregard.com/blog/2012/01/arduino-pid-autotune-library/
+//------------------------------------------------------------------
+#ifdef PID_AUTOTUNE
+void PID_autotune(int PIDAT_test_temp)
+{
+  float PIDAT_input = 0;
+  int PIDAT_input_help = 0;
+  unsigned char PIDAT_count_input = 0;
+
+  float PIDAT_max, PIDAT_min;
+ 
+  unsigned char PIDAT_PWM_val = 255;
+  
+  unsigned char PIDAT_cycles=0;
+  bool PIDAT_heating = true;
+
+  unsigned long PIDAT_temp_millis = millis();
+  unsigned long PIDAT_t1=PIDAT_temp_millis;
+  unsigned long PIDAT_t2=PIDAT_temp_millis;
+  unsigned long PIDAT_T_check_AI_val = PIDAT_temp_millis;
+
+  unsigned char PIDAT_cycle_cnt = 0;
+  
+  long PIDAT_t_high;
+  long PIDAT_t_low;
+
+  long PIDAT_bias= 127;
+  long PIDAT_d  =  127;
+  
+  float PIDAT_Ku, PIDAT_Tu;
+  float PIDAT_Kp, PIDAT_Ki, PIDAT_Kd;
+  
+  #define PIDAT_TIME_FACTOR ((HEATER_CHECK_INTERVAL*256.0) / 1000.0)
+  
+  showString(PSTR("PID Autotune start\r\n"));
+
+  target_temp = PIDAT_test_temp;
+  
+  #ifdef BED_USES_THERMISTOR
+   WRITE(HEATER_1_PIN,LOW);
+  #endif
+  
+  for(;;) 
+  {
+ 
+    if((millis() - PIDAT_T_check_AI_val) > 100 )
+    {
+      PIDAT_T_check_AI_val = millis();
+      PIDAT_cycle_cnt++;
+      
+      #ifdef HEATER_USES_THERMISTOR
+        current_raw = analogRead(TEMP_0_PIN); 
+        current_raw = 1023 - current_raw;
+        PIDAT_input_help += analog2temp(current_raw);
+        PIDAT_count_input++;
+      #elif defined HEATER_USES_AD595
+        current_raw = analogRead(TEMP_0_PIN);    
+        PIDAT_input_help += analog2temp(current_raw);
+        PIDAT_count_input++;
+      #elif defined HEATER_USES_MAX6675
+        current_raw = read_max6675();
+        PIDAT_input_help += analog2temp(current_raw);
+        PIDAT_count_input++;
+      #endif
+    }
+    
+    if(PIDAT_cycle_cnt >= 10 )
+    {
+      
+      PIDAT_cycle_cnt = 0;
+      
+      PIDAT_input = (float)PIDAT_input_help / (float)PIDAT_count_input;
+      PIDAT_input_help = 0;
+      PIDAT_count_input = 0;
+      
+      PIDAT_max=max(PIDAT_max,PIDAT_input);
+      PIDAT_min=min(PIDAT_min,PIDAT_input);
+      
+      if(PIDAT_heating == true && PIDAT_input > PIDAT_test_temp) 
+      {
+        if(millis() - PIDAT_t2 > 5000) 
+        { 
+          PIDAT_heating = false;
+          PIDAT_PWM_val = (PIDAT_bias - PIDAT_d);
+          PIDAT_t1 = millis();
+          PIDAT_t_high = PIDAT_t1 - PIDAT_t2;
+          PIDAT_max = PIDAT_test_temp;
+        }
+      }
+      
+      if(PIDAT_heating == false && PIDAT_input < PIDAT_test_temp) 
+      {
+        if(millis() - PIDAT_t1 > 5000) 
+        {
+          PIDAT_heating = true;
+          PIDAT_t2 = millis();
+          PIDAT_t_low = PIDAT_t2 - PIDAT_t1;
+          
+          if(PIDAT_cycles > 0) 
+          {
+            PIDAT_bias += (PIDAT_d*(PIDAT_t_high - PIDAT_t_low))/(PIDAT_t_low + PIDAT_t_high);
+            PIDAT_bias = constrain(PIDAT_bias, 20 ,235);
+            if(PIDAT_bias > 127) PIDAT_d = 254 - PIDAT_bias;
+            else PIDAT_d = PIDAT_bias;
+
+            showString(PSTR(" bias: ")); Serial.print(PIDAT_bias);
+            showString(PSTR(" d: "));    Serial.print(PIDAT_d);
+            showString(PSTR(" min: "));  Serial.print(PIDAT_min);
+            showString(PSTR(" max: "));  Serial.println(PIDAT_max);
+            
+            if(PIDAT_cycles > 2) 
+            {
+              PIDAT_Ku = (4.0*PIDAT_d)/(3.14159*(PIDAT_max-PIDAT_min));
+              PIDAT_Tu = ((float)(PIDAT_t_low + PIDAT_t_high)/1000.0);
+              
+              showString(PSTR(" Ku: ")); Serial.print(PIDAT_Ku);
+              showString(PSTR(" Tu: ")); Serial.println(PIDAT_Tu);
+
+              PIDAT_Kp = 0.60*PIDAT_Ku;
+              PIDAT_Ki = 2*PIDAT_Kp/PIDAT_Tu;
+              PIDAT_Kd = PIDAT_Kp*PIDAT_Tu/8;
+              showString(PSTR(" Clasic PID \r\n"));
+              //showString(PSTR(" Kp: ")); Serial.println(PIDAT_Kp);
+              //showString(PSTR(" Ki: ")); Serial.println(PIDAT_Ki);
+              //showString(PSTR(" Kd: ")); Serial.println(PIDAT_Kd);
+              showString(PSTR(" CFG Kp: ")); Serial.println((unsigned int)(PIDAT_Kp*256));
+              showString(PSTR(" CFG Ki: ")); Serial.println((unsigned int)(PIDAT_Ki*PIDAT_TIME_FACTOR));
+              showString(PSTR(" CFG Kd: ")); Serial.println((unsigned int)(PIDAT_Kd*PIDAT_TIME_FACTOR));
+              
+              PIDAT_Kp = 0.30*PIDAT_Ku;
+              PIDAT_Ki = PIDAT_Kp/PIDAT_Tu;
+              PIDAT_Kd = PIDAT_Kp*PIDAT_Tu/3;
+              showString(PSTR(" Some overshoot \r\n"));
+              showString(PSTR(" CFG Kp: ")); Serial.println((unsigned int)(PIDAT_Kp*256));
+              showString(PSTR(" CFG Ki: ")); Serial.println((unsigned int)(PIDAT_Ki*PIDAT_TIME_FACTOR));
+              showString(PSTR(" CFG Kd: ")); Serial.println((unsigned int)(PIDAT_Kd*PIDAT_TIME_FACTOR));
+              /*
+              PIDAT_Kp = 0.20*PIDAT_Ku;
+              PIDAT_Ki = 2*PIDAT_Kp/PIDAT_Tu;
+              PIDAT_Kd = PIDAT_Kp*PIDAT_Tu/3;
+              showString(PSTR(" No overshoot \r\n"));
+              showString(PSTR(" CFG Kp: ")); Serial.println((unsigned int)(PIDAT_Kp*256));
+              showString(PSTR(" CFG Ki: ")); Serial.println((unsigned int)(PIDAT_Ki*PIDAT_TIME_FACTOR));
+              showString(PSTR(" CFG Kd: ")); Serial.println((unsigned int)(PIDAT_Kd*PIDAT_TIME_FACTOR));
+              */
+            }
+          }
+          PIDAT_PWM_val = (PIDAT_bias + PIDAT_d);
+          PIDAT_cycles++;
+          PIDAT_min = PIDAT_test_temp;
+        }
+      } 
+      
+      #ifdef PID_SOFT_PWM
+        g_heater_pwm_val = PIDAT_PWM_val;
+      #else
+        analogWrite_check(HEATER_0_PIN, PIDAT_PWM_val);
+        #if LED_PIN>-1
+          analogWrite_check(LED_PIN, PIDAT_PWM_val);
+        #endif
+      #endif  
+    }
+    
+    if(PIDAT_input > (PIDAT_test_temp + 20)) 
+    {
+      showString(PSTR("PID Autotune failed! Temperature to high\r\n"));
+      return;
+    }
+    
+    if(millis() - PIDAT_temp_millis > 2000) 
+    {
+      PIDAT_temp_millis = millis();
+      showString(PSTR("ok T:"));
+      Serial.print(PIDAT_input);   
+      showString(PSTR(" @:"));
+      Serial.println((unsigned char)PIDAT_PWM_val*1);       
+    }
+    
+    if(((millis() - PIDAT_t1) + (millis() - PIDAT_t2)) > (10L*60L*1000L*2L)) 
+    {
+      showString(PSTR("PID Autotune failed! timeout\r\n"));
+      return;
+    }
+    
+    if(PIDAT_cycles > 5) 
+    {
+      showString(PSTR("PID Autotune finished ! Place the Kp, Ki and Kd constants in the configuration.h\r\n"));
+      return;
+    }
+  }
+}
+#endif  
+//---------------- END AUTOTUNE PID ------------------------------
  
  void manage_heater()
  {

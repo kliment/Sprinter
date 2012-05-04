@@ -116,6 +116,10 @@
  Version 1.3.16T
 - Extra Max Feedrate for Retract (MAX_RETRACT_FEEDRATE)
 
+ Version 1.3.17T
+- M303 - PID relay autotune possible
+- G4 Wait until last move is done
+
 
 */
 
@@ -207,6 +211,8 @@ void __cxa_pure_virtual(){};
 // M220 - set speed factor override percentage S:factor in percent 
 // M221 - set extruder multiply factor S100 --> original Extrude Speed 
 
+// M303 - PID relay autotune S<temperature> sets the target temperature. (default target temperature = 150C)
+
 // M500 - stores paramters in EEPROM
 // M501 - reads parameters from EEPROM (if you need reset them after you changed them temporarily).
 // M502 - reverts to the default "factory settings". You still need to store them in EEPROM afterwards if you want to.
@@ -218,7 +224,7 @@ void __cxa_pure_virtual(){};
 // M603 - Show Free Ram
 
 
-#define _VERSION_TEXT "1.3.16T / 24.04.2012"
+#define _VERSION_TEXT "1.3.17T / 04.05.2012"
 
 //Stepper Movement Variables
 char axis_codes[NUM_AXIS] = {'X', 'Y', 'Z', 'E'};
@@ -1121,6 +1127,7 @@ FORCE_INLINE void process_commands()
         if(code_seen('P')) codenum = code_value(); // milliseconds to wait
         if(code_seen('S')) codenum = code_value() * 1000; // seconds to wait
         codenum += millis();  // keep track of when we started waiting
+        st_synchronize();  // wait for all movements to finish
         while(millis()  < codenum ){
           manage_heater();
         }
@@ -1795,7 +1802,15 @@ FORCE_INLINE void process_commands()
         }
       }
       break;
-
+#ifdef PID_AUTOTUNE
+      case 303: // M303 PID autotune
+      {
+        float help_temp = 150.0;
+        if (code_seen('S')) help_temp=code_value();
+        PID_autotune(help_temp);
+      }
+      break;
+#endif
 #ifdef USE_EEPROM_SETTINGS
       case 500: // Store settings in EEPROM
       {
