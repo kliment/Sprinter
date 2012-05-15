@@ -7,6 +7,7 @@
 // MEGA/RAMPS up to 1.2  = 3,
 // RAMPS 1.3/1.4 = 33
 // Gen6 = 5, 
+// Gen6 deluxe = 51
 // Sanguinololu up to 1.1 = 6
 // Sanguinololu 1.2 and above = 62
 // Gen 7 @ 16MHZ only= 7
