@@ -168,7 +168,7 @@ const int NUM_AXIS = 4; // The axis order in all axis related arrays is X, Y, Z,
 ///Oscillation reduction.  Forces x,y,or z axis to be stationary for ## ms before allowing axis to switch direcitons.  Alternative method to prevent skipping steps.  Uncomment the line below to activate.
 //#define RAPID_OSCILLATION_REDUCTION
 #ifdef RAPID_OSCILLATION_REDUCTION
-long min_time_before_dir_change = 30; //milliseconds
+const long min_time_before_dir_change = 30; //milliseconds
 #endif
 
 //-----------------------------------------------------------------------
