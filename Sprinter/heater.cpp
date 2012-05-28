@@ -32,6 +32,10 @@
   void controllerFan(void);
 #endif
 
+#ifdef EXTRUDERFAN_PIN
+  void extruderFan(void);
+#endif
+
 // Manage heater variables. For a thermistor or AD595 thermocouple, raw values refer to the 
 // reading from the analog pin. For a MAX6675 thermocouple, the raw value is the temperature in 0.25 
 // degree increments (i.e. 100=25 deg). 
@@ -734,6 +738,10 @@ void PID_autotune(int PIDAT_test_temp)
   controllerFan(); //Check if fan should be turned on to cool stepper drivers down
 #endif
 
+#ifdef EXTRUDERFAN_PIN
+  extruderFan(); //Check if fan should be turned on to cool extruder down
+#endif
+
 }
 
 #if defined (HEATER_USES_THERMISTOR) || defined (BED_USES_THERMISTOR)
@@ -839,6 +847,27 @@ void controllerFan()
     else
     {
       WRITE(CONTROLLERFAN_PIN, HIGH); //... turn the fan on
+    }
+  }
+}
+#endif
+
+#ifdef EXTRUDERFAN_PIN
+unsigned long lastExtruderCheck = 0;
+
+void extruderFan()
+{
+  if ((millis() - lastExtruderCheck) >= 2500) //Not a time critical function, so we only check every 2500ms
+  {
+    lastExtruderCheck = millis();
+           
+    if (analog2temp(current_raw) < EXTRUDERFAN_DEC)
+    {
+      WRITE(EXTRUDERFAN_PIN, LOW); //... turn the fan off
+    }
+    else
+    {
+      WRITE(EXTRUDERFAN_PIN, HIGH); //... turn the fan on
     }
   }
 }
