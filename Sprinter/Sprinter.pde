@@ -2502,12 +2502,12 @@ void plan_buffer_line(float x, float y, float z, float e, float feed_rate)
     enable_y();
     delayMicroseconds(DELAY_ENABLE);
   }
-  if(if(block->steps_z != 0))
+  if(block->steps_z != 0)
   {
     enable_z();
     delayMicroseconds(DELAY_ENABLE);
   }
-  if(if(block->steps_e != 0))
+  if(block->steps_e != 0)
   {
     enable_e();
     delayMicroseconds(DELAY_ENABLE);

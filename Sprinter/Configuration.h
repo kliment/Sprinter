@@ -362,6 +362,9 @@ const int dropsegments=5; //everything with less than this number of steps will 
 //#define CONTROLLERFAN_PIN 23 //Pin used for the fan to cool controller, comment out to disable this function
 #define CONTROLLERFAN_SEC 60 //How many seconds, after all motors were disabled, the fan should run
 
+//This is for controlling a fan that will keep the extruder cool.
+//#define EXTRUDERFAN_PIN 66 //Pin used to control the fan, comment out to disable this function
+#define EXTRUDERFAN_DEC 50 //Hotend temperature from where the fan will be turned on
 
 //-----------------------------------------------------------------------
 // DEBUGING
