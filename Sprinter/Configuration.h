@@ -175,7 +175,7 @@ const int NUM_AXIS = 4; // The axis order in all axis related arrays is X, Y, Z,
 //#define RAPID_OSCILLATION_REDUCTION
 
 #ifdef RAPID_OSCILLATION_REDUCTION
-long min_time_before_dir_change = 30; //milliseconds
+const long min_time_before_dir_change = 30; //milliseconds
 #endif
 
 //-----------------------------------------------------------------------
