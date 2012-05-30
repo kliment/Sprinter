@@ -280,8 +280,8 @@ const short temptable_6[NUMTEMPS_6][2] = {
    {49, 220},
    {53, 215},
    {62, 210},
-   {73, 205},
-   {72, 200},
+   {71, 205}, //fitted graphically
+   {78, 200}, //fitted graphically
    {94, 190},
    {102, 185},
    {116, 170},
