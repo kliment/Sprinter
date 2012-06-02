@@ -402,12 +402,21 @@ int read_max6675()
       heater_duty = constrain(heater_duty, 0, HEATER_CURRENT);
 
       #ifdef PID_SOFT_PWM
-        g_heater_pwm_val = (unsigned char)heater_duty;
+        if(target_raw != 0)
+          g_heater_pwm_val = (unsigned char)heater_duty;
+        else
+          g_heater_pwm_val = 0;
       #else
-        analogWrite(HEATER_0_PIN, heater_duty);
+        if(target_raw != 0)
+          analogWrite(HEATER_0_PIN, heater_duty);
+        else
+          analogWrite(HEATER_0_PIN, 0);
     
         #if LED_PIN>-1
-          analogWrite(LED_PIN, constrain(LED_PWM_FOR_BRIGHTNESS(heater_duty),0,255));
+          if(target_raw != 0)
+            analogWrite(LED_PIN, constrain(LED_PWM_FOR_BRIGHTNESS(heater_duty),0,255));
+          else
+            analogWrite(LED_PIN, 0);
         #endif
       #endif
   
@@ -422,10 +431,13 @@ int read_max6675()
       }
       else 
       {
-        WRITE(HEATER_0_PIN,HIGH);
-        #if LED_PIN > -1
-            WRITE(LED_PIN,HIGH);
-        #endif
+        if(target_raw != 0)
+        {
+          WRITE(HEATER_0_PIN,HIGH);
+          #if LED_PIN > -1
+              WRITE(LED_PIN,HIGH);
+          #endif
+        }
       }
     #endif
   #endif
