@@ -213,6 +213,8 @@ void __cxa_pure_virtual(){};
 
 // M303 - PID relay autotune S<temperature> sets the target temperature. (default target temperature = 150C)
 
+// M400 - Finish all moves
+
 // M500 - stores paramters in EEPROM
 // M501 - reads parameters from EEPROM (if you need reset them after you changed them temporarily).
 // M502 - reverts to the default "factory settings". You still need to store them in EEPROM afterwards if you want to.
@@ -1811,6 +1813,11 @@ FORCE_INLINE void process_commands()
       }
       break;
 #endif
+      case 400: // M400 finish all moves
+      {
+      	st_synchronize();	
+      }
+      break;
 #ifdef USE_EEPROM_SETTINGS
       case 500: // Store settings in EEPROM
       {
