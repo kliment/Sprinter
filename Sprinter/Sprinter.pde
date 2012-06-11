@@ -1649,7 +1649,7 @@ FORCE_INLINE void process_commands()
             axis_steps_per_sqr_second[i] = code_value() * axis_steps_per_unit[i];
           }
         }
-
+        break;
       #if 0 // Not used for Sprinter/grbl gen6
       case 202: // M202
         for(int i=0; i < NUM_AXIS; i++) 
