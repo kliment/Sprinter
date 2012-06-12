@@ -16,7 +16,7 @@
 // Gen 3 Plus = 21
 // gen 3  Monolithic Electronics = 22
 // Gen3 PLUS for TechZone Gen3 Remix Motherboard = 23
-#define MOTHERBOARD 33
+#define MOTHERBOARD 62
 
 //// Thermistor settings:
 // 1 is 100k thermistor
@@ -26,8 +26,8 @@
 // 5 is ParCan supplied 104GT-2 100K
 // 6 is EPCOS 100k
 // 7 is 100k Honeywell thermistor 135-104LAG-J01
-#define THERMISTORHEATER 1
-#define THERMISTORBED 1
+#define THERMISTORHEATER 6
+#define THERMISTORBED 6
 
 //// Calibration variables
 // X, Y, Z, E steps per unit - Metric Prusa Mendel with Wade extruder:
@@ -53,7 +53,7 @@ const bool Z_ENDSTOP_INVERT = false;
 //#define BAUDRATE 250000
 
 // Comment out (using // at the start of the line) to disable SD support:
-#define SDSUPPORT
+// #define SDSUPPORT
 
 // Uncomment to make run init.g from SD on boot
 //#define SDINITFILE
@@ -81,7 +81,7 @@ const bool Z_ENDSTOP_INVERT = false;
 //-----------------------------------------------------------------------
 //Uncomment to aktivate the arc (circle) function (G2/G3 Command)
 //Without SD function an ARC function the used Flash is smaller 31 kb
-#define USE_ARC_FUNCTION
+// #define USE_ARC_FUNCTION
 
 //-----------------------------------------------------------------------
 //// ADVANCED SETTINGS - to tweak parameters
