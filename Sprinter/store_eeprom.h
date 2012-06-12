@@ -27,7 +27,7 @@
 // the default values are used whenever there is a change to the data, to prevent
 // wrong data being written to the variables.
 // ALSO:  always make sure the variables in the Store and retrieve sections are in the same order.
-#define EEPROM_VERSION "S01"  
+#define EEPROM_VERSION "S02"  
 
 
 extern float axis_steps_per_unit[4]; 
@@ -39,6 +39,7 @@ extern float mintravelfeedrate;
 extern float minimumfeedrate;
 extern float max_xy_jerk;
 extern float max_z_jerk;
+extern float max_e_jerk;
 
 
 extern void EEPROM_RetrieveSettings(bool def, bool printout );

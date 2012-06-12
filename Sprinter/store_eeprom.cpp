@@ -67,6 +67,7 @@ void EEPROM_StoreSettings()
   EEPROM_writeAnything(i,ul_help);  //Min Segment Time, not used yet
   EEPROM_writeAnything(i,max_xy_jerk);
   EEPROM_writeAnything(i,max_z_jerk);
+  EEPROM_writeAnything(i,max_e_jerk);
 
   //PID Settings, not used yet --> placeholder
   ui_help = 2560;
@@ -124,7 +125,7 @@ void EEPROM_printSettings()
       showString(PSTR(" T"));
       Serial.println(retract_acceleration);
 
-      showString(PSTR("Advanced variables: S=Min feedrate (mm/s), T=Min travel feedrate (mm/s), X=maximum xY jerk (mm/s),  Z=maximum Z jerk (mm/s)\r\n"));
+      showString(PSTR("Advanced variables (mm/s): S=Min feedrate, T=Min travel feedrate, X=max xY jerk,  Z=max Z jerk, E=max E jerk\r\n"));
 
       showString(PSTR("  M205 S"));
       Serial.print(minimumfeedrate ); 
@@ -135,7 +136,10 @@ void EEPROM_printSettings()
       showString(PSTR(" X"));
       Serial.print(max_xy_jerk ); 
       showString(PSTR(" Z"));
-      Serial.println(max_z_jerk);
+      Serial.print(max_z_jerk);
+      showString(PSTR(" E"));
+      Serial.println(max_e_jerk);
+
       
     #ifdef PIDTEMP
     /*
@@ -174,6 +178,7 @@ void EEPROM_RetrieveSettings(bool def, bool printout)
       EEPROM_readAnything(i,ul_help);  //min Segmenttime --> not used yet
       EEPROM_readAnything(i,max_xy_jerk);
       EEPROM_readAnything(i,max_z_jerk);
+      EEPROM_readAnything(i,max_e_jerk);
 
       unsigned int Kp,Ki,Kd;
       EEPROM_readAnything(i,Kp);
@@ -200,10 +205,11 @@ void EEPROM_RetrieveSettings(bool def, bool printout)
       mintravelfeedrate=DEFAULT_MINTRAVELFEEDRATE;
       max_xy_jerk=_MAX_XY_JERK;
       max_z_jerk=_MAX_Z_JERK;
+      max_e_jerk=_MAX_E_JERK;
 
       showString(PSTR("Using Default settings\r\n"));
     }
-
+    
     if(printout)
     {
       EEPROM_printSettings();

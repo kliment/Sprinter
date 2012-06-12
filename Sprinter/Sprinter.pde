@@ -46,7 +46,7 @@
   - New Command
     * M202 - Set maximum feedrate that your machine can sustain (M203 X200 Y200 Z300 E10000) in mm/sec
     * M204 - Set default acceleration: S normal moves T filament only moves (M204 S3000 T7000) im mm/sec^2 
-    * M205 - advanced settings:  minimum travel speed S=while printing T=travel only,  X= maximum xy jerk, Z=maximum Z jerk
+    * M205 - advanced settings:  minimum travel speed S=while printing T=travel only,  X= maximum xy jerk, Z=maximum Z jerk, E = max E jerk
   - Remove unused Variables
   - Check Uart Puffer while circle processing (CMD: G2 / G3)
   - Fast Xfer Function --> move Text to Flash
@@ -119,6 +119,15 @@
  Version 1.3.17T
 - M303 - PID relay autotune possible
 - G4 Wait until last move is done
+
+ Version 1.3.18T
+- Problem with Thermistor 3 table when sensor is brocken and temp is -20 °C
+
+ Version 1.3.19T
+- Set maximum acceleration. If "steps per unit" is Change the acc were not recalculatet
+- Extra Parameter for Max Extruder Jerk
+- New Parameter (max_e_jerk) in EEPROM --> Default settings after update !
+
 
 
 */
@@ -226,7 +235,7 @@ void __cxa_pure_virtual(){};
 // M603 - Show Free Ram
 
 
-#define _VERSION_TEXT "1.3.17T / 04.05.2012"
+#define _VERSION_TEXT "1.3.19T / 11.06.2012"
 
 //Stepper Movement Variables
 char axis_codes[NUM_AXIS] = {'X', 'Y', 'Z', 'E'};
@@ -240,6 +249,7 @@ float move_acceleration = _ACCELERATION;         // Normal acceleration mm/s^2
 float retract_acceleration = _RETRACT_ACCELERATION; // Normal acceleration mm/s^2
 float max_xy_jerk = _MAX_XY_JERK;
 float max_z_jerk = _MAX_Z_JERK;
+float max_e_jerk = _MAX_E_JERK;
 
 long  max_acceleration_units_per_sq_second[4] = _MAX_ACCELERATION_UNITS_PER_SQ_SECOND; // X, Y, Z and E max acceleration in mm/s^2 for printing moves or retracts
 
@@ -785,10 +795,7 @@ void setup()
     SET_OUTPUT(E_STEP_PIN);
   #endif  
 
-  for(int8_t i=0; i < NUM_AXIS; i++)
-  {
-    axis_steps_per_sqr_second[i] = max_acceleration_units_per_sq_second[i] * axis_steps_per_unit[i];
-  }
+  
 
 //  for(int i=0; i < NUM_AXIS; i++){
 //      axis_max_interval[i] = 100000000.0 / (max_start_speed_units_per_second[i] * axis_steps_per_unit[i]);
@@ -849,6 +856,12 @@ void setup()
   Serial.print((int)sizeof(block_t)*BLOCK_BUFFER_SIZE);
   showString(PSTR(" / "));
   Serial.println(BLOCK_BUFFER_SIZE);
+  
+  for(int8_t i=0; i < NUM_AXIS; i++)
+  {
+    axis_steps_per_sqr_second[i] = max_acceleration_units_per_sq_second[i] * axis_steps_per_unit[i];
+  }
+
 }
 
 
@@ -1670,7 +1683,11 @@ FORCE_INLINE void process_commands()
       case 92: // M92
         for(int i=0; i < NUM_AXIS; i++) 
         {
-          if(code_seen(axis_codes[i])) axis_steps_per_unit[i] = code_value();
+          if(code_seen(axis_codes[i])) 
+          {
+            axis_steps_per_unit[i] = code_value();
+            axis_steps_per_sqr_second[i] = max_acceleration_units_per_sq_second[i] * axis_steps_per_unit[i];
+          }
         }
         
           // Update start speed intervals and axis order. TODO: refactor axis_max_interval[] calculation into a function, as it
@@ -1772,12 +1789,13 @@ FORCE_INLINE void process_commands()
           if(code_seen('S')) move_acceleration = code_value() ;
           if(code_seen('T')) retract_acceleration = code_value() ;
       break;
-      case 205: //M205 advanced settings:  minimum travel speed S=while printing T=travel only,  B=minimum segment time X= maximum xy jerk, Z=maximum Z jerk
+      case 205: //M205 advanced settings:  minimum travel speed S=while printing T=travel only,  B=minimum segment time X= maximum xy jerk, Z=maximum Z jerk, E= max E jerk
         if(code_seen('S')) minimumfeedrate = code_value();
         if(code_seen('T')) mintravelfeedrate = code_value();
       //if(code_seen('B')) minsegmenttime = code_value() ;
         if(code_seen('X')) max_xy_jerk = code_value() ;
         if(code_seen('Z')) max_z_jerk = code_value() ;
+        if(code_seen('E')) max_e_jerk = code_value() ;
       break;
       case 206: // M206 additional homeing offset
         for(int8_t cnt_i=0; cnt_i < 3; cnt_i++) 
@@ -1827,11 +1845,19 @@ FORCE_INLINE void process_commands()
       case 501: // Read settings from EEPROM
       {
         EEPROM_RetrieveSettings(false,true);
+        for(int8_t i=0; i < NUM_AXIS; i++)
+        {
+          axis_steps_per_sqr_second[i] = max_acceleration_units_per_sq_second[i] * axis_steps_per_unit[i];
+        }
       }
       break;
       case 502: // Revert to default settings
       {
         EEPROM_RetrieveSettings(true,true);
+        for(int8_t i=0; i < NUM_AXIS; i++)
+        {
+          axis_steps_per_sqr_second[i] = max_acceleration_units_per_sq_second[i] * axis_steps_per_unit[i];
+        }
       }
       break;
       case 503: // print settings currently in memory
@@ -2255,10 +2281,17 @@ void planner_reverse_pass_kernel(block_t *previous, block_t *current, block_t *n
 // implements the reverse pass.
 void planner_reverse_pass() {
   uint8_t block_index = block_buffer_head;
-  if(((block_buffer_head-block_buffer_tail + BLOCK_BUFFER_SIZE) & (BLOCK_BUFFER_SIZE - 1)) > 3) {
+  
+  //Make a local copy of block_buffer_tail, because the interrupt can alter it
+  CRITICAL_SECTION_START;
+  unsigned char tail = block_buffer_tail;
+  CRITICAL_SECTION_END;
+  
+  if(((block_buffer_head-tail + BLOCK_BUFFER_SIZE) & (BLOCK_BUFFER_SIZE - 1)) > 3) 
+  {
     block_index = (block_buffer_head - 3) & (BLOCK_BUFFER_SIZE - 1);
     block_t *block[3] = { NULL, NULL, NULL };
-    while(block_index != block_buffer_tail) { 
+    while(block_index != tail) { 
       block_index = prev_block_index(block_index); 
       block[2]= block[1];
       block[1]= block[0];
@@ -2666,25 +2699,33 @@ void plan_buffer_line(float x, float y, float z, float e, float feed_rate)
   }
 #endif
   // Start with a safe speed
-  float vmax_junction = max_xy_jerk/2;  
+  float vmax_junction = max_xy_jerk/2; 
+  float vmax_junction_factor = 1.0; 
   if(fabs(current_speed[Z_AXIS]) > max_z_jerk/2) 
-    vmax_junction = max_z_jerk/2;
+    vmax_junction = min(vmax_junction, max_z_jerk/2);
+  if(fabs(current_speed[E_AXIS]) > max_e_jerk/2) 
+    vmax_junction = min(vmax_junction, max_e_jerk/2);
   vmax_junction = min(vmax_junction, block->nominal_speed);
+  float safe_speed = vmax_junction;
 
-  if ((moves_queued > 1) && (previous_nominal_speed > 0.0)) {
+  if ((moves_queued > 1) && (previous_nominal_speed > 0.0001)) {
     float jerk = sqrt(pow((current_speed[X_AXIS]-previous_speed[X_AXIS]), 2)+pow((current_speed[Y_AXIS]-previous_speed[Y_AXIS]), 2));
-    if((previous_speed[X_AXIS] != 0.0) || (previous_speed[Y_AXIS] != 0.0)) {
-      vmax_junction = block->nominal_speed;
-    }
+    //    if((fabs(previous_speed[X_AXIS]) > 0.0001) || (fabs(previous_speed[Y_AXIS]) > 0.0001)) {
+    vmax_junction = block->nominal_speed;
+    //    }
     if (jerk > max_xy_jerk) {
-      vmax_junction *= (max_xy_jerk/jerk);
+      vmax_junction_factor = (max_xy_jerk/jerk);
     } 
     if(fabs(current_speed[Z_AXIS] - previous_speed[Z_AXIS]) > max_z_jerk) {
-      vmax_junction *= (max_z_jerk/fabs(current_speed[Z_AXIS] - previous_speed[Z_AXIS]));
+      vmax_junction_factor= min(vmax_junction_factor, (max_z_jerk/fabs(current_speed[Z_AXIS] - previous_speed[Z_AXIS])));
     } 
+    if(fabs(current_speed[E_AXIS] - previous_speed[E_AXIS]) > max_e_jerk) {
+      vmax_junction_factor = min(vmax_junction_factor, (max_e_jerk/fabs(current_speed[E_AXIS] - previous_speed[E_AXIS])));
+    } 
+    vmax_junction = min(previous_nominal_speed, vmax_junction * vmax_junction_factor); // Limit speed to max previous speed
   }
   block->max_entry_speed = vmax_junction;
-    
+
   // Initialize block entry speed. Compute based on deceleration to user-defined MINIMUM_PLANNER_SPEED.
   double v_allowable = max_allowable_speed(-block->acceleration,MINIMUM_PLANNER_SPEED,block->millimeters);
   block->entry_speed = min(vmax_junction, v_allowable);
@@ -2697,10 +2738,14 @@ void plan_buffer_line(float x, float y, float z, float e, float feed_rate)
   // block nominal speed limits both the current and next maximum junction speeds. Hence, in both
   // the reverse and forward planners, the corresponding block junction speed will always be at the
   // the maximum junction speed and may always be ignored for any speed reduction checks.
-  if (block->nominal_speed <= v_allowable) { block->nominal_length_flag = true; }
-  else { block->nominal_length_flag = false; }
+  if (block->nominal_speed <= v_allowable) { 
+    block->nominal_length_flag = true; 
+  }
+  else { 
+    block->nominal_length_flag = false; 
+  }
   block->recalculate_flag = true; // Always calculate trapezoid for new block
-  
+
   // Update previous path unit_vector and nominal speed
   memcpy(previous_speed, current_speed, sizeof(previous_speed)); // previous_speed[] = current_speed[]
   previous_nominal_speed = block->nominal_speed;
@@ -2727,10 +2772,8 @@ void plan_buffer_line(float x, float y, float z, float e, float feed_rate)
   #endif // ADVANCE
 
 
-
-
   calculate_trapezoid_for_block(block, block->entry_speed/block->nominal_speed,
-    MINIMUM_PLANNER_SPEED/block->nominal_speed);
+    safe_speed/block->nominal_speed);
     
   // Move buffer head
   block_buffer_head = next_buffer_head;
@@ -2812,7 +2855,6 @@ void getHighESpeed()
 
 }
 #endif
-
 
 
 
@@ -3263,8 +3305,10 @@ ISR(TIMER1_COMPA_vect)
           WRITE(E_STEP_PIN, LOW);
         }
       #endif //!ADVANCE
+
       step_events_completed += 1;  
       if(step_events_completed >= current_block->step_event_count) break;
+      
     }
     // Calculare new timer value
     unsigned short timer;
