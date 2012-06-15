@@ -1,6 +1,6 @@
 /*
  Reprap firmware based on Sprinter
- Optimize for Sanguinololu 1.2 and above, RAMPS 
+ Optimized for Sanguinololu 1.2 and above / RAMPS 
  
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 
 /*
-  This firmware is a mashup between Sprinter,grbl and parts from marlin.
+  This firmware is a mashup between Sprinter, grbl and parts from marlin.
   (https://github.com/kliment/Sprinter)
   
   Changes by Doppler Michael (midopple)
@@ -30,9 +30,9 @@
   Sprinter Changelog
   -  Look forward function --> calculate 16 Steps forward, get from Firmaware Marlin and Grbl
   -  Stepper control with Timer 1 (Interrupt)
-  -  Extruder heating with PID use a Softpwm (Timer 2) with 500 hz to free Timer1 für Steppercontrol
+  -  Extruder heating with PID use a Softpwm (Timer 2) with 500 hz to free Timer1 for Steppercontrol
   -  command M220 Sxxx --> tune Printing speed online (+/- 50 %)
-  -  G2 / G3 command --> circle funktion
+  -  G2 / G3 command --> circle function
   -  Baudrate set to 250 kbaud
   -  Testet on Sanguinololu Board
   -  M30 Command can delete files on SD Card
@@ -42,7 +42,7 @@
  Version 1.3.04T
   - Implement Plannercode from Marlin V1 big thanks to Erik
   - Stepper interrupt with Step loops
-  - Stepperfrequenz 30 Khz
+  - Stepperfrequency 30 Khz
   - New Command
     * M202 - Set maximum feedrate that your machine can sustain (M203 X200 Y200 Z300 E10000) in mm/sec
     * M204 - Set default acceleration: S normal moves T filament only moves (M204 S3000 T7000) im mm/sec^2 
@@ -50,7 +50,7 @@
   - Remove unused Variables
   - Check Uart Puffer while circle processing (CMD: G2 / G3)
   - Fast Xfer Function --> move Text to Flash
-  - Option to deaktivate ARC (G2/G3) function (save flash)
+  - Option to deactivate ARC (G2/G3) function (save flash)
   - Removed modulo (%) operator, which uses an expensive divide
 
  Version 1.3.05T
@@ -77,7 +77,7 @@
    A ';' inside a line ignores just the portion following the ';' character.
    The beginning of the line is still interpreted.
    
- - Same fix for SD Card, testet and work
+ - Same fix for SD Card, tested and work
 
  Version 1.3.09T
  - Move SLOWDOWN Function up
@@ -93,10 +93,7 @@
 - fix for broken include in store_eeprom.cpp  --> Thanks to kmeehl (issue #145)
 - Make fastio & Arduino pin numbering consistent for AT90USB128x. --> Thanks to lincomatic
 - Select Speedtable with F_CPU
-- Use same Values for Speedtables as Marlin 
-- 
-
-  
+- Use same Values for Speedtables as Marlin
 
 */
 
@@ -180,19 +177,19 @@ void __cxa_pure_virtual(){};
 // M201 - Set maximum acceleration in units/s^2 for print moves (M201 X1000 Y1000)
 // M202 - Set maximum feedrate that your machine can sustain (M203 X200 Y200 Z300 E10000) in mm/sec
 // M203 - Set temperture monitor to Sx
-// M204 - Set default acceleration: S normal moves T filament only moves (M204 S3000 T7000) im mm/sec^2 
-// M205 - advanced settings:  minimum travel speed S=while printing T=travel only,  X= maximum xy jerk, Z=maximum Z jerk
+// M204 - Set default acceleration: S normal moves T filament only moves (M204 S3000 T7000) in mm/sec^2
+// M205 - advanced settings: minimum travel speed S=while printing T=travel only, X=maximum xy jerk, Z=maximum Z jerk
 
-// M220 - set speed factor override percentage S:factor in percent 
+// M220 - set speed factor override percentage S=factor in percent 
 
 // M500 - stores paramters in EEPROM
-// M501 - reads parameters from EEPROM (if you need reset them after you changed them temporarily).
+// M501 - reads parameters from EEPROM (if you need to reset them after you changed them temporarily).
 // M502 - reverts to the default "factory settings". You still need to store them in EEPROM afterwards if you want to.
 // M503 - Print settings
 
 // Debug feature / Testing the PID for Hotend
-// M601 - Show Temp jitter from Extruder (min / max value from Hotend Temperatur while printing)
-// M602 - Reset Temp jitter from Extruder (min / max val) --> Dont use it while Printing
+// M601 - Show Temp jitter from Extruder (min / max value from Hotend Temperature while printing)
+// M602 - Reset Temp jitter from Extruder (min / max val) --> Don't use it while Printing
 // M603 - Show Free Ram
 
 
@@ -228,8 +225,8 @@ unsigned long plateau_steps;
 //unsigned long steps_per_sqr_second;
 
 
-//adjustable feed faktor for online tuning printerspeed
-volatile int feedmultiply=100; //100->original / 200-> Faktor 2 / 50 -> Faktor 0.5
+//adjustable feed factor for online tuning printer speed
+volatile int feedmultiply=100; //100->original / 200 -> Factor 2 / 50 -> Factor 0.5
 int saved_feedmultiply;
 volatile bool feedmultiplychanged=false;
 
@@ -260,7 +257,7 @@ bool is_homing = false;
 
 
 #ifdef USE_ARC_FUNCTION
-//For arc centerpont, send bei Command G2/G3
+//For arc center point coordinates, sent by commands G2/G3
 float offset[3] = {0.0, 0.0, 0.0};
 #endif
 
@@ -305,7 +302,7 @@ unsigned long previous_millis_cmd = 0;
 unsigned long max_inactive_time = 0;
 unsigned long stepper_inactive_time = 0;
 
-//Temp Montor for repetier
+//Temp Monitor for repetier
 unsigned char manage_monitor = 255;
 
 
@@ -562,8 +559,8 @@ int FreeRam1(void)
 void analogWrite_check(uint8_t check_pin, int val)
 {
   #if defined(__AVR_ATmega168__) || defined(__AVR_ATmega328P__) 
-  //Atmega168 / 328 can not useed OCR1A and OCR1B
-  //This are PINS PB1 / PB2 or on Ardurino D9 / D10
+  //Atmega168/328 can't use OCR1A and OCR1B
+  //These are pins PB1/PB2 or on Arduino D9/D10
     if((check_pin != 9) && (check_pin != 10))
     {
         analogWrite(check_pin, val);
@@ -571,8 +568,8 @@ void analogWrite_check(uint8_t check_pin, int val)
   #endif
   
   #if defined(__AVR_ATmega644P__) || defined(__AVR_ATmega1284P__) 
-  //Atmega664P / 1284P can not useed OCR1A and OCR1B
-  //This are PINS PD4 / PD5 or on Ardurino D12 / D13
+  //Atmega664P/1284P can't use OCR1A and OCR1B
+  //These are pins PD4/PD5 or on Arduino D12/D13
     if((check_pin != 12) && (check_pin != 13))
     {
         analogWrite(check_pin, val);
@@ -580,8 +577,8 @@ void analogWrite_check(uint8_t check_pin, int val)
   #endif
 
   #if defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__) 
-  //Atmega1280 / 2560 can not useed OCR1A, OCR1B and OCR1C
-  //This are PINS PB5,PB6,PB7 or on Ardurino D11,D12,and D13
+  //Atmega1280/2560 can't use OCR1A, OCR1B and OCR1C
+  //These are pins PB5,PB6,PB7 or on Arduino D11,D12 and D13
     if((check_pin != 11) && (check_pin != 12) && (check_pin != 13))
     {
         analogWrite(check_pin, val);
@@ -1510,7 +1507,7 @@ FORCE_INLINE void process_commands()
 	    }
       }
       break;
-      case 190: // M190 - Wait bed for heater to reach target.
+      case 190: // M190 - Wait for bed heater to reach target temperature.
       #if TEMP_1_PIN > -1
         if (code_seen('S')) target_bed_raw = temp2analogBed(code_value());
         codenum = millis(); 
@@ -1669,7 +1666,7 @@ FORCE_INLINE void process_commands()
           if(code_seen('S')) manage_monitor = code_value();
           if(manage_monitor==100) manage_monitor=1; // Set 100 to heated bed
       break;
-      case 204: // M204 acclereration S normal moves T filmanent only moves
+      case 204: // M204 acceleration S normal moves T filmanent only moves
           if(code_seen('S')) move_acceleration = code_value() ;
           if(code_seen('T')) retract_acceleration = code_value() ;
       break;
@@ -2008,7 +2005,7 @@ void calculate_trapezoid_for_block(block_t *block, float entry_factor, float exi
   int32_t plateau_steps = block->step_event_count-accelerate_steps-decelerate_steps;
   
   // Is the Plateau of Nominal Rate smaller than nothing? That means no cruising, and we will
-  // have to use intersection_distance() to calculate when to abort acceleration and start braking
+  // have to use intersection_distance() to calculate when to abort acceleration and start breaking
   // in order to reach the final_rate exactly at the end of this block.
   if (plateau_steps < 0) {
     accelerate_steps = ceil(
@@ -2336,7 +2333,7 @@ void plan_buffer_line(float x, float y, float z, float e, float feed_rate)
     	if(feed_rate<minimumfeedrate) feed_rate=minimumfeedrate;
   } 
 
-  // slow down when de buffer starts to empty, rather than wait at the corner for a buffer refill
+  // slow down when the buffer starts to empty, rather than wait at the corner for a buffer refill
   int moves_queued=(block_buffer_head-block_buffer_tail + BLOCK_BUFFER_SIZE) & (BLOCK_BUFFER_SIZE - 1);
 #ifdef SLOWDOWN  
   if(moves_queued < (BLOCK_BUFFER_SIZE * 0.5) && moves_queued > 1) feed_rate = feed_rate*moves_queued / (BLOCK_BUFFER_SIZE * 0.5); 
@@ -2711,7 +2708,7 @@ static unsigned long step_events_completed; // The number of step events execute
 static short e_steps;
 static unsigned char busy = false; // TRUE when SIG_OUTPUT_COMPARE1A is being serviced. Used to avoid retriggering that handler.
 static long acceleration_time, deceleration_time;
-static unsigned short acc_step_rate; // needed for deccelaration start point
+static unsigned short acc_step_rate; // needed for deceleration start point
 static char step_loops;
 static unsigned short OCR1A_nominal;
 
@@ -2739,7 +2736,7 @@ static bool old_z_max_endstop=false;
 //
 //                           time ----->
 // 
-//  The trapezoid is the shape the speed curve over time. It starts at block->initial_rate, accelerates 
+//  The trapezoid is the shape of the speed curve over time. It starts at block->initial_rate, accelerates 
 //  first block->accelerate_until step_events_completed, then keeps going at constant speed until 
 //  step_events_completed reaches block->decelerate_after after which it decelerates until the trapezoid generator is reset.
 //  The slope of acceleration is calculated with the leib ramp alghorithm.
@@ -2840,7 +2837,7 @@ ISR(TIMER1_COMPA_vect)
     // Set directions TO DO This should be done once during init of trapezoid. Endstops -> interrupt
     out_bits = current_block->direction_bits;
 
-    // Set direction en check limit switches
+    // Set direction and check limit switches
     if ((out_bits & (1<<X_AXIS)) != 0) {   // -direction
       WRITE(X_DIR_PIN, INVERT_X_DIR);
       CHECK_ENDSTOPS
