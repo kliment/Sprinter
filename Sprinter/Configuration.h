@@ -30,15 +30,134 @@
 #define THERMISTORHEATER 1
 #define THERMISTORBED 1
 
-//// Calibration variables
-// X, Y, Z, E steps per unit - Metric Prusa Mendel with Wade extruder:
-#define _AXIS_STEP_PER_UNIT {80, 80, 3200/1.25,700}
-// Metric Prusa Mendel with Makergear geared stepper extruder:
-//#define _AXIS_STEP_PER_UNIT {80,80,3200/1.25,1380}
-// MakerGear Hybrid Prusa Mendel:
-// Z axis value is for .9 stepper(if you have 1.8 steppers for Z, you need to use 2272.7272)
-//#define _AXIS_STEP_PER_UNIT {104.987, 104.987, 4545.4544, 1487}
+// === axis scaling and extruder parameters ===
+//
+// steps_per_revolution:
+//   Number of motor steps per one revolution
+//   (200 for 1.8 degree, 400 for 0.9 degree motor, etc.)
+//
+// microstepping:
+//   Microstepping ratio of controller
+//   (1/8 for Gen6, 1/16 for Pololu, etc.)
+//
+// belt_pitch:
+//   Distance in millimeters between teeth of belt
+//   (5.00mm for T5, 5.08mm for XL, etc.)
+//
+// pulley_teeth:
+//   Number of teeth on the motor pulley gear
+//   (default is 8 teeth for T5 gears; XL gears may use 10)
+//
+// extruder_gears_ratio:
+//   Gear ratio for extruder gears
+//   (Wade's Extruder = 39/11
+//    Accessible Wade's by Greg Frost = 43/10
+//    Adrian's Extruder = 59/11)
+//
+// bolt_diameter:
+//   Diameter of hobbed bolt in millimeters, measured at hobbed section
+//
+// z_thread_distance:
+//   Distance in millimeters between threads of Z rods
+//   (1.25mm for M8)
 
+//Use these #defines to select one of the known machine configurations:
+//#define CUSTOM_MACHINE_CONFIG
+#define METRIC_PRUSA_WADE
+//#define METRIC_PRUSA_MAKERGEAR
+//#define METRIC_PRUSA_MAKERGEAR_HYBRID_09
+//#define METRIC_PRUSA_MAKERGEAR_HYBRID_18
+//#define METRIC_PRUSA_METAMAQUINA_3D
+
+// Describe known machine configurations by explicitly defining their
+// specific configuration values inside #ifdef <MACHINE_NAME> blocks
+
+#ifdef CUSTOM_MACHINE_CONFIG
+//You may use this block to define custom settings
+#define steps_per_revolution 200
+#define microstepping (1/16.0)
+#define belt_pitch 5
+#define pulley_teeth 8
+#define extruder_gears_ratio (43/10)
+#define bolt_diameter 7
+#define z_thread_distance 1.25
+#endif
+
+#ifdef METRIC_PRUSA_WADE
+//Metric Prusa Mendel with Wade extruder
+#define _AXIS_STEP_PER_UNIT {80, 80, 3200/1.25,700}
+
+/* ToDo: express the above values in terms of calibration parameters
+#define steps_per_revolution 200
+#define microstepping (1/16.0)
+#define belt_pitch 5
+#define pulley_teeth 8
+#define extruder_gears_ratio (?/?)
+#define bolt_diameter ?
+#define z_thread_distance 1.25
+*/
+#endif
+
+#ifdef METRIC_PRUSA_MAKERGEAR
+// Metric Prusa Mendel with Makergear geared stepper extruder:
+#define _AXIS_STEP_PER_UNIT {80,80,3200/1.25,1380}
+#define steps_per_revolution 200
+#define microstepping (1/16.0)
+#define belt_pitch 5
+#define pulley_teeth 8
+#define extruder_gears_ratio 1
+#define bolt_diameter 0.73813165 //guessed based on precalculated value, please check.
+#define z_thread_distance 1.25
+#endif
+
+#ifdef METRIC_PRUSA_MAKERGEAR_HYBRID_09
+// MakerGear Hybrid Prusa Mendel with 0.9 Z stepper
+#define _AXIS_STEP_PER_UNIT {104.987, 104.987, 4545.4544, 1487}
+
+/* ToDo: express the above values in terms of calibration parameters
+#define steps_per_revolution ?
+#define microstepping ?
+#define belt_pitch ?
+#define pulley_teeth ?
+#define extruder_gears_ratio ?
+#define bolt_diameter ?
+#define z_thread_distance ?
+*/
+#endif
+
+#ifdef METRIC_PRUSA_MAKERGEAR_HYBRID_18
+// MakerGear Hybrid Prusa Mendel with 1.8 Z stepper
+#define _AXIS_STEP_PER_UNIT {104.987, 104.987, 2272.7272, 1487}
+
+/* ToDo: express the above values in terms of calibration parameters
+#define steps_per_revolution ?
+#define microstepping ?
+#define belt_pitch ?
+#define pulley_teeth ?
+#define extruder_gears_ratio ?
+#define bolt_diameter ?
+#define z_thread_distance ?
+*/
+#endif
+
+#ifdef METRIC_PRUSA_METAMAQUINA_3D
+//Metamáquina 3D
+#define steps_per_revolution 200
+#define microstepping (1/16.0)
+#define belt_pitch 5
+#define pulley_teeth 8
+#define extruder_gears_ratio (43/10)
+#define bolt_diameter 7
+#define z_thread_distance 1.25
+#endif
+
+#ifndef _AXIS_STEP_PER_UNIT
+#define x_steps_per_mm (steps_per_revolution * (1/microstepping) / ( belt_pitch * pulley_teeth ))
+#define y_steps_per_mm x_steps_per_mm
+#define z_steps_per_mm (steps_per_revolution * (1/microstepping) / z_thread_distance)
+#define e_steps_per_mm ((steps_per_revolution * (1/microstepping) * extruder_gears_ratio) / (3.1415 * bolt_diameter))
+#define _AXIS_STEP_PER_UNIT {x_steps_per_mm, y_steps_per_mm, z_steps_per_mm, e_steps_per_mm}
+#endif
 
 //// Endstop Settings
 #define ENDSTOPPULLUPS // Comment this out (using // at the start of the line) to disable the endstop pullup resistors
