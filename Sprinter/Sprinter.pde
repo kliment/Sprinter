@@ -1103,6 +1103,67 @@ FORCE_INLINE bool code_seen(char code)
   return (strchr_pointer != NULL);  //Return True if a character was found
 }
 
+FORCE_INLINE void homing_routine(char axis)
+{
+  int min_pin, max_pin, home_dir, max_length, home_bounce;
+
+  switch(axis){
+    case X_AXIS:
+      min_pin = X_MIN_PIN;
+      max_pin = X_MAX_PIN;
+      home_dir = X_HOME_DIR;
+      max_length = X_MAX_LENGTH;
+      home_bounce = 10;
+      break;
+    case Y_AXIS:
+      min_pin = Y_MIN_PIN;
+      max_pin = Y_MAX_PIN;
+      home_dir = Y_HOME_DIR;
+      max_length = Y_MAX_LENGTH;
+      home_bounce = 10;
+      break;
+    case Z_AXIS:
+      min_pin = Z_MIN_PIN;
+      max_pin = Z_MAX_PIN;
+      home_dir = Z_HOME_DIR;
+      max_length = Z_MAX_LENGTH;
+      home_bounce = 4;
+      break;
+    default:
+      //never reached
+      break;
+  }
+
+  if ((min_pin > -1 && home_dir==-1) || (max_pin > -1 && home_dir==1))
+  {
+    current_position[axis] = -1.5 * max_length * home_dir;
+    plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);
+    destination[axis] = 0;
+    feedrate = homing_feedrate[axis];
+    prepare_move();
+    st_synchronize();
+
+    current_position[axis] = home_bounce/2 * home_dir;
+    plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);
+    destination[axis] = 0;
+    prepare_move();
+    st_synchronize();
+
+    current_position[axis] = -home_bounce * home_dir;
+    plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);
+    destination[axis] = 0;
+    feedrate = homing_feedrate[axis]/2;
+    prepare_move();
+    st_synchronize();
+
+    current_position[axis] = (home_dir == -1) ? 0 : max_length;
+    current_position[axis] += add_homing[axis];
+    plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);
+    destination[axis] = current_position[axis];
+    feedrate = 0;
+  }
+}
+
 //------------------------------------------------
 // CHECK COMMAND AND CONVERT VALUES
 //------------------------------------------------
@@ -1150,42 +1211,6 @@ FORCE_INLINE void process_commands()
           manage_heater();
         }
         break;
-
-#define X_HOME_BOUNCE 10
-#define Y_HOME_BOUNCE 10
-#define Z_HOME_BOUNCE 4
-
-#define HOMING_ROUTINE(coord)\
-          if ((coord##_MIN_PIN > -1 && coord##_HOME_DIR==-1) || (coord##_MAX_PIN > -1 && coord##_HOME_DIR==1))\
-          {\
-            current_position[coord##_AXIS] = -1.5 * coord##_MAX_LENGTH * coord##_HOME_DIR;\
-            plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);\
-            destination[coord##_AXIS] = 0;\
-            feedrate = homing_feedrate[coord##_AXIS];\
-            prepare_move();\
-            st_synchronize();\
-  \
-            current_position[coord##_AXIS] = coord##_HOME_BOUNCE/2 * coord##_HOME_DIR;\
-            plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);\
-            destination[coord##_AXIS] = 0;\
-            prepare_move();\
-            st_synchronize();\
-  \
-            current_position[coord##_AXIS] = -coord##_HOME_BOUNCE * coord##_HOME_DIR;\
-            plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);\
-            destination[coord##_AXIS] = 0;\
-            feedrate = homing_feedrate[coord##_AXIS]/2;\
-            prepare_move();\
-            st_synchronize();\
-  \
-            current_position[coord##_AXIS] = (coord##_HOME_DIR == -1) ? 0 : coord##_MAX_LENGTH;\
-            current_position[coord##_AXIS] += add_homing[coord##_AXIS];\
-            plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);\
-            destination[coord##_AXIS] = current_position[coord##_AXIS];\
-            feedrate = 0;\
-        /*showString(PSTR("HOME " #coord " AXIS\r\n"));*/\
-          }
-
       case 28: //G28 Home all Axis one at a time
         saved_feedrate = feedrate;
         saved_feedmultiply = feedmultiply;
@@ -1205,13 +1230,13 @@ FORCE_INLINE void process_commands()
         home_all_axis = !((code_seen(axis_codes[0])) || (code_seen(axis_codes[1])) || (code_seen(axis_codes[2])));
 
         if((home_all_axis) || (code_seen(axis_codes[X_AXIS]))) 
-          HOMING_ROUTINE(X)
+          homing_routine(X_AXIS);
 
         if((home_all_axis) || (code_seen(axis_codes[Y_AXIS]))) 
-          HOMING_ROUTINE(Y)
+          homing_routine(Y_AXIS);
 
         if((home_all_axis) || (code_seen(axis_codes[Z_AXIS]))) 
-          HOMING_ROUTINE(Z)
+          homing_routine(Z_AXIS);
         
         #ifdef ENDSTOPS_ONLY_FOR_HOMING
             enable_endstops(false);
