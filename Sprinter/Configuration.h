@@ -199,6 +199,11 @@ const long min_time_before_dir_change = 30; //milliseconds
 #define DEFAULT_MINIMUMFEEDRATE       0.0     // minimum feedrate
 #define DEFAULT_MINTRAVELFEEDRATE     0.0
 
+#define _MIN_SEG_TIME 20000
+#define DEFAULT_KP 2560
+#define DEFAULT_KI 64
+#define DEFAULT_KD 4096
+
 // If defined the movements slow down when the look ahead buffer is only half full
 #define SLOWDOWN
 
