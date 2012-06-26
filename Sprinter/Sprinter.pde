@@ -249,6 +249,8 @@ float retract_acceleration = _RETRACT_ACCELERATION; // Normal acceleration mm/s^
 float max_xy_jerk = _MAX_XY_JERK;
 float max_z_jerk = _MAX_Z_JERK;
 float max_e_jerk = _MAX_E_JERK;
+unsigned long min_seg_time = _MIN_SEG_TIME;
+unsigned int Kp = PID_PGAIN, Ki = PID_IGAIN, Kd = PID_DGAIN;
 
 long  max_acceleration_units_per_sq_second[4] = _MAX_ACCELERATION_UNITS_PER_SQ_SECOND; // X, Y, Z and E max acceleration in mm/s^2 for printing moves or retracts
 
@@ -1103,9 +1105,9 @@ FORCE_INLINE bool code_seen(char code)
   return (strchr_pointer != NULL);  //Return True if a character was found
 }
 
-FORCE_INLINE void homing_routine(char axis)
+FORCE_INLINE int homing_routine(char axis)
 {
-  int min_pin, max_pin, home_dir, max_length, home_bounce;
+  int min_pin, max_pin, home_dir, max_length, home_bounce, distance=0;
 
   switch(axis){
     case X_AXIS:
@@ -1143,11 +1145,15 @@ FORCE_INLINE void homing_routine(char axis)
     prepare_move();
     st_synchronize();
 
+    distance = current_position[axis] + 1.5 * max_length * home_dir;
+
     current_position[axis] = home_bounce/2 * home_dir;
     plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);
     destination[axis] = 0;
     prepare_move();
     st_synchronize();
+
+    distance -= home_bounce/2 * home_dir;
 
     current_position[axis] = -home_bounce * home_dir;
     plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);
@@ -1156,12 +1162,15 @@ FORCE_INLINE void homing_routine(char axis)
     prepare_move();
     st_synchronize();
 
+    distance += current_position[axis] + home_bounce * home_dir;
+
     current_position[axis] = (home_dir == -1) ? 0 : max_length;
     current_position[axis] += add_homing[axis];
     plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);
     destination[axis] = current_position[axis];
     feedrate = 0;
   }
+  return distance; //distance traveled while homing the given axis
 }
 
 //------------------------------------------------
