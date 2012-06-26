@@ -195,9 +195,9 @@ void EEPROM_RetrieveSettings(bool def, bool printout)
       max_z_jerk=_MAX_Z_JERK;
       max_e_jerk=_MAX_E_JERK;
       min_seg_time=_MIN_SEG_TIME;
-      Kp = DEFAULT_KP;
-      Ki = DEFAULT_KI;
-      Kd = DEFAULT_KD;
+      Kp = PID_PGAIN;
+      Ki = PID_IGAIN;
+      Kd = PID_DGAIN;
 
       showString(PSTR("Using Default settings\r\n"));
     }
