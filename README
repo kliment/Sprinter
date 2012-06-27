@@ -40,17 +40,17 @@ Software installation
 1. Install the required packages (gcc-avr, avr-libc, etc.)
   sudo apt-get install arduino-core
 
-2. Get the arduino software version 0018 (0023 works for RAMPS), uncompress it in a directory.
+2. Get the arduino software version 0023, uncompress it in a directory.
 Arduino software v1 has not been tested much, but is known to work with some boards.
    http://www.arduino.cc/en/Main/Software
 
-3. Get the sanguino software, version 0018
+3. Get the sanguino software, version 0023
    http://sanguino.cc/softwareforlinux
 
 follow the sanguino's readme so that your arduino hardware folder looks like 
-  arduino-0018/hardware/arduino
-  arduino-0018/hardware/sanguino
-  arduino-0018/hardware/tools
+  arduino-0023/hardware/arduino
+  arduino-0023/hardware/sanguino
+  arduino-0023/hardware/tools
 
 4. Clone the Sprinter git repository. 
    git clone https://github.com/kliment/Sprinter.git
@@ -64,12 +64,12 @@ Firmware compilation and upload
 5. Edit INSTALL_DIR inside Sprinter/Makefile (do not mind the default reference to arduino 0022)
 
 6. Run make. If everything goes well Sprinter/applet/Sprinter.cpp should have been created.
-You can safely ignore the error message mentioning arduino-0018/hardware/arduino/cores/arduino/WString.o
+You can safely ignore the error message mentioning arduino-0023/hardware/arduino/cores/arduino/WString.o
 
 7. Connect your Sanguinololu to your computer
    http://reprap.org/wiki/Sanguinololu
 
-8. Launch arduino-0018/arduino, open Sprinter/Sprinter.pde
+8. Launch arduino-0023/arduino, open Sprinter/Sprinter.pde
 
 9. Go to Tools -> Serial Port, and select the relevant option
 
