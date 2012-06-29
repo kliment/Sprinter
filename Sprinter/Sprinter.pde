@@ -249,6 +249,8 @@ float retract_acceleration = _RETRACT_ACCELERATION; // Normal acceleration mm/s^
 float max_xy_jerk = _MAX_XY_JERK;
 float max_z_jerk = _MAX_Z_JERK;
 float max_e_jerk = _MAX_E_JERK;
+unsigned long min_seg_time = _MIN_SEG_TIME;
+unsigned int Kp = PID_PGAIN, Ki = PID_IGAIN, Kd = PID_DGAIN;
 
 long  max_acceleration_units_per_sq_second[4] = _MAX_ACCELERATION_UNITS_PER_SQ_SECOND; // X, Y, Z and E max acceleration in mm/s^2 for printing moves or retracts
 
