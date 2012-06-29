@@ -70,6 +70,8 @@ void EEPROM_StoreSettings()
   EEPROM_write_setting(Ki_address, Ki);     //Ki
   EEPROM_write_setting(Kd_address, Kd);     //Kd
 
+  EEPROM_write_setting(z_max_length_address, z_max_length);
+
   char ver2[4]=EEPROM_VERSION;
   EEPROM_write_setting(EEPROM_OFFSET, ver2); // validate data
   showString(PSTR("Settings Stored\r\n"));
@@ -143,6 +145,9 @@ void EEPROM_printSettings()
       Serial.print(Kd);
     */
     #endif
+
+      showString(PSTR("z_max_length:\r\n"));
+      Serial.println(z_max_length);
   #endif
 
 } 
@@ -172,6 +177,7 @@ void EEPROM_RetrieveSettings(bool def, bool printout)
       EEPROM_read_setting(Kp_address, Kp);
       EEPROM_read_setting(Ki_address, Ki);
       EEPROM_read_setting(Kd_address, Kd);
+      EEPROM_read_setting(z_max_length_address, z_max_length);
 
       showString(PSTR("Stored settings retreived\r\n"));
     }
@@ -195,9 +201,10 @@ void EEPROM_RetrieveSettings(bool def, bool printout)
       max_z_jerk=_MAX_Z_JERK;
       max_e_jerk=_MAX_E_JERK;
       min_seg_time=_MIN_SEG_TIME;
-      Kp = PID_PGAIN;
-      Ki = PID_IGAIN;
-      Kd = PID_DGAIN;
+      Kp=PID_PGAIN;
+      Ki=PID_IGAIN;
+      Kd=PID_DGAIN;
+      z_max_length=Z_MAX_LENGTH;
 
       showString(PSTR("Using Default settings\r\n"));
     }

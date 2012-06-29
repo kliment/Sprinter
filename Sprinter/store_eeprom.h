@@ -27,7 +27,7 @@
 // the default values are used whenever there is a change to the data, to prevent
 // wrong data being written to the variables.
 // ALSO:  always make sure the variables in the Store and retrieve sections are in the same order.
-#define EEPROM_VERSION "S03"
+#define EEPROM_VERSION "S04"
 
 
 extern float axis_steps_per_unit[4]; 
@@ -42,6 +42,7 @@ extern float max_z_jerk;
 extern float max_e_jerk;
 extern unsigned long min_seg_time;
 extern unsigned int Kp, Ki, Kd;
+extern int z_max_length;
 
 #define axis_steps_per_unit_address (EEPROM_OFFSET + 4*sizeof(char))
 #define max_feedrate_address (axis_steps_per_unit_address + 4*sizeof(float))
