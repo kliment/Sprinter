@@ -251,6 +251,7 @@ float max_z_jerk = _MAX_Z_JERK;
 float max_e_jerk = _MAX_E_JERK;
 unsigned long min_seg_time = _MIN_SEG_TIME;
 unsigned int Kp = PID_PGAIN, Ki = PID_IGAIN, Kd = PID_DGAIN;
+int z_max_length = Z_MAX_LENGTH;
 
 long  max_acceleration_units_per_sq_second[4] = _MAX_ACCELERATION_UNITS_PER_SQ_SECOND; // X, Y, Z and E max acceleration in mm/s^2 for printing moves or retracts
 
@@ -1128,7 +1129,7 @@ FORCE_INLINE int homing_routine(char axis)
       min_pin = Z_MIN_PIN;
       max_pin = Z_MAX_PIN;
       home_dir = Z_HOME_DIR;
-      max_length = Z_MAX_LENGTH;
+      max_length = z_max_length;
       home_bounce = 4;
       break;
     default:
@@ -1966,7 +1967,7 @@ void prepare_move()
     {
       if (destination[X_AXIS] > X_MAX_LENGTH) destination[X_AXIS] = X_MAX_LENGTH;
       if (destination[Y_AXIS] > Y_MAX_LENGTH) destination[Y_AXIS] = Y_MAX_LENGTH;
-      if (destination[Z_AXIS] > Z_MAX_LENGTH) destination[Z_AXIS] = Z_MAX_LENGTH;
+      if (destination[Z_AXIS] > z_max_length) destination[Z_AXIS] = z_max_length;
     }
   }
 
