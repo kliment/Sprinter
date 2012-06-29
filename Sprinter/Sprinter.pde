@@ -1288,6 +1288,15 @@ FORCE_INLINE void process_commands()
     
     switch( (int)code_value() ) 
     {
+#if Z_HOME_DIR == 1
+      case 111: // M111 - callibrate Z axis using Z_MAX and report detected z_max_length
+        z_max_length = homing_routine(Z_AXIS);
+        EEPROM_write_setting(z_max_length_address, z_max_length);
+        showString(PSTR("z_max_length: "));
+        Serial.println(z_max_length);
+        break;
+#endif
+
 #ifdef SDSUPPORT
         
       case 20: // M20 - list SD card

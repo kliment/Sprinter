@@ -58,10 +58,11 @@ extern int z_max_length;
 #define Kp_address (min_seg_time_address + sizeof(unsigned long))
 #define Ki_address (Kp_address + sizeof(unsigned int))
 #define Kd_address (Ki_address + sizeof(unsigned int))
+#define z_max_length_address (Kd_address + sizeof(unsigned int))
 
 extern void EEPROM_RetrieveSettings(bool def, bool printout );
 extern void EEPROM_printSettings();
 extern void EEPROM_StoreSettings();
-
-
+template<typename T> int EEPROM_write_setting(int address, const T& value);
+template<typename T> int EEPROM_read_setting(int address, T& value);
 #endif

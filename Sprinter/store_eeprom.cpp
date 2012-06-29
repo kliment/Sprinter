@@ -29,7 +29,7 @@
 
 //======================================================================================
 //========================= Read / Write EEPROM =======================================
-template <class T> int EEPROM_write_setting(int address, const T& value)
+template <typename T> int EEPROM_write_setting(int address, const T& value)
 {
   const byte* p = (const byte*)(const void*)&value;
   int i;
@@ -38,7 +38,7 @@ template <class T> int EEPROM_write_setting(int address, const T& value)
   return i;
 }
 
-template <class T> int EEPROM_read_setting(int address, T& value)
+template <typename T> int EEPROM_read_setting(int address, T& value)
 {
   byte* p = (byte*)(void*)&value;
   int i;
