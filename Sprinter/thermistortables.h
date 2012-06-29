@@ -311,7 +311,7 @@ const short temptable_6[NUMTEMPS_6][2] = {
 #endif
 
 #if (THERMISTORHEATER == 7) || (THERMISTORBED == 7) // 100k Honeywell 135-104LAG-J01
-#define NUMTEMPS_7 54
+#define NUMTEMPS_7 55
 const short temptable_7[NUMTEMPS_7][2] = {
    {46, 270},
    {50, 265},
@@ -366,7 +366,9 @@ const short temptable_7[NUMTEMPS_7][2] = {
    {989, 20},
    {994, 15},
    {1001, 10},
-   {1005, 5}
+   {1005, 5},
+   {1021, 0} //safety
+
 };
 #endif
 
