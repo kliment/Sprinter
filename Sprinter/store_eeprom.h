@@ -42,7 +42,7 @@ extern float max_z_jerk;
 extern float max_e_jerk;
 extern unsigned long min_seg_time;
 extern unsigned int Kp, Ki, Kd;
-extern int z_max_length;
+extern float z_max_length;
 
 #define axis_steps_per_unit_address (EEPROM_OFFSET + 4*sizeof(char))
 #define max_feedrate_address (axis_steps_per_unit_address + 4*sizeof(float))

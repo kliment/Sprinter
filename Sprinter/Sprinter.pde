@@ -251,7 +251,7 @@ float max_z_jerk = _MAX_Z_JERK;
 float max_e_jerk = _MAX_E_JERK;
 unsigned long min_seg_time = _MIN_SEG_TIME;
 unsigned int Kp = PID_PGAIN, Ki = PID_IGAIN, Kd = PID_DGAIN;
-int z_max_length = Z_MAX_LENGTH;
+float z_max_length = Z_MAX_LENGTH;
 float effective_travel[3] = {0,0,0};
 
 long  max_acceleration_units_per_sq_second[4] = _MAX_ACCELERATION_UNITS_PER_SQ_SECOND; // X, Y, Z and E max acceleration in mm/s^2 for printing moves or retracts
@@ -1292,10 +1292,19 @@ FORCE_INLINE void process_commands()
     {
 #if Z_HOME_DIR == 1
       case 111: // M111 - callibrate Z axis using Z_MAX and report detected z_max_length
+        is_homing = true;
         z_max_length = homing_routine(Z_AXIS);
+        is_homing = false;
+
         EEPROM_write_setting(z_max_length_address, z_max_length);
         showString(PSTR("z_max_length: "));
         Serial.println(z_max_length);
+
+        current_position[Z_AXIS] = z_max_length;
+        current_position[Z_AXIS] += add_homing[Z_AXIS];
+        plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);
+        destination[Z_AXIS] = current_position[Z_AXIS];
+        feedrate = 0;
         break;
 #endif
 
