@@ -252,6 +252,7 @@ float max_e_jerk = _MAX_E_JERK;
 unsigned long min_seg_time = _MIN_SEG_TIME;
 unsigned int Kp = PID_PGAIN, Ki = PID_IGAIN, Kd = PID_DGAIN;
 int z_max_length = Z_MAX_LENGTH;
+float effective_travel[3] = {0,0,0};
 
 long  max_acceleration_units_per_sq_second[4] = _MAX_ACCELERATION_UNITS_PER_SQ_SECOND; // X, Y, Z and E max acceleration in mm/s^2 for printing moves or retracts
 
@@ -1106,9 +1107,10 @@ FORCE_INLINE bool code_seen(char code)
   return (strchr_pointer != NULL);  //Return True if a character was found
 }
 
-FORCE_INLINE int homing_routine(char axis)
+FORCE_INLINE float homing_routine(char axis)
 {
-  int min_pin, max_pin, home_dir, max_length, home_bounce, distance=0;
+  int min_pin, max_pin, home_dir, home_bounce;
+  float max_length, distance=0;
 
   switch(axis){
     case X_AXIS:
@@ -1129,7 +1131,7 @@ FORCE_INLINE int homing_routine(char axis)
       min_pin = Z_MIN_PIN;
       max_pin = Z_MAX_PIN;
       home_dir = Z_HOME_DIR;
-      max_length = z_max_length;
+      max_length = Z_MAX_LENGTH;
       home_bounce = 4;
       break;
     default:
@@ -1146,7 +1148,7 @@ FORCE_INLINE int homing_routine(char axis)
     prepare_move();
     st_synchronize();
 
-    distance = current_position[axis] + 1.5 * max_length * home_dir;
+    distance = effective_travel[axis];
 
     current_position[axis] = home_bounce/2 * home_dir;
     plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);
@@ -1163,7 +1165,7 @@ FORCE_INLINE int homing_routine(char axis)
     prepare_move();
     st_synchronize();
 
-    distance += current_position[axis] + home_bounce * home_dir;
+    distance += effective_travel[axis];
 
     current_position[axis] = (home_dir == -1) ? 0 : max_length;
     current_position[axis] += add_homing[axis];
@@ -3074,6 +3076,10 @@ ISR(TIMER1_COMPA_vect)
   } 
 
   if (current_block != NULL) {
+    effective_travel[X_AXIS] = current_block->steps_x / axis_steps_per_unit[X_AXIS];
+    effective_travel[Y_AXIS] = current_block->steps_y / axis_steps_per_unit[Y_AXIS];
+    effective_travel[Z_AXIS] = current_block->steps_z / axis_steps_per_unit[Z_AXIS];
+
     // Set directions TO DO This should be done once during init of trapezoid. Endstops -> interrupt
     out_bits = current_block->direction_bits;
 
@@ -3087,8 +3093,10 @@ ISR(TIMER1_COMPA_vect)
           if(x_min_endstop && old_x_min_endstop && (current_block->steps_x > 0)) {
             if(!is_homing)
               endstop_x_hit=true;
-            else  
+            else {
+              effective_travel[X_AXIS] = -step_events_completed / axis_steps_per_unit[X_AXIS];
               step_events_completed = current_block->step_event_count;
+            }
           }
           else
           {
@@ -3109,8 +3117,10 @@ ISR(TIMER1_COMPA_vect)
           if(x_max_endstop && old_x_max_endstop && (current_block->steps_x > 0)){
             if(!is_homing)
               endstop_x_hit=true;
-            else    
+            else {
+              effective_travel[X_AXIS] = step_events_completed / axis_steps_per_unit[X_AXIS];
               step_events_completed = current_block->step_event_count;
+            }
           }
           else
           {
@@ -3132,8 +3142,10 @@ ISR(TIMER1_COMPA_vect)
           if(y_min_endstop && old_y_min_endstop && (current_block->steps_y > 0)) {
             if(!is_homing)
               endstop_y_hit=true;
-            else
+            else {
+              effective_travel[Y_AXIS] = -step_events_completed / axis_steps_per_unit[Y_AXIS];
               step_events_completed = current_block->step_event_count;
+            }
           }
           else
           {
@@ -3154,8 +3166,10 @@ ISR(TIMER1_COMPA_vect)
           if(y_max_endstop && old_y_max_endstop && (current_block->steps_y > 0)){
             if(!is_homing)
               endstop_y_hit=true;
-            else  
+            else {
+              effective_travel[Y_AXIS] = step_events_completed / axis_steps_per_unit[Y_AXIS];  
               step_events_completed = current_block->step_event_count;
+            }
           }
           else
           {
@@ -3177,8 +3191,10 @@ ISR(TIMER1_COMPA_vect)
           if(z_min_endstop && old_z_min_endstop && (current_block->steps_z > 0)) {
             if(!is_homing)  
               endstop_z_hit=true;
-            else  
+            else {
+              effective_travel[Z_AXIS] = -step_events_completed / axis_steps_per_unit[Z_AXIS];
               step_events_completed = current_block->step_event_count;
+            }
           }
           else
           {
@@ -3199,8 +3215,10 @@ ISR(TIMER1_COMPA_vect)
           if(z_max_endstop && old_z_max_endstop && (current_block->steps_z > 0)) {
             if(!is_homing)
               endstop_z_hit=true;
-            else  
+            else {
+              effective_travel[Z_AXIS] = step_events_completed / axis_steps_per_unit[Z_AXIS];
               step_events_completed = current_block->step_event_count;
+            }
           }
           else
           {
