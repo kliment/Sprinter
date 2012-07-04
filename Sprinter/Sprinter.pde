@@ -1131,7 +1131,7 @@ FORCE_INLINE float homing_routine(char axis)
       min_pin = Z_MIN_PIN;
       max_pin = Z_MAX_PIN;
       home_dir = Z_HOME_DIR;
-      max_length = Z_MAX_LENGTH;
+      max_length = z_max_length;
       home_bounce = 4;
       break;
     default:
@@ -1141,7 +1141,8 @@ FORCE_INLINE float homing_routine(char axis)
 
   if ((min_pin > -1 && home_dir==-1) || (max_pin > -1 && home_dir==1))
   {
-    current_position[axis] = -1.5 * max_length * home_dir;
+    //This won't work for machines with build dimensions larger than a meter :-)
+    current_position[axis] = -1000 * home_dir;
     plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);
     destination[axis] = 0;
     feedrate = homing_feedrate[axis];
