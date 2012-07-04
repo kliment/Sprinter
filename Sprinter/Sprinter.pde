@@ -252,7 +252,6 @@ float max_e_jerk = _MAX_E_JERK;
 unsigned long min_seg_time = _MIN_SEG_TIME;
 unsigned int Kp = PID_PGAIN, Ki = PID_IGAIN, Kd = PID_DGAIN;
 float z_max_length = Z_MAX_LENGTH;
-float effective_travel[3] = {0,0,0};
 
 long  max_acceleration_units_per_sq_second[4] = _MAX_ACCELERATION_UNITS_PER_SQ_SECOND; // X, Y, Z and E max acceleration in mm/s^2 for printing moves or retracts
 
@@ -283,9 +282,7 @@ float destination[NUM_AXIS] = {0.0, 0.0, 0.0, 0.0};
 float current_position[NUM_AXIS] = {0.0, 0.0, 0.0, 0.0};
 float add_homing[3]={0,0,0};
 
-static unsigned short virtual_steps_x = 0;
-static unsigned short virtual_steps_y = 0;
-static unsigned short virtual_steps_z = 0;
+static unsigned short virtual_steps[3] = {0,0,0};
 
 bool home_all_axis = true;
 //unsigned ?? ToDo: Check
@@ -1149,7 +1146,7 @@ FORCE_INLINE float homing_routine(char axis)
     prepare_move();
     st_synchronize();
 
-    distance = effective_travel[axis];
+    distance = 1000 - virtual_steps[axis]/axis_steps_per_unit[axis];
 
     current_position[axis] = home_bounce/2 * home_dir;
     plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);
@@ -1166,7 +1163,7 @@ FORCE_INLINE float homing_routine(char axis)
     prepare_move();
     st_synchronize();
 
-    distance += effective_travel[axis];
+    distance += virtual_steps[axis]/axis_steps_per_unit[axis];
 
     current_position[axis] = (home_dir == -1) ? 0 : max_length;
     current_position[axis] += add_homing[axis];
@@ -2804,9 +2801,9 @@ void plan_set_position(float x, float y, float z, float e)
   position[Z_AXIS] = lround(z*axis_steps_per_unit[Z_AXIS]);     
   position[E_AXIS] = lround(e*axis_steps_per_unit[E_AXIS]);  
 
-  virtual_steps_x = 0;
-  virtual_steps_y = 0;
-  virtual_steps_z = 0;
+  virtual_steps[X_AXIS] = 0;
+  virtual_steps[Y_AXIS] = 0;
+  virtual_steps[Z_AXIS] = 0;
 
   previous_nominal_speed = 0.0; // Resets planner junction speeds. Assumes start from rest.
   previous_speed[0] = 0.0;
@@ -3086,10 +3083,6 @@ ISR(TIMER1_COMPA_vect)
   } 
 
   if (current_block != NULL) {
-    effective_travel[X_AXIS] = current_block->steps_x / axis_steps_per_unit[X_AXIS];
-    effective_travel[Y_AXIS] = current_block->steps_y / axis_steps_per_unit[Y_AXIS];
-    effective_travel[Z_AXIS] = current_block->steps_z / axis_steps_per_unit[Z_AXIS];
-
     // Set directions TO DO This should be done once during init of trapezoid. Endstops -> interrupt
     out_bits = current_block->direction_bits;
 
@@ -3103,10 +3096,8 @@ ISR(TIMER1_COMPA_vect)
           if(x_min_endstop && old_x_min_endstop && (current_block->steps_x > 0)) {
             if(!is_homing)
               endstop_x_hit=true;
-            else {
-              effective_travel[X_AXIS] = -step_events_completed / axis_steps_per_unit[X_AXIS];
+            else
               step_events_completed = current_block->step_event_count;
-            }
           }
           else
           {
@@ -3127,10 +3118,8 @@ ISR(TIMER1_COMPA_vect)
           if(x_max_endstop && old_x_max_endstop && (current_block->steps_x > 0)){
             if(!is_homing)
               endstop_x_hit=true;
-            else {
-              effective_travel[X_AXIS] = step_events_completed / axis_steps_per_unit[X_AXIS];
+            else
               step_events_completed = current_block->step_event_count;
-            }
           }
           else
           {
@@ -3152,10 +3141,8 @@ ISR(TIMER1_COMPA_vect)
           if(y_min_endstop && old_y_min_endstop && (current_block->steps_y > 0)) {
             if(!is_homing)
               endstop_y_hit=true;
-            else {
-              effective_travel[Y_AXIS] = -step_events_completed / axis_steps_per_unit[Y_AXIS];
+            else
               step_events_completed = current_block->step_event_count;
-            }
           }
           else
           {
@@ -3176,10 +3163,8 @@ ISR(TIMER1_COMPA_vect)
           if(y_max_endstop && old_y_max_endstop && (current_block->steps_y > 0)){
             if(!is_homing)
               endstop_y_hit=true;
-            else {
-              effective_travel[Y_AXIS] = step_events_completed / axis_steps_per_unit[Y_AXIS];  
+            else
               step_events_completed = current_block->step_event_count;
-            }
           }
           else
           {
@@ -3201,10 +3186,8 @@ ISR(TIMER1_COMPA_vect)
           if(z_min_endstop && old_z_min_endstop && (current_block->steps_z > 0)) {
             if(!is_homing)  
               endstop_z_hit=true;
-            else {
-              effective_travel[Z_AXIS] = -step_events_completed / axis_steps_per_unit[Z_AXIS];
+            else
               step_events_completed = current_block->step_event_count;
-            }
           }
           else
           {
@@ -3225,10 +3208,8 @@ ISR(TIMER1_COMPA_vect)
           if(z_max_endstop && old_z_max_endstop && (current_block->steps_z > 0)) {
             if(!is_homing)
               endstop_z_hit=true;
-            else {
-              effective_travel[Z_AXIS] = step_events_completed / axis_steps_per_unit[Z_AXIS];
+            else
               step_events_completed = current_block->step_event_count;
-            }
           }
           else
           {
@@ -3272,13 +3253,13 @@ ISR(TIMER1_COMPA_vect)
       if (counter_x > 0) {
         if(!endstop_x_hit)
         {
-          if(virtual_steps_x)
-            virtual_steps_x--;
+          if(virtual_steps[X_AXIS])
+            virtual_steps[X_AXIS]--;
           else
             WRITE(X_STEP_PIN, HIGH);
         }
         else
-          virtual_steps_x++;
+          virtual_steps[X_AXIS]++;
           
         counter_x -= current_block->step_event_count;
         WRITE(X_STEP_PIN, LOW);
@@ -3288,13 +3269,13 @@ ISR(TIMER1_COMPA_vect)
       if (counter_y > 0) {
         if(!endstop_y_hit)
         {
-          if(virtual_steps_y)
-            virtual_steps_y--;
+          if(virtual_steps[Y_AXIS])
+            virtual_steps[Y_AXIS]--;
           else
             WRITE(Y_STEP_PIN, HIGH);
         }
         else
-          virtual_steps_y++;
+          virtual_steps[Y_AXIS]++;
             
         counter_y -= current_block->step_event_count;
         WRITE(Y_STEP_PIN, LOW);
@@ -3304,13 +3285,13 @@ ISR(TIMER1_COMPA_vect)
       if (counter_z > 0) {
         if(!endstop_z_hit)
         {
-          if(virtual_steps_z)
-            virtual_steps_z--;
+          if(virtual_steps[Z_AXIS])
+            virtual_steps[Z_AXIS]--;
           else
             WRITE(Z_STEP_PIN, HIGH);
         }
         else
-          virtual_steps_z++;
+          virtual_steps[Z_AXIS]++;
           
         counter_z -= current_block->step_event_count;
         WRITE(Z_STEP_PIN, LOW);
