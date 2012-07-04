@@ -1289,7 +1289,7 @@ FORCE_INLINE void process_commands()
     switch( (int)code_value() ) 
     {
 #if Z_HOME_DIR == 1
-      case 111: // M111 - callibrate Z axis using Z_MAX and report detected z_max_length
+      case 204: // M204 - callibrate Z axis using Z_MAX and report detected z_max_length
         is_homing = true;
         z_max_length = homing_routine(Z_AXIS);
         is_homing = false;
