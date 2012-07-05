@@ -686,8 +686,13 @@
 
 #define Z_STEP_PIN         3
 #define Z_DIR_PIN          2
+#if Z_HOME_DIR==1
+#define Z_MIN_PIN          -1
+#define Z_MAX_PIN          20
+#else
 #define Z_MIN_PIN          20
 #define Z_MAX_PIN          -1
+#endif
 
 #define E_STEP_PIN         1
 #define E_DIR_PIN          0

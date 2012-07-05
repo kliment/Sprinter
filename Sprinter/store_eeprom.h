@@ -27,7 +27,7 @@
 // the default values are used whenever there is a change to the data, to prevent
 // wrong data being written to the variables.
 // ALSO:  always make sure the variables in the Store and retrieve sections are in the same order.
-#define EEPROM_VERSION "S03"
+#define EEPROM_VERSION "S04"
 
 
 extern float axis_steps_per_unit[4]; 
@@ -42,6 +42,7 @@ extern float max_z_jerk;
 extern float max_e_jerk;
 extern unsigned long min_seg_time;
 extern unsigned int Kp, Ki, Kd;
+extern float z_max_length;
 
 #define axis_steps_per_unit_address (EEPROM_OFFSET + 4*sizeof(char))
 #define max_feedrate_address (axis_steps_per_unit_address + 4*sizeof(float))
@@ -57,10 +58,11 @@ extern unsigned int Kp, Ki, Kd;
 #define Kp_address (min_seg_time_address + sizeof(unsigned long))
 #define Ki_address (Kp_address + sizeof(unsigned int))
 #define Kd_address (Ki_address + sizeof(unsigned int))
+#define z_max_length_address (Kd_address + sizeof(unsigned int))
 
 extern void EEPROM_RetrieveSettings(bool def, bool printout );
 extern void EEPROM_printSettings();
 extern void EEPROM_StoreSettings();
-
-
+template<typename T> int EEPROM_write_setting(int address, const T& value);
+template<typename T> int EEPROM_read_setting(int address, T& value);
 #endif
