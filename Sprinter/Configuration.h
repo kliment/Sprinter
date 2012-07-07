@@ -369,6 +369,8 @@ const int dropsegments=5; //everything with less than this number of steps will 
 //#define EXTRUDERFAN_PIN 66 //Pin used to control the fan, comment out to disable this function
 #define EXTRUDERFAN_DEC 50 //Hotend temperature from where the fan will be turned on
 
+//#define CHAIN_OF_COMMAND 1 //Finish buffered moves before executing M42, fan speed, heater target, and so...
+
 //-----------------------------------------------------------------------
 // DEBUGING
 //-----------------------------------------------------------------------
