@@ -1421,6 +1421,9 @@ FORCE_INLINE void process_commands()
       case 42: //M42 -Change pin status via gcode
         if (code_seen('S'))
         {
+#ifdef CHAIN_OF_COMMAND
+          st_synchronize(); // wait for all movements to finish
+#endif
           int pin_status = code_value();
           if (code_seen('P') && pin_status >= 0 && pin_status <= 255)
           {
@@ -1444,6 +1447,9 @@ FORCE_INLINE void process_commands()
         }
         break;
       case 104: // M104
+#ifdef CHAIN_OF_COMMAND
+          st_synchronize(); // wait for all movements to finish
+#endif
         if (code_seen('S')) target_raw = temp2analogh(target_temp = code_value());
         #ifdef WATCHPERIOD
             if(target_raw > current_raw)
@@ -1458,6 +1464,9 @@ FORCE_INLINE void process_commands()
         #endif
         break;
       case 140: // M140 set bed temp
+#ifdef CHAIN_OF_COMMAND
+          st_synchronize(); // wait for all movements to finish
+#endif
         #if TEMP_1_PIN > -1 || defined BED_USES_AD595
             if (code_seen('S')) target_bed_raw = temp2analogBed(code_value());
         #endif
@@ -1500,6 +1509,9 @@ FORCE_INLINE void process_commands()
         return;
         //break;
       case 109: { // M109 - Wait for extruder heater to reach target.
+#ifdef CHAIN_OF_COMMAND
+          st_synchronize(); // wait for all movements to finish
+#endif
         if (code_seen('S')) target_raw = temp2analogh(target_temp = code_value());
         #ifdef WATCHPERIOD
             if(target_raw>current_raw)
@@ -1550,6 +1562,9 @@ FORCE_INLINE void process_commands()
       }
       break;
       case 190: // M190 - Wait for bed heater to reach target temperature.
+#ifdef CHAIN_OF_COMMAND
+          st_synchronize(); // wait for all movements to finish
+#endif
       #if TEMP_1_PIN > -1
         if (code_seen('S')) target_bed_raw = temp2analogBed(code_value());
         codenum = millis(); 
@@ -1573,6 +1588,9 @@ FORCE_INLINE void process_commands()
       break;
       #if FAN_PIN > -1
       case 106: //M106 Fan On
+#ifdef CHAIN_OF_COMMAND
+          st_synchronize(); // wait for all movements to finish
+#endif
         if (code_seen('S'))
         {
             unsigned char l_fan_code_val = constrain(code_value(),0,255);
@@ -1627,6 +1645,9 @@ FORCE_INLINE void process_commands()
         SET_OUTPUT(PS_ON_PIN); //GND
         break;
       case 81: // M81 - ATX Power Off
+#ifdef CHAIN_OF_COMMAND
+          st_synchronize(); // wait for all movements to finish
+#endif
         SET_INPUT(PS_ON_PIN); //Floating
         break;
       #endif
