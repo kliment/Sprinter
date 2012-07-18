@@ -23,6 +23,9 @@
 #include "store_eeprom.h"
 #include "Configuration.h"
 
+#ifdef PIDTEMP
+ extern unsigned int PID_Kp, PID_Ki, PID_Kd;
+#endif
 
 
 #ifdef USE_EEPROM_SETTINGS
@@ -65,10 +68,17 @@ void EEPROM_StoreSettings()
   EEPROM_write_setting(max_z_jerk_address, max_z_jerk);
   EEPROM_write_setting(max_e_jerk_address, max_e_jerk);
 
-  //PID Settings, not used yet --> placeholder
-  EEPROM_write_setting(Kp_address, Kp);     //Kp
-  EEPROM_write_setting(Ki_address, Ki);     //Ki
-  EEPROM_write_setting(Kd_address, Kd);     //Kd
+  //PID Settings
+  #ifdef PIDTEMP
+   EEPROM_write_setting(Kp_address, PID_Kp);     //Kp
+   EEPROM_write_setting(Ki_address, PID_Ki);     //Ki
+   EEPROM_write_setting(Kd_address, PID_Kd);     //Kd
+  #else
+   EEPROM_write_setting(Kp_address, 2048);     //Kp
+   EEPROM_write_setting(Ki_address, 32);     //Ki
+   EEPROM_write_setting(Kd_address, 2048);     //Kd
+  #endif
+  
 
   char ver2[4]=EEPROM_VERSION;
   EEPROM_write_setting(EEPROM_OFFSET, ver2); // validate data
@@ -123,7 +133,7 @@ void EEPROM_printSettings()
       showString(PSTR(" T" ));
       Serial.print(mintravelfeedrate ); 
 //      showString(PSTR(" B"));
-//      Serial.print(minsegmenttime ); 
+//      Serial.print(min_seg_time ); 
       showString(PSTR(" X"));
       Serial.print(max_xy_jerk ); 
       showString(PSTR(" Z"));
@@ -133,15 +143,15 @@ void EEPROM_printSettings()
 
       
     #ifdef PIDTEMP
-    /*
-      showString(PSTR("PID settings:");
-      showString(PSTR("   M301 P"));
-      Serial.print(Kp); 
+    
+      showString(PSTR("PID settings:\r\n"));
+      showString(PSTR("  M301 P"));
+      Serial.print(PID_Kp); 
       showString(PSTR(" I"));
-      Serial.print(Ki); 
-      SshowString(PSTR(" D"));
-      Serial.print(Kd);
-    */
+      Serial.print(PID_Ki); 
+      showString(PSTR(" D"));
+      Serial.println(PID_Kd);
+    
     #endif
   #endif
 
@@ -169,9 +179,12 @@ void EEPROM_RetrieveSettings(bool def, bool printout)
       EEPROM_read_setting(max_xy_jerk_address, max_xy_jerk);
       EEPROM_read_setting(max_z_jerk_address, max_z_jerk);
       EEPROM_read_setting(max_e_jerk_address, max_e_jerk);
-      EEPROM_read_setting(Kp_address, Kp);
-      EEPROM_read_setting(Ki_address, Ki);
-      EEPROM_read_setting(Kd_address, Kd);
+
+      #ifdef PIDTEMP
+       EEPROM_read_setting(Kp_address, PID_Kp);
+       EEPROM_read_setting(Ki_address, PID_Ki);
+       EEPROM_read_setting(Kd_address, PID_Kd);
+      #endif
 
       showString(PSTR("Stored settings retreived\r\n"));
     }
@@ -195,9 +208,12 @@ void EEPROM_RetrieveSettings(bool def, bool printout)
       max_z_jerk=_MAX_Z_JERK;
       max_e_jerk=_MAX_E_JERK;
       min_seg_time=_MIN_SEG_TIME;
-      Kp = PID_PGAIN;
-      Ki = PID_IGAIN;
-      Kd = PID_DGAIN;
+      
+      #ifdef PIDTEMP
+       PID_Kp = PID_PGAIN;
+       PID_Ki = PID_IGAIN;
+       PID_Kd = PID_DGAIN;
+      #endif
 
       showString(PSTR("Using Default settings\r\n"));
     }

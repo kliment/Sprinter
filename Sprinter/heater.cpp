@@ -66,8 +66,8 @@ unsigned long previous_millis_heater, previous_millis_bed_heater, previous_milli
       //int output;
   int error;
   int heater_duty = 0;
-  const int temp_iState_min = 256L * -PID_INTEGRAL_DRIVE_MAX / PID_IGAIN;
-  const int temp_iState_max = 256L * PID_INTEGRAL_DRIVE_MAX / PID_IGAIN;
+  int temp_iState_min = 256L * -PID_INTEGRAL_DRIVE_MAX / PID_IGAIN;
+  int temp_iState_max = 256L * PID_INTEGRAL_DRIVE_MAX / PID_IGAIN;
 #endif
 
 
@@ -496,6 +496,14 @@ void PID_autotune(int PIDAT_test_temp)
 }
 #endif  
 //---------------- END AUTOTUNE PID ------------------------------
+
+ void updatePID()
+ {
+   #ifdef PIDTEMP
+    temp_iState_min = (256L * -PID_INTEGRAL_DRIVE_MAX) / PID_Ki;
+    temp_iState_max = (256L * PID_INTEGRAL_DRIVE_MAX) / PID_Ki;
+   #endif
+ }
  
  void manage_heater()
  {
@@ -637,7 +645,7 @@ void PID_autotune(int PIDAT_test_temp)
       int delta_temp = current_temp - prev_temp;
       
       prev_temp = current_temp;
-      pTerm = ((long)PID_PGAIN * error) / 256;
+      pTerm = ((long)PID_Kp * error) / 256;
       const int H0 = min(HEATER_DUTY_FOR_SETPOINT(target_temp),HEATER_CURRENT);
       heater_duty = H0 + pTerm;
       
@@ -645,7 +653,7 @@ void PID_autotune(int PIDAT_test_temp)
       {
         temp_iState += error;
         temp_iState = constrain(temp_iState, temp_iState_min, temp_iState_max);
-        iTerm = ((long)PID_IGAIN * temp_iState) / 256;
+        iTerm = ((long)PID_Ki * temp_iState) / 256;
         heater_duty += iTerm;
       }
       
@@ -656,7 +664,7 @@ void PID_autotune(int PIDAT_test_temp)
       if(prev_error >  9){ prev_error /=  9; log3 += 2; }
       if(prev_error >  3){ prev_error /=  3; log3 ++;   }
       
-      dTerm = ((long)PID_DGAIN * delta_temp) / (256*log3);
+      dTerm = ((long)PID_Kd * delta_temp) / (256*log3);
       heater_duty += dTerm;
       heater_duty = constrain(heater_duty, 0, HEATER_CURRENT);
 

@@ -88,6 +88,8 @@ extern unsigned char manage_monitor;
   extern int dTerm;
   extern int error;
   extern int heater_duty;
+  
+  extern unsigned int PID_Kp, PID_Ki, PID_Kd;
 #endif
 
 #if defined(FAN_SOFT_PWM) && (FAN_PIN > -1)
@@ -121,6 +123,10 @@ extern unsigned char manage_monitor;
 
 #ifdef PID_AUTOTUNE
  void PID_autotune(int PIDAT_test_temp);
+#endif
+
+#ifdef PIDTEMP
+ void updatePID();
 #endif
 
 void manage_heater();

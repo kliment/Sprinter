@@ -127,7 +127,16 @@
 - Extra Parameter for Max Extruder Jerk
 - New Parameter (max_e_jerk) in EEPROM --> Default settings after update !
 
+ Version 1.3.20T
+- fix a few typos and correct english usage
+- reimplement homing routine as an inline function
+- refactor eeprom routines to make it possible to modify the value of a single parameter
+- calculate eeprom parameter addresses based on previous param address plus sizeof(type)
+- add 0 C point in Thermistortable 7
 
+ Version 1.3.21T
+- M301 set PID Parameter, and Store to EEPROM
+- If no PID is used, deaktivate Variables for PID settings
 
 */
 
@@ -219,6 +228,7 @@ void __cxa_pure_virtual(){};
 // M220 - set speed factor override percentage S=factor in percent 
 // M221 - set extruder multiply factor S100 --> original Extrude Speed 
 
+// M301 - Set PID parameters P I and D
 // M303 - PID relay autotune S<temperature> sets the target temperature. (default target temperature = 150C)
 
 // M400 - Finish all moves
@@ -234,7 +244,7 @@ void __cxa_pure_virtual(){};
 // M603 - Show Free Ram
 
 
-#define _VERSION_TEXT "1.3.19T / 11.06.2012"
+#define _VERSION_TEXT "1.3.21T / 17.07.2012"
 
 //Stepper Movement Variables
 char axis_codes[NUM_AXIS] = {'X', 'Y', 'Z', 'E'};
@@ -250,7 +260,9 @@ float max_xy_jerk = _MAX_XY_JERK;
 float max_z_jerk = _MAX_Z_JERK;
 float max_e_jerk = _MAX_E_JERK;
 unsigned long min_seg_time = _MIN_SEG_TIME;
-unsigned int Kp = PID_PGAIN, Ki = PID_IGAIN, Kd = PID_DGAIN;
+#ifdef PIDTEMP
+ unsigned int PID_Kp = PID_PGAIN, PID_Ki = PID_IGAIN, PID_Kd = PID_DGAIN;
+#endif
 
 long  max_acceleration_units_per_sq_second[4] = _MAX_ACCELERATION_UNITS_PER_SQ_SECOND; // X, Y, Z and E max acceleration in mm/s^2 for printing moves or retracts
 
@@ -850,6 +862,10 @@ void setup()
   //first Value --> Init with default
   //second value --> Print settings to UART
   EEPROM_RetrieveSettings(false,false);
+  #endif
+  
+  #ifdef PIDTEMP
+  updatePID();
   #endif
 
   //Free Ram
@@ -1817,6 +1833,16 @@ FORCE_INLINE void process_commands()
         }
       }
       break;
+#ifdef PIDTEMP
+      case 301: // M301
+      {
+        if(code_seen('P')) PID_Kp = code_value();
+        if(code_seen('I')) PID_Ki = code_value();
+        if(code_seen('D')) PID_Kd = code_value();
+        updatePID();
+      }
+      break;
+#endif //PIDTEMP      
 #ifdef PID_AUTOTUNE
       case 303: // M303 PID autotune
       {
