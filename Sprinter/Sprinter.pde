@@ -1679,6 +1679,13 @@ FORCE_INLINE void process_commands()
         {
           stepper_inactive_time = code_value() * 1000; 
         }
+        else if(code_seen('T'))
+        {
+          enable_x(); 
+          enable_y(); 
+          enable_z(); 
+          enable_e(); 
+        }
         else
         { 
           disable_x(); 
