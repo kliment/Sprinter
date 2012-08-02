@@ -1444,7 +1444,7 @@ FORCE_INLINE void process_commands()
           if (code_seen('P') && pin_status >= 0 && pin_status <= 255)
           {
             int pin_number = code_value();
-            for(int i = 0; i < sizeof(sensitive_pins); i++)
+            for(int i = 0; i < sizeof(sensitive_pins) / sizeof(int); i++)
             {
               if (sensitive_pins[i] == pin_number)
               {
