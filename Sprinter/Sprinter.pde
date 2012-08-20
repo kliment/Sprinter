@@ -138,6 +138,11 @@
 - M301 set PID Parameter, and Store to EEPROM
 - If no PID is used, deaktivate Variables for PID settings
 
+ Version 1.3.22T
+- Error in JERK calculation after G92 command is send, make problems 
+  with Z-Lift function in Slic3r
+- Add homing values can shown with M206 D
+
 */
 
 #include <avr/pgmspace.h>
@@ -244,7 +249,7 @@ void __cxa_pure_virtual(){};
 // M603 - Show Free Ram
 
 
-#define _VERSION_TEXT "1.3.21T / 17.07.2012"
+#define _VERSION_TEXT "1.3.22T / 20.08.2012"
 
 //Stepper Movement Variables
 char axis_codes[NUM_AXIS] = {'X', 'Y', 'Z', 'E'};
@@ -1816,6 +1821,13 @@ FORCE_INLINE void process_commands()
         if(code_seen('E')) max_e_jerk = code_value() ;
       break;
       case 206: // M206 additional homing offset
+        if(code_seen('D'))
+        {
+          showString(PSTR("Addhome X:")); Serial.print(add_homing[0]);
+          showString(PSTR(" Y:")); Serial.print(add_homing[1]);
+          showString(PSTR(" Z:")); Serial.println(add_homing[2]);
+        }
+
         for(int8_t cnt_i=0; cnt_i < 3; cnt_i++) 
         {
           if(code_seen(axis_codes[cnt_i])) add_homing[cnt_i] = code_value();
@@ -2183,6 +2195,7 @@ static int8_t prev_block_index(int8_t block_index) {
 static long position[4];   
 static float previous_speed[4]; // Speed of previous path line segment
 static float previous_nominal_speed; // Nominal speed of previous path line segment
+static unsigned char G92_reset_previous_speed = 0;
 
 
 // Calculates the distance (not time) it takes to accelerate from initial_rate to target_rate using the 
@@ -2729,10 +2742,19 @@ void plan_buffer_line(float x, float y, float z, float e, float feed_rate)
   // Start with a safe speed
   float vmax_junction = max_xy_jerk/2; 
   float vmax_junction_factor = 1.0; 
+
   if(fabs(current_speed[Z_AXIS]) > max_z_jerk/2) 
     vmax_junction = min(vmax_junction, max_z_jerk/2);
+
   if(fabs(current_speed[E_AXIS]) > max_e_jerk/2) 
     vmax_junction = min(vmax_junction, max_e_jerk/2);
+
+  if(G92_reset_previous_speed == 1)
+  {
+    vmax_junction = 0.1;
+    G92_reset_previous_speed = 0;  
+  }
+
   vmax_junction = min(vmax_junction, block->nominal_speed);
   float safe_speed = vmax_junction;
 
@@ -2838,6 +2860,8 @@ void plan_set_position(float x, float y, float z, float e)
   previous_speed[1] = 0.0;
   previous_speed[2] = 0.0;
   previous_speed[3] = 0.0;
+  
+  G92_reset_previous_speed = 1;
 }
 
 #ifdef AUTOTEMP
