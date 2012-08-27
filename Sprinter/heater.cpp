@@ -314,7 +314,7 @@ void PID_autotune(int PIDAT_test_temp)
 
   float PIDAT_max, PIDAT_min;
  
-  unsigned char PIDAT_PWM_val = 255;
+  unsigned char PIDAT_PWM_val = HEATER_CURRENT;
   
   unsigned char PIDAT_cycles=0;
   bool PIDAT_heating = true;
@@ -329,8 +329,8 @@ void PID_autotune(int PIDAT_test_temp)
   long PIDAT_t_high;
   long PIDAT_t_low;
 
-  long PIDAT_bias= 127;
-  long PIDAT_d  =  127;
+  long PIDAT_bias= HEATER_CURRENT/2;
+  long PIDAT_d  =  HEATER_CURRENT/2;
   
   float PIDAT_Ku, PIDAT_Tu;
   float PIDAT_Kp, PIDAT_Ki, PIDAT_Kd;
@@ -404,8 +404,8 @@ void PID_autotune(int PIDAT_test_temp)
           if(PIDAT_cycles > 0) 
           {
             PIDAT_bias += (PIDAT_d*(PIDAT_t_high - PIDAT_t_low))/(PIDAT_t_low + PIDAT_t_high);
-            PIDAT_bias = constrain(PIDAT_bias, 20 ,235);
-            if(PIDAT_bias > 127) PIDAT_d = 254 - PIDAT_bias;
+            PIDAT_bias = constrain(PIDAT_bias, 20 ,HEATER_CURRENT - 20);
+            if(PIDAT_bias > (HEATER_CURRENT/2)) PIDAT_d = (HEATER_CURRENT - 1) - PIDAT_bias;
             else PIDAT_d = PIDAT_bias;
 
             showString(PSTR(" bias: ")); Serial.print(PIDAT_bias);
@@ -466,7 +466,7 @@ void PID_autotune(int PIDAT_test_temp)
       #endif  
     }
     
-    if(PIDAT_input > (PIDAT_test_temp + 20)) 
+    if(PIDAT_input > (PIDAT_test_temp + 25)) 
     {
       showString(PSTR("PID Autotune failed! Temperature to high\r\n"));
       return;
