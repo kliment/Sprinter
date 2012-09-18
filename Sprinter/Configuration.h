@@ -312,7 +312,7 @@ const int dropsegments=5; //everything with less than this number of steps will 
 #define HEATER_CURRENT 255
 
 // How often should the heater check for new temp readings, in milliseconds
-#define HEATER_CHECK_INTERVAL 500
+#define HEATER_CHECK_INTERVAL 100
 #define BED_CHECK_INTERVAL 5000
 
 // Comment the following line to enable heat management during acceleration
