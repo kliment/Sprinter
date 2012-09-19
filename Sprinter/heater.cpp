@@ -466,9 +466,10 @@ void PID_autotune(int PIDAT_test_temp)
       #endif  
     }
     
-    if(PIDAT_input > (PIDAT_test_temp + 25)) 
+    if((PIDAT_input > (PIDAT_test_temp + 55)) || (PIDAT_input > 255))
     {
       showString(PSTR("PID Autotune failed! Temperature to high\r\n"));
+      target_temp = 0;
       return;
     }
     
