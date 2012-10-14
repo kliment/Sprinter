@@ -171,6 +171,7 @@
 #define CRITICAL_SECTION_START  unsigned char _sreg = SREG; cli()
 #define CRITICAL_SECTION_END    SREG = _sreg
 #endif //CRITICAL_SECTION_START
+#define SERVO 1
 
 void __cxa_pure_virtual(){};
 
@@ -377,6 +378,11 @@ unsigned long stepper_inactive_time = 0;
 //Temp Monitor for repetier
 unsigned char manage_monitor = 255;
 
+#ifdef SERVO
+#define SERVOCOUNT 4
+#include <Servo.h> 
+static Servo servos[SERVOCOUNT];
+#endif
 
 //------------------------------------------------
 //Init the SD card 
@@ -851,6 +857,18 @@ void setup()
   initsd();
 
 #endif
+
+#ifdef SERVO
+servos[0].attach(11);
+servos[0].write(0);
+servos[1].attach(6);
+servos[1].write(180);
+servos[2].attach(5);
+servos[2].write(0);
+servos[3].attach(4);
+servos[3].write(180);
+#endif
+
 
   #if defined(PID_SOFT_PWM) || (defined(FAN_SOFT_PWM) && (FAN_PIN > -1))
   showString(PSTR("Soft PWM Init\r\n"));
@@ -1467,6 +1485,24 @@ FORCE_INLINE void process_commands()
           }
         }
         break;
+#ifdef SERVO
+      case 43:
+        if (code_seen('S'))
+        {
+          int pin_status = code_value();
+          if (code_seen('P') && pin_status >= 0 && pin_status <= 180)
+          {
+            
+            int pin_number = code_value();
+            if (pin_number > -1 && pin_number<SERVOCOUNT)
+            {              
+              servos[pin_number].write(pin_status);
+            }
+          }
+        }
+        break;
+#endif
+
       case 104: // M104
 #ifdef CHAIN_OF_COMMAND
           st_synchronize(); // wait for all movements to finish
