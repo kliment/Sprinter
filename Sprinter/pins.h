@@ -181,7 +181,7 @@
 #if MOTHERBOARD == 2
 #define KNOWN_BOARD 1
 
-#if !defined(__AVR_ATmega644P__) && !defined(__AVR_ATmega1284P__) 
+#if !defined(__AVR_ATmega644P__) && !defined(__AVR_ATmega1284P__) && !defined(__ATmega644P__) && !defined(__ATmega1284P__)  
 #error Oops!  Make sure you have 'Sanguino' selected from the 'Tools -> Boards' menu.
 #endif
 
@@ -598,6 +598,11 @@
 * Gen6 pin assignment
 *
 ****************************************************************************************/
+#if MOTHERBOARD == 51
+  #define MOTHERBOARD 5
+  #define GEN6_DELUXE
+#endif
+
 #if MOTHERBOARD == 5
 #define KNOWN_BOARD 1
 
@@ -632,13 +637,18 @@
     #define E_ENABLE_PIN    3     //Added @ EJE Electronics 20100715
     #define TEMP_0_PIN      5     //changed @ rkoeppl 20110410
     #define HEATER_0_PIN    14    //changed @ rkoeppl 20110410
-    #define HEATER_1_PIN    -1    //changed @ rkoeppl 20110410
     
+    #ifdef GEN6_DELUXE
+      #define HEATER_1_PIN   1    
+      #define TEMP_1_PIN     0    
+    #else
+      #define HEATER_1_PIN   -1   
+      #define TEMP_1_PIN     -1    
+    #endif
     
     #define SDPOWER          -1
     #define SDSS          17
     #define LED_PIN         -1    //changed @ rkoeppl 20110410
-    #define TEMP_1_PIN      -1    //changed @ rkoeppl 20110410
     #define FAN_PIN         -1    //changed @ rkoeppl 20110410
     #define PS_ON_PIN       -1    //changed @ rkoeppl 20110410
     //our pin for debugging.

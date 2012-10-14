@@ -23,27 +23,30 @@
 #include "store_eeprom.h"
 #include "Configuration.h"
 
+#ifdef PIDTEMP
+ extern unsigned int PID_Kp, PID_Ki, PID_Kd;
+#endif
 
 
 #ifdef USE_EEPROM_SETTINGS
 
 //======================================================================================
 //========================= Read / Write EEPROM =======================================
-template <class T> int EEPROM_writeAnything(int &ee, const T& value)
+template <class T> int EEPROM_write_setting(int address, const T& value)
 {
   const byte* p = (const byte*)(const void*)&value;
   int i;
   for (i = 0; i < (int)sizeof(value); i++)
-    eeprom_write_byte((unsigned char *)ee++, *p++);
+    eeprom_write_byte((unsigned char *)address++, *p++);
   return i;
 }
 
-template <class T> int EEPROM_readAnything(int &ee, T& value)
+template <class T> int EEPROM_read_setting(int address, T& value)
 {
   byte* p = (byte*)(void*)&value;
   int i;
   for (i = 0; i < (int)sizeof(value); i++)
-    *p++ = eeprom_read_byte((unsigned char *)ee++);
+    *p++ = eeprom_read_byte((unsigned char *)address++);
   return i;
 }
 //======================================================================================
@@ -51,34 +54,34 @@ template <class T> int EEPROM_readAnything(int &ee, T& value)
 
 void EEPROM_StoreSettings() 
 {
-
-  unsigned long ul_help = 20000;
-  unsigned int ui_help = 0;
   char ver[4]= "000";
-  int i=EEPROM_OFFSET;
-  EEPROM_writeAnything(i,ver); // invalidate data first 
-  EEPROM_writeAnything(i,axis_steps_per_unit);  
-  EEPROM_writeAnything(i,max_feedrate);  
-  EEPROM_writeAnything(i,max_acceleration_units_per_sq_second);
-  EEPROM_writeAnything(i,move_acceleration);
-  EEPROM_writeAnything(i,retract_acceleration);
-  EEPROM_writeAnything(i,minimumfeedrate);
-  EEPROM_writeAnything(i,mintravelfeedrate);
-  EEPROM_writeAnything(i,ul_help);  //Min Segment Time, not used yet
-  EEPROM_writeAnything(i,max_xy_jerk);
-  EEPROM_writeAnything(i,max_z_jerk);
+  EEPROM_write_setting(EEPROM_OFFSET, ver); // invalidate data first
+  EEPROM_write_setting(axis_steps_per_unit_address, axis_steps_per_unit);
+  EEPROM_write_setting(max_feedrate_address, max_feedrate);
+  EEPROM_write_setting(max_acceleration_units_per_sq_second_address, max_acceleration_units_per_sq_second);
+  EEPROM_write_setting(move_acceleration_address, move_acceleration);
+  EEPROM_write_setting(retract_acceleration_address, retract_acceleration);
+  EEPROM_write_setting(minimumfeedrate_address, minimumfeedrate);
+  EEPROM_write_setting(mintravelfeedrate_address, mintravelfeedrate);
+  EEPROM_write_setting(min_seg_time_address, min_seg_time);  //Min Segment Time, not used yet
+  EEPROM_write_setting(max_xy_jerk_address, max_xy_jerk);
+  EEPROM_write_setting(max_z_jerk_address, max_z_jerk);
+  EEPROM_write_setting(max_e_jerk_address, max_e_jerk);
 
-  //PID Settings, not used yet --> placeholder
-  ui_help = 2560;
-  EEPROM_writeAnything(i,ui_help);     //Kp
-  ui_help = 64;
-  EEPROM_writeAnything(i,ui_help);     //Ki
-  ui_help = 4096;
-  EEPROM_writeAnything(i,ui_help);     //Kd
+  //PID Settings
+  #ifdef PIDTEMP
+   EEPROM_write_setting(Kp_address, PID_Kp);     //Kp
+   EEPROM_write_setting(Ki_address, PID_Ki);     //Ki
+   EEPROM_write_setting(Kd_address, PID_Kd);     //Kd
+  #else
+   EEPROM_write_setting(Kp_address, 2048);     //Kp
+   EEPROM_write_setting(Ki_address, 32);     //Ki
+   EEPROM_write_setting(Kd_address, 2048);     //Kd
+  #endif
+  
 
   char ver2[4]=EEPROM_VERSION;
-  i=EEPROM_OFFSET;
-  EEPROM_writeAnything(i,ver2); // validate data
+  EEPROM_write_setting(EEPROM_OFFSET, ver2); // validate data
   showString(PSTR("Settings Stored\r\n"));
  
 }
@@ -86,7 +89,6 @@ void EEPROM_StoreSettings()
 
 void EEPROM_printSettings()
 {  
-      // if def=true, the default values will be used
   #ifdef PRINT_EEPROM_SETTING
       showString(PSTR("Steps per unit:\r\n"));
       showString(PSTR(" M92 X"));
@@ -99,7 +101,7 @@ void EEPROM_printSettings()
       Serial.println(axis_steps_per_unit[3]);
       
       showString(PSTR("Maximum feedrates (mm/s):\r\n"));
-      showString(PSTR("  M203 X"));
+      showString(PSTR("  M202 X"));
       Serial.print(max_feedrate[0]);
       showString(PSTR(" Y"));
       Serial.print(max_feedrate[1]); 
@@ -124,29 +126,32 @@ void EEPROM_printSettings()
       showString(PSTR(" T"));
       Serial.println(retract_acceleration);
 
-      showString(PSTR("Advanced variables: S=Min feedrate (mm/s), T=Min travel feedrate (mm/s), X=maximum xY jerk (mm/s),  Z=maximum Z jerk (mm/s)\r\n"));
+      showString(PSTR("Advanced variables (mm/s): S=Min feedrate, T=Min travel feedrate, X=max xY jerk,  Z=max Z jerk, E=max E jerk\r\n"));
 
       showString(PSTR("  M205 S"));
       Serial.print(minimumfeedrate ); 
       showString(PSTR(" T" ));
       Serial.print(mintravelfeedrate ); 
 //      showString(PSTR(" B"));
-//      Serial.print(minsegmenttime ); 
+//      Serial.print(min_seg_time ); 
       showString(PSTR(" X"));
       Serial.print(max_xy_jerk ); 
       showString(PSTR(" Z"));
-      Serial.println(max_z_jerk);
+      Serial.print(max_z_jerk);
+      showString(PSTR(" E"));
+      Serial.println(max_e_jerk);
+
       
     #ifdef PIDTEMP
-    /*
-      showString(PSTR("PID settings:");
-      showString(PSTR("   M301 P"));
-      Serial.print(Kp); 
+    
+      showString(PSTR("PID settings:\r\n"));
+      showString(PSTR("  M301 P"));
+      Serial.print(PID_Kp); 
       showString(PSTR(" I"));
-      Serial.print(Ki); 
-      SshowString(PSTR(" D"));
-      Serial.print(Kd);
-    */
+      Serial.print(PID_Ki); 
+      showString(PSTR(" D"));
+      Serial.println(PID_Kd);
+    
     #endif
   #endif
 
@@ -159,26 +164,27 @@ void EEPROM_RetrieveSettings(bool def, bool printout)
     int i=EEPROM_OFFSET;
     char stored_ver[4];
     char ver[4]=EEPROM_VERSION;
-    unsigned long ul_help = 0;
     
-    EEPROM_readAnything(i,stored_ver); //read stored version
-    if ((!def)&&(strncmp(ver,stored_ver,3)==0)) 
+    EEPROM_read_setting(EEPROM_OFFSET,stored_ver); //read stored version
+    if ((!def)&&(strncmp(ver,stored_ver,3)==0))
     {   // version number match
-      EEPROM_readAnything(i,axis_steps_per_unit);  
-      EEPROM_readAnything(i,max_feedrate);  
-      EEPROM_readAnything(i,max_acceleration_units_per_sq_second);
-      EEPROM_readAnything(i,move_acceleration);
-      EEPROM_readAnything(i,retract_acceleration);
-      EEPROM_readAnything(i,minimumfeedrate);
-      EEPROM_readAnything(i,mintravelfeedrate);
-      EEPROM_readAnything(i,ul_help);  //min Segmenttime --> not used yet
-      EEPROM_readAnything(i,max_xy_jerk);
-      EEPROM_readAnything(i,max_z_jerk);
+      EEPROM_read_setting(axis_steps_per_unit_address, axis_steps_per_unit);
+      EEPROM_read_setting(max_feedrate_address, max_feedrate);
+      EEPROM_read_setting(max_acceleration_units_per_sq_second_address, max_acceleration_units_per_sq_second);
+      EEPROM_read_setting(move_acceleration_address, move_acceleration);
+      EEPROM_read_setting(retract_acceleration_address, retract_acceleration);
+      EEPROM_read_setting(minimumfeedrate_address, minimumfeedrate);
+      EEPROM_read_setting(mintravelfeedrate_address, mintravelfeedrate);
+      EEPROM_read_setting(min_seg_time_address, min_seg_time);  //min Segmenttime --> not used yet
+      EEPROM_read_setting(max_xy_jerk_address, max_xy_jerk);
+      EEPROM_read_setting(max_z_jerk_address, max_z_jerk);
+      EEPROM_read_setting(max_e_jerk_address, max_e_jerk);
 
-      unsigned int Kp,Ki,Kd;
-      EEPROM_readAnything(i,Kp);
-      EEPROM_readAnything(i,Ki);
-      EEPROM_readAnything(i,Kd);
+      #ifdef PIDTEMP
+       EEPROM_read_setting(Kp_address, PID_Kp);
+       EEPROM_read_setting(Ki_address, PID_Ki);
+       EEPROM_read_setting(Kd_address, PID_Kd);
+      #endif
 
       showString(PSTR("Stored settings retreived\r\n"));
     }
@@ -200,10 +206,18 @@ void EEPROM_RetrieveSettings(bool def, bool printout)
       mintravelfeedrate=DEFAULT_MINTRAVELFEEDRATE;
       max_xy_jerk=_MAX_XY_JERK;
       max_z_jerk=_MAX_Z_JERK;
+      max_e_jerk=_MAX_E_JERK;
+      min_seg_time=_MIN_SEG_TIME;
+      
+      #ifdef PIDTEMP
+       PID_Kp = PID_PGAIN;
+       PID_Ki = PID_IGAIN;
+       PID_Kd = PID_DGAIN;
+      #endif
 
       showString(PSTR("Using Default settings\r\n"));
     }
-
+    
     if(printout)
     {
       EEPROM_printSettings();

@@ -32,6 +32,10 @@
   void controllerFan(void);
 #endif
 
+#ifdef EXTRUDERFAN_PIN
+  void extruderFan(void);
+#endif
+
 // Manage heater variables. For a thermistor or AD595 thermocouple, raw values refer to the 
 // reading from the analog pin. For a MAX6675 thermocouple, the raw value is the temperature in 0.25 
 // degree increments (i.e. 100=25 deg). 
@@ -50,8 +54,8 @@ unsigned long previous_millis_heater, previous_millis_bed_heater, previous_milli
 #ifdef PIDTEMP
   volatile unsigned char g_heater_pwm_val = 0;
  
-  unsigned char PWM_off_time = 0;
-  unsigned char PWM_out_on = 0;
+  //unsigned char PWM_off_time = 0;
+  //unsigned char PWM_out_on = 0;
   
   int temp_iState = 0;
   int temp_dState = 0;
@@ -62,10 +66,14 @@ unsigned long previous_millis_heater, previous_millis_bed_heater, previous_milli
       //int output;
   int error;
   int heater_duty = 0;
-  const int temp_iState_min = 256L * -PID_INTEGRAL_DRIVE_MAX / PID_IGAIN;
-  const int temp_iState_max = 256L * PID_INTEGRAL_DRIVE_MAX / PID_IGAIN;
+  int temp_iState_min = 256L * -PID_INTEGRAL_DRIVE_MAX / PID_IGAIN;
+  int temp_iState_max = 256L * PID_INTEGRAL_DRIVE_MAX / PID_IGAIN;
 #endif
 
+
+#if defined(FAN_SOFT_PWM) && (FAN_PIN > -1)
+  volatile unsigned char g_fan_pwm_val = 0;
+#endif
 
 #ifdef AUTOTEMP
     float autotemp_max=AUTO_TEMP_MAX;
@@ -155,90 +163,348 @@ int read_max6675()
 #endif
 
 
-#ifdef PID_SOFT_PWM
+//------------------------------------------------------------------------
+// Soft PWM for Heater and FAN
+//------------------------------------------------------------------------
 
+#if defined(PID_SOFT_PWM) || (defined(FAN_SOFT_PWM) && (FAN_PIN > -1))
  void init_Timer2_softpwm(void)
  {
   // This is a simple SOFT PWM with 500 Hz for Extruder Heating
 
- 
   TIFR2 = (1 << TOV2);          // clear interrupt flag
   TCCR2B = (1 << CS22) | (1 << CS20);         // start timer (ck/128 prescalar)
-  TCCR2A = (1 << WGM21);        // CTC mode
-  OCR2A = 128;                  // We want to have at least 30Hz or else it gets choppy
-  TIMSK2 = (1 << OCIE2A);       // enable timer2 output compare match interrupt
-
+  TCCR2A = 0;//(1 << WGM21);        // Normal mode
+  
+   TIMSK2 |= (1 << TOIE2);
+  
+  #ifdef PID_SOFT_PWM
+   OCR2A = 128;                  // We want to have at least 500Hz or else it gets choppy
+   TIMSK2 |= (1 << OCIE2A);       // enable timer2 output compare match interrupt
+  #endif
+  
+  #if defined(FAN_SOFT_PWM) && (FAN_PIN > -1)
+   OCR2B = 128;                  // We want to have at least 500Hz or else it gets choppy
+   TIMSK2 |= (1 << OCIE2B);       // enable timer2 output compare match interrupt
+  #endif
+ 
  }
+#endif
 
-
- ISR(TIMER2_COMPA_vect)
- {
-
-    
-    if(g_heater_pwm_val < 2)
-    {
-      #if LED_PIN > -1
-        WRITE(LED_PIN,LOW);
-      #endif
-      WRITE(HEATER_0_PIN,LOW);
-      PWM_out_on = 0;
-      OCR2A = 128; 
-    }
-    else if(g_heater_pwm_val > 253)
+#if defined(PID_SOFT_PWM) || (defined(FAN_SOFT_PWM) && (FAN_PIN > -1))
+ISR(TIMER2_OVF_vect)
+{
+  
+  //--------------------------------------
+  // Soft PWM, Heater, start PWM cycle
+  //--------------------------------------
+  #ifdef PID_SOFT_PWM
+    if(g_heater_pwm_val >= 2)
     {
       #if LED_PIN > -1
         WRITE(LED_PIN,HIGH);
       #endif
       WRITE(HEATER_0_PIN,HIGH);
-      PWM_out_on = 1;
-      OCR2A = 128; 
+
+      if(g_heater_pwm_val <= 253)
+        OCR2A = g_heater_pwm_val; 
+      else
+        OCR2A = 192; 
     }
     else
     {
-
-       if(PWM_out_on == 1)
-       {
-
-         #if LED_PIN > -1
-           WRITE(LED_PIN,LOW);
-         #endif
-         WRITE(HEATER_0_PIN,LOW);
-         PWM_out_on = 0;
-         OCR2A = PWM_off_time;
-       }
-       else
-       {
-
-         #if LED_PIN > -1
-           WRITE(LED_PIN,HIGH);
-         #endif
-         WRITE(HEATER_0_PIN,HIGH);
-         PWM_out_on = 1;
-         
-         if(g_heater_pwm_val > 253)
-         {
-           OCR2A = 253;
-           PWM_off_time = 2;
-         }
-         else if(g_heater_pwm_val < 2)
-         {
-           OCR2A = 2;
-           PWM_off_time = 253;
-         }
-         else
-         {
-           OCR2A =  g_heater_pwm_val;
-           PWM_off_time = 255 - g_heater_pwm_val;
-         }
-         
-       }
+      #if LED_PIN > -1
+        WRITE(LED_PIN,LOW);
+      #endif
+      WRITE(HEATER_0_PIN,LOW);
+      OCR2A = 192; 
     }
-    
+  #endif
   
+  //--------------------------------------
+  // Soft PWM, Fan, start PWM cycle
+  //--------------------------------------
+  #if defined(FAN_SOFT_PWM) && (FAN_PIN > -1)
+    if(g_fan_pwm_val >= 2)
+    {
+      #if (FAN_PIN > -1) 
+        WRITE(FAN_PIN,HIGH);
+      #endif  
+      
+      if(g_fan_pwm_val <= 253)
+        OCR2B = g_fan_pwm_val; 
+      else
+        OCR2B = 128; 
+    }
+    else
+    {
+      #if (FAN_PIN > -1) 
+        WRITE(FAN_PIN,LOW);
+      #endif  
+      
+      OCR2B = 128; 
+    }
+  #endif
+  
+
+}
+#endif
+
+
+ #ifdef PID_SOFT_PWM
+ ISR(TIMER2_COMPA_vect)
+ {
+
+
+   if(g_heater_pwm_val > 253)
+   {
+     #if LED_PIN > -1
+       WRITE(LED_PIN,HIGH);
+     #endif
+     WRITE(HEATER_0_PIN,HIGH);
+   }
+   else
+   {
+     #if LED_PIN > -1
+       WRITE(LED_PIN,LOW);
+     #endif
+     WRITE(HEATER_0_PIN,LOW);
+   }
+   
+
  }
  #endif
  
+
+ #if defined(FAN_SOFT_PWM) && (FAN_PIN > -1)
+ ISR(TIMER2_COMPB_vect)
+ {
+
+   
+   if(g_fan_pwm_val > 253)
+   {
+     #if (FAN_PIN > -1) 
+       WRITE(FAN_PIN,HIGH);
+     #endif
+   }
+   else
+   {
+     #if (FAN_PIN > -1) 
+       WRITE(FAN_PIN,LOW);
+     #endif
+   }  
+
+
+ }  
+ #endif
+ //--------------------END SOFT PWM---------------------------
+
+//-------------------- START PID AUTOTUNE ---------------------------
+// Based on PID relay test 
+// Thanks to Erik van der Zalm for this idea to use it for Marlin
+// Some information see:
+// http://brettbeauregard.com/blog/2012/01/arduino-pid-autotune-library/
+//------------------------------------------------------------------
+#ifdef PID_AUTOTUNE
+void PID_autotune(int PIDAT_test_temp)
+{
+  float PIDAT_input = 0;
+  int PIDAT_input_help = 0;
+  unsigned char PIDAT_count_input = 0;
+
+  float PIDAT_max, PIDAT_min;
  
+  unsigned char PIDAT_PWM_val = HEATER_CURRENT;
+  
+  unsigned char PIDAT_cycles=0;
+  bool PIDAT_heating = true;
+
+  unsigned long PIDAT_temp_millis = millis();
+  unsigned long PIDAT_t1=PIDAT_temp_millis;
+  unsigned long PIDAT_t2=PIDAT_temp_millis;
+  unsigned long PIDAT_T_check_AI_val = PIDAT_temp_millis;
+
+  unsigned char PIDAT_cycle_cnt = 0;
+  
+  long PIDAT_t_high;
+  long PIDAT_t_low;
+
+  long PIDAT_bias= HEATER_CURRENT/2;
+  long PIDAT_d  =  HEATER_CURRENT/2;
+  
+  float PIDAT_Ku, PIDAT_Tu;
+  float PIDAT_Kp, PIDAT_Ki, PIDAT_Kd;
+  
+  #define PIDAT_TIME_FACTOR ((HEATER_CHECK_INTERVAL*256.0) / 1000.0)
+  
+  showString(PSTR("PID Autotune start\r\n"));
+
+  target_temp = PIDAT_test_temp;
+  
+  #ifdef BED_USES_THERMISTOR
+   WRITE(HEATER_1_PIN,LOW);
+  #endif
+  
+  for(;;) 
+  {
+ 
+    if((millis() - PIDAT_T_check_AI_val) > 100 )
+    {
+      PIDAT_T_check_AI_val = millis();
+      PIDAT_cycle_cnt++;
+      
+      #ifdef HEATER_USES_THERMISTOR
+        current_raw = analogRead(TEMP_0_PIN); 
+        current_raw = 1023 - current_raw;
+        PIDAT_input_help += analog2temp(current_raw);
+        PIDAT_count_input++;
+      #elif defined HEATER_USES_AD595
+        current_raw = analogRead(TEMP_0_PIN);    
+        PIDAT_input_help += analog2temp(current_raw);
+        PIDAT_count_input++;
+      #elif defined HEATER_USES_MAX6675
+        current_raw = read_max6675();
+        PIDAT_input_help += analog2temp(current_raw);
+        PIDAT_count_input++;
+      #endif
+    }
+    
+    if(PIDAT_cycle_cnt >= 10 )
+    {
+      
+      PIDAT_cycle_cnt = 0;
+      
+      PIDAT_input = (float)PIDAT_input_help / (float)PIDAT_count_input;
+      PIDAT_input_help = 0;
+      PIDAT_count_input = 0;
+      
+      PIDAT_max=max(PIDAT_max,PIDAT_input);
+      PIDAT_min=min(PIDAT_min,PIDAT_input);
+      
+      if(PIDAT_heating == true && PIDAT_input > PIDAT_test_temp) 
+      {
+        if(millis() - PIDAT_t2 > 5000) 
+        { 
+          PIDAT_heating = false;
+          PIDAT_PWM_val = (PIDAT_bias - PIDAT_d);
+          PIDAT_t1 = millis();
+          PIDAT_t_high = PIDAT_t1 - PIDAT_t2;
+          PIDAT_max = PIDAT_test_temp;
+        }
+      }
+      
+      if(PIDAT_heating == false && PIDAT_input < PIDAT_test_temp) 
+      {
+        if(millis() - PIDAT_t1 > 5000) 
+        {
+          PIDAT_heating = true;
+          PIDAT_t2 = millis();
+          PIDAT_t_low = PIDAT_t2 - PIDAT_t1;
+          
+          if(PIDAT_cycles > 0) 
+          {
+            PIDAT_bias += (PIDAT_d*(PIDAT_t_high - PIDAT_t_low))/(PIDAT_t_low + PIDAT_t_high);
+            PIDAT_bias = constrain(PIDAT_bias, 20 ,HEATER_CURRENT - 20);
+            if(PIDAT_bias > (HEATER_CURRENT/2)) PIDAT_d = (HEATER_CURRENT - 1) - PIDAT_bias;
+            else PIDAT_d = PIDAT_bias;
+
+            showString(PSTR(" bias: ")); Serial.print(PIDAT_bias);
+            showString(PSTR(" d: "));    Serial.print(PIDAT_d);
+            showString(PSTR(" min: "));  Serial.print(PIDAT_min);
+            showString(PSTR(" max: "));  Serial.println(PIDAT_max);
+            
+            if(PIDAT_cycles > 2) 
+            {
+              PIDAT_Ku = (4.0*PIDAT_d)/(3.14159*(PIDAT_max-PIDAT_min));
+              PIDAT_Tu = ((float)(PIDAT_t_low + PIDAT_t_high)/1000.0);
+              
+              showString(PSTR(" Ku: ")); Serial.print(PIDAT_Ku);
+              showString(PSTR(" Tu: ")); Serial.println(PIDAT_Tu);
+
+              PIDAT_Kp = 0.60*PIDAT_Ku;
+              PIDAT_Ki = 2*PIDAT_Kp/PIDAT_Tu;
+              PIDAT_Kd = PIDAT_Kp*PIDAT_Tu/8;
+              showString(PSTR(" Clasic PID \r\n"));
+              //showString(PSTR(" Kp: ")); Serial.println(PIDAT_Kp);
+              //showString(PSTR(" Ki: ")); Serial.println(PIDAT_Ki);
+              //showString(PSTR(" Kd: ")); Serial.println(PIDAT_Kd);
+              showString(PSTR(" CFG Kp: ")); Serial.println((unsigned int)(PIDAT_Kp*256));
+              showString(PSTR(" CFG Ki: ")); Serial.println((unsigned int)(PIDAT_Ki*PIDAT_TIME_FACTOR));
+              showString(PSTR(" CFG Kd: ")); Serial.println((unsigned int)(PIDAT_Kd*PIDAT_TIME_FACTOR));
+              
+              PIDAT_Kp = 0.30*PIDAT_Ku;
+              PIDAT_Ki = PIDAT_Kp/PIDAT_Tu;
+              PIDAT_Kd = PIDAT_Kp*PIDAT_Tu/3;
+              showString(PSTR(" Some overshoot \r\n"));
+              showString(PSTR(" CFG Kp: ")); Serial.println((unsigned int)(PIDAT_Kp*256));
+              showString(PSTR(" CFG Ki: ")); Serial.println((unsigned int)(PIDAT_Ki*PIDAT_TIME_FACTOR));
+              showString(PSTR(" CFG Kd: ")); Serial.println((unsigned int)(PIDAT_Kd*PIDAT_TIME_FACTOR));
+              /*
+              PIDAT_Kp = 0.20*PIDAT_Ku;
+              PIDAT_Ki = 2*PIDAT_Kp/PIDAT_Tu;
+              PIDAT_Kd = PIDAT_Kp*PIDAT_Tu/3;
+              showString(PSTR(" No overshoot \r\n"));
+              showString(PSTR(" CFG Kp: ")); Serial.println((unsigned int)(PIDAT_Kp*256));
+              showString(PSTR(" CFG Ki: ")); Serial.println((unsigned int)(PIDAT_Ki*PIDAT_TIME_FACTOR));
+              showString(PSTR(" CFG Kd: ")); Serial.println((unsigned int)(PIDAT_Kd*PIDAT_TIME_FACTOR));
+              */
+            }
+          }
+          PIDAT_PWM_val = (PIDAT_bias + PIDAT_d);
+          PIDAT_cycles++;
+          PIDAT_min = PIDAT_test_temp;
+        }
+      } 
+      
+      #ifdef PID_SOFT_PWM
+        g_heater_pwm_val = PIDAT_PWM_val;
+      #else
+        analogWrite_check(HEATER_0_PIN, PIDAT_PWM_val);
+        #if LED_PIN>-1
+          analogWrite_check(LED_PIN, PIDAT_PWM_val);
+        #endif
+      #endif  
+    }
+    
+    if((PIDAT_input > (PIDAT_test_temp + 55)) || (PIDAT_input > 255))
+    {
+      showString(PSTR("PID Autotune failed! Temperature to high\r\n"));
+      target_temp = 0;
+      return;
+    }
+    
+    if(millis() - PIDAT_temp_millis > 2000) 
+    {
+      PIDAT_temp_millis = millis();
+      showString(PSTR("ok T:"));
+      Serial.print(PIDAT_input);   
+      showString(PSTR(" @:"));
+      Serial.println((unsigned char)PIDAT_PWM_val*1);       
+    }
+    
+    if(((millis() - PIDAT_t1) + (millis() - PIDAT_t2)) > (10L*60L*1000L*2L)) 
+    {
+      showString(PSTR("PID Autotune failed! timeout\r\n"));
+      return;
+    }
+    
+    if(PIDAT_cycles > 5) 
+    {
+      showString(PSTR("PID Autotune finished ! Place the Kp, Ki and Kd constants in the configuration.h\r\n"));
+      return;
+    }
+  }
+}
+#endif  
+//---------------- END AUTOTUNE PID ------------------------------
+
+ void updatePID()
+ {
+   #ifdef PIDTEMP
+    temp_iState_min = (256L * -PID_INTEGRAL_DRIVE_MAX) / PID_Ki;
+    temp_iState_max = (256L * PID_INTEGRAL_DRIVE_MAX) / PID_Ki;
+   #endif
+ }
  
  void manage_heater()
  {
@@ -247,6 +513,8 @@ int read_max6675()
   if((millis() - previous_millis_monitor) > 250 )
   {
     previous_millis_monitor = millis();
+
+
     if(manage_monitor <= 1)
     {
       showString(PSTR("MTEMP:"));
@@ -378,7 +646,7 @@ int read_max6675()
       int delta_temp = current_temp - prev_temp;
       
       prev_temp = current_temp;
-      pTerm = ((long)PID_PGAIN * error) / 256;
+      pTerm = ((long)PID_Kp * error) / 256;
       const int H0 = min(HEATER_DUTY_FOR_SETPOINT(target_temp),HEATER_CURRENT);
       heater_duty = H0 + pTerm;
       
@@ -386,7 +654,7 @@ int read_max6675()
       {
         temp_iState += error;
         temp_iState = constrain(temp_iState, temp_iState_min, temp_iState_max);
-        iTerm = ((long)PID_IGAIN * temp_iState) / 256;
+        iTerm = ((long)PID_Ki * temp_iState) / 256;
         heater_duty += iTerm;
       }
       
@@ -397,7 +665,7 @@ int read_max6675()
       if(prev_error >  9){ prev_error /=  9; log3 += 2; }
       if(prev_error >  3){ prev_error /=  3; log3 ++;   }
       
-      dTerm = ((long)PID_DGAIN * delta_temp) / (256*log3);
+      dTerm = ((long)PID_Kd * delta_temp) / (256*log3);
       heater_duty += dTerm;
       heater_duty = constrain(heater_duty, 0, HEATER_CURRENT);
 
@@ -489,6 +757,10 @@ int read_max6675()
     
 #ifdef CONTROLLERFAN_PIN
   controllerFan(); //Check if fan should be turned on to cool stepper drivers down
+#endif
+
+#ifdef EXTRUDERFAN_PIN
+  extruderFan(); //Check if fan should be turned on to cool extruder down
 #endif
 
 }
@@ -596,6 +868,27 @@ void controllerFan()
     else
     {
       WRITE(CONTROLLERFAN_PIN, HIGH); //... turn the fan on
+    }
+  }
+}
+#endif
+
+#ifdef EXTRUDERFAN_PIN
+unsigned long lastExtruderCheck = 0;
+
+void extruderFan()
+{
+  if ((millis() - lastExtruderCheck) >= 2500) //Not a time critical function, so we only check every 2500ms
+  {
+    lastExtruderCheck = millis();
+           
+    if (analog2temp(current_raw) < EXTRUDERFAN_DEC)
+    {
+      WRITE(EXTRUDERFAN_PIN, LOW); //... turn the fan off
+    }
+    else
+    {
+      WRITE(EXTRUDERFAN_PIN, HIGH); //... turn the fan on
     }
   }
 }
