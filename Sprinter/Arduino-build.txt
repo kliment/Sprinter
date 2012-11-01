@@ -96,3 +96,4 @@ No client software is included in Sprinter.  An open-source client
 designed to work with RAMPS will be your best test subject.  I test
 with pronterface, but am happy to test with other clients if
 pronterface works and they don't.
+

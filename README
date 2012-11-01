@@ -11,8 +11,9 @@ discretion) any later version.
 It is based on Tonokips's firmware, which was licensed under GPL v2 or
 later.
 
-If you are running a current version, after October 2012, see the 
-file Arduino-build.txt in Sprinter for build instructions.
+NEW ARDUINO BUILDS, 2012:
+    If you are running a current version, after October 2012, see the 
+    file Arduino-build.txt in Sprinter for build instructions.
 
 WARNING: This version (April 19th, 2011) fixes a bug that caused
     speeds to be lower than what set in GCODE. So before attempting
