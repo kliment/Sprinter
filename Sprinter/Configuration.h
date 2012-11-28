@@ -162,9 +162,12 @@ const int NUM_AXIS = 4; // The axis order in all axis related arrays is X, Y, Z,
 //// Not used at the Moment
 //-----------------------------------------------------------------------
 
-// Min step delay in microseconds. If you are experiencing missing steps, try to raise the delay microseconds, but be aware this
+// Extended step pulse in microseconds.
 // If you enable this, make sure STEP_DELAY_RATIO is disabled.
-//#define STEP_DELAY_MICROS 1
+// Minimum High Time for Stepperpulse at 16 Mhz (E-Axis) is 2,4 us
+// Minimum High Time for Stepperpulse on X = 6,7 us / Y = 5,6 us / Z = 3,6 us
+// if you want Stepperpulse like 8 us set the value to 6 
+#define EXTEND_STEP_PULSE_USEC 0
 
 // Step delay over interval ratio. If you are still experiencing missing steps, try to uncomment the following line, but be aware this
 // If you enable this, make sure STEP_DELAY_MICROS is disabled. (except for Gen6: both need to be enabled.)

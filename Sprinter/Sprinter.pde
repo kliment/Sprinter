@@ -142,6 +142,12 @@
 - Error in JERK calculation after G92 command is send, make problems 
   with Z-Lift function in Slic3r
 - Add homing values can shown with M206 D
+- M303 Autotune use HEATER_CURRENT val for Maximum PWM Value 
+
+ Version 1.3.23T
+- Change max overshoot for Autotune to 55 °C
+- Analog pins was added with the wrong pin number, needs to be offset +55 to protect against using the pin as a digital
+- Min step delay in microseconds (EXTEND_STEP_PULSE_USEC)
 
 */
 
@@ -249,7 +255,7 @@ void __cxa_pure_virtual(){};
 // M603 - Show Free Ram
 
 
-#define _VERSION_TEXT "1.3.22T / 20.08.2012"
+#define _VERSION_TEXT "1.3.23T / 28.11.2012"
 
 //Stepper Movement Variables
 char axis_codes[NUM_AXIS] = {'X', 'Y', 'Z', 'E'};
@@ -3314,7 +3320,7 @@ ISR(TIMER1_COMPA_vect)
           virtual_steps_x++;
           
         counter_x -= current_block->step_event_count;
-        WRITE(X_STEP_PIN, LOW);
+        //WRITE(X_STEP_PIN, LOW);
       }
 
       counter_y += current_block->steps_y;
@@ -3330,7 +3336,7 @@ ISR(TIMER1_COMPA_vect)
           virtual_steps_y++;
             
         counter_y -= current_block->step_event_count;
-        WRITE(Y_STEP_PIN, LOW);
+        //WRITE(Y_STEP_PIN, LOW);
       }
 
       counter_z += current_block->steps_z;
@@ -3346,7 +3352,7 @@ ISR(TIMER1_COMPA_vect)
           virtual_steps_z++;
           
         counter_z -= current_block->step_event_count;
-        WRITE(Z_STEP_PIN, LOW);
+        //WRITE(Z_STEP_PIN, LOW);
       }
 
       #ifndef ADVANCE
@@ -3354,11 +3360,23 @@ ISR(TIMER1_COMPA_vect)
         if (counter_e > 0) {
           WRITE(E_STEP_PIN, HIGH);
           counter_e -= current_block->step_event_count;
-          WRITE(E_STEP_PIN, LOW);
+          //WRITE(E_STEP_PIN, LOW);
         }
       #endif //!ADVANCE
 
       step_events_completed += 1;  
+      
+      #if (EXTEND_STEP_PULSE_USEC > 0)
+        delayMicroseconds(EXTEND_STEP_PULSE_USEC);
+      #endif 
+   
+      WRITE(X_STEP_PIN, LOW);
+      WRITE(Y_STEP_PIN, LOW);
+      WRITE(Z_STEP_PIN, LOW);
+      #ifndef ADVANCE
+        WRITE(E_STEP_PIN, LOW);  
+      #endif
+
       if(step_events_completed >= current_block->step_event_count) break;
       
     }
