@@ -1,0 +1,99 @@
+Arduino build docs rev 0001
+jet@allartburns.org
+31 Oct 2012  (Merry Goth Xmas!)
+[TODO insert boilerplate for FSF/GPL copyright process docs or
+ Sprinter license]
+
+These docs were written under 
+Arduino:  Arduino-1.0.1
+Host:     OSX 10.6.8
+Sprinter: kliment/experimental clone on 31 Oct 2012
+
+These docs where tested under
+Arduino:  Arduino-1.0.1
+Host:     Win7
+Sprinter: kliment/experimental clone on 31 Oct 2012
+Tester:   jet
+Status:   NOT DONE
+
+Arduino:  Arduino-1.0.1
+Host:     Win8
+Sprinter: kliment/experimental clone on 31 Oct 2012
+Tester:   jet
+Status:   NOT DONE
+
+Arduino:  Arduino-1.0.1
+Host:     Ubuntu 12
+Sprinter: kliment/experimental clone on 31 Oct 2012
+Tester:   jet
+Status:   NOT DONE
+
+
+#####################
+# BUILD REQUIREMENTS
+#####################
+
+These instructions only apply if you are required to build the code
+from source.  If you are not required to do this, fetch the compiled
+binaries and follow their instructions.
+
+This is not an instructional document on how to use github, avr
+utilities, or other development packages.  If you do not know how to
+use these, find a local friend and ask for their assistance.
+
+On all platforms the build is similar:
+- verify that Arduino 1.0.1 or later is installed and generates
+  code for your specific Arduino.
+- get a copy of the Sprinter code.  Since we are building from source, 
+  you should branch kliment/Sprinter and clone that code.
+
+The currently supported platforms are
+OSX 10.6.8  TODO
+OSX 10.7    TODO
+Win7/32     TODO
+Win7/64     TODO
+Win8        TODO
+Ubuntu12    TODO
+
+##################
+#BUILD STEPS FLASH
+##################
+
+1) Launch arduino-1.0.1, set the board and port, verify that it can
+   see your RAMPS controller.
+
+2) Open the Sprinter.pde or Sprinter.ino file.  Arduino-1.0.1 suports
+   the old format, the name will change now or in the future.
+
+3) Verify (compile) the Sprinter sketch.  If it does not compile
+   completely,  exit these instructions and resolve the problem[
+   This could be as simple as changing a variable in Sprinter.pde or
+   as complex as installing new/different Arduino software.
+
+4) Upload the sketch to the board.  As of 1.0.1, Arduino still
+   re-compiles everything before an upload, this is a bug in Arduino
+   not in Sprinter software.
+
+5) If "Done uploading." appears in the dialog box
+       reset the RAMPS unit
+   If anything else appears, correct the problem and retry this step
+
+6) Open the Serial Port Monitor and verify the port and bps rate of
+   your connection.  This should trigger a RAMPS reset and you should
+   see the software announcement in the Serial Monitor.
+
+7) Restart the RAMPS controller by pushing the resset pin.  After the
+   reset, the Serial Monitor should update.
+
+8) At this point the installation should be considered complete.
+   Exit Arduino
+
+###################
+#BUILD STEPS CLIENT
+###################
+
+No client software is included in Sprinter.  An open-source client
+designed to work with RAMPS will be your best test subject.  I test
+with pronterface, but am happy to test with other clients if
+pronterface works and they don't.
+

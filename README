@@ -1,38 +1,62 @@
-The leading developers of Sprinter are currently Kliment, caru and midopple, though many others contribute with their patches.
+The leading developers of Sprinter are currently Kliment, caru and
+midopple, though many others contribute with their patches.
 
-This is a firmware for RAMPS and other reprap single-processor electronics setups. It supports printing from SD card, active heatbed control, and ATmega internal pullups.
+This is a firmware for RAMPS and other reprap single-processor
+electronics setups. It supports printing from SD card, active heatbed
+control, and ATmega internal pullups.
 
-This work is licensed under the GNU GPL v3 or (at the user's discretion) any later version.
+This work is licensed under the GNU GPL v3 or (at the user's
+discretion) any later version.
 
-It is based on Tonokips's firmware, which was licensed under GPL v2 or later.
+It is based on Tonokips's firmware, which was licensed under GPL v2 or
+later.
 
-WARNING: This version (April 19th, 2011) fixes a bug that caused speeds to be lower than what
-    set in GCODE. So before attempting any print, you will have to check all
-    your axis max speed, including the extruder retract speed. Not following
-    this guidelines can seriously damage your printer.
+NEW ARDUINO BUILDS, 2012:
+    If you are running a current version, after October 2012, see the 
+    file Arduino-build.txt in Sprinter for build instructions.
 
-The configuration file now has an option to set the wanted temperature table file. If you copy and paste a temperature file from older versions, make sure that the configuration is pointing to it. For example:
-#include "ThermistorTable.h"
+WARNING: This version (April 19th, 2011) fixes a bug that caused
+    speeds to be lower than what set in GCODE. So before attempting
+    any print, you will have to check all your axis max speed,
+    including the extruder retract speed. Not following this
+    guidelines can seriously damage your printer.
 
-In addition, you can optionally use a different thermistor table for hot-end and bed. To do so, comment out the following lines in configuration.h:
+The configuration file now has an option to set the wanted temperature
+table file. If you copy and paste a temperature file from older
+versions, make sure that the configuration is pointing to it. For
+example: #include "ThermistorTable.h"
+
+In addition, you can optionally use a different thermistor table for
+hot-end and bed. To do so, comment out the following lines in
+configuration.h:
 #define BNUMTEMPS NUMPTEMPS
 #define bedtemptable temptable
+
 Then add a line pointing to your second thermistor table, for example:
 #include "BedThermistorTable.h"
-Finally, make sure that the nozzle thermistor table, inside ThermistorTable.h in this case, is defined as "temptable" and that the bed thermistor table is defined as "bedtemptable", and that the number of temps is defined as NUMTEMPS for the heater and BNUMTEMPS for the bed.
 
-There are examples of all these configurations in the configuration.h file. Please look at them before you change anything.
+Finally, make sure that the nozzle thermistor table, inside
+ThermistorTable.h in this case, is defined as "temptable" and that the
+bed thermistor table is defined as "bedtemptable", and that the number
+of temps is defined as NUMTEMPS for the heater and BNUMTEMPS for the
+bed.
+
+There are examples of all these configurations in the configuration.h
+file. Please look at them before you change anything.
 
 
 Complete beginners guide
 =======================
 
-From a fresh Ubuntu install how to update the firmware of your Prusa Mendel ?
-(the specifics are for the Prusa Mendel built at the Bath RepRap masterclass.
-This version uses the http://reprap.org/wiki/Sanguinololu. 
-Some details may not fit your hardware, be sure to check what you are doing)
+From a fresh Ubuntu install how to update the firmware of your Prusa
+Mendel ?  (the specifics are for the Prusa Mendel built at the Bath
+RepRap masterclass.  This version uses the
+http://reprap.org/wiki/Sanguinololu.  Some details may not fit your
+hardware, be sure to check what you are doing)
 
-Steps 3,10,11 are hardware-specific to the Sanguinololu and Bath Prusa and should be skipped or modified accordingly for other hardware such as the Arduino Mega 2560
+Steps 3,10,11 are hardware-specific to the Sanguinololu and Bath Prusa
+and should be skipped or modified accordingly for other hardware such
+as the Arduino Mega 2560
 
 Software installation
 ----------------------
@@ -40,8 +64,9 @@ Software installation
 1. Install the required packages (gcc-avr, avr-libc, etc.)
   sudo apt-get install arduino-core
 
-2. Get the arduino software version 0023, uncompress it in a directory.
-Arduino software v1 has not been tested much, but is known to work with some boards.
+2. Get the arduino software version 0023, uncompress it in a
+directory.  Arduino software v1 has not been tested much, but is known
+to work with some boards.
    http://www.arduino.cc/en/Main/Software
 
 3. Get the sanguino software, version 0023
@@ -61,10 +86,12 @@ Optionally, switch to the desired branch
 Firmware compilation and upload
 -------------------------------
 
-5. Edit INSTALL_DIR inside Sprinter/Makefile (do not mind the default reference to arduino 0022)
+5. Edit INSTALL_DIR inside Sprinter/Makefile (do not mind the default
+reference to arduino 0022)
 
-6. Run make. If everything goes well Sprinter/applet/Sprinter.cpp should have been created.
-You can safely ignore the error message mentioning arduino-0023/hardware/arduino/cores/arduino/WString.o
+6. Run make. If everything goes well Sprinter/applet/Sprinter.cpp
+should have been created.  You can safely ignore the error message
+mentioning arduino-0023/hardware/arduino/cores/arduino/WString.o
 
 7. Connect your Sanguinololu to your computer
    http://reprap.org/wiki/Sanguinololu
@@ -81,7 +108,8 @@ You can safely ignore the error message mentioning arduino-0023/hardware/arduino
 
   float axis_steps_per_unit[] 
 
-set values that match your hardware. For the special cast gears of the Bath Masterclass Prusa Mendel, these values are  
+set values that match your hardware. For the special cast gears of the
+Bath Masterclass Prusa Mendel, these values are
   float axis_steps_per_unit[] = {91.42857, 91.42857, 3200/1.25,700}; 
 
 also for the mentioned hardware setup
@@ -90,10 +118,12 @@ also for the mentioned hardware setup
   // "no touch == closed circuit == SIG connects to GND"
   // see http://reprap.org/wiki/Sanguinololu#Endstops
 
-12. Click on the "play" button to compile. If everything goes well you should see a "Binary sketch size: " message.
+12. Click on the "play" button to compile. If everything goes well you
+should see a "Binary sketch size: " message.
 
-13. Click on "the arrow going to the right" button to upload (you had done steps 7,8,9 before, right ?). 
-If everything goes well you should see the message "Done uploading".
+13. Click on "the arrow going to the right" button to upload (you had
+done steps 7,8,9 before, right ?).  If everything goes well you should
+see the message "Done uploading".
 
 if GEN7 with 20 Mhz is in use set the Fuses for Bootloader to
 lfuse= 0xF7 hfuse = 0xD4 efuse = FD
@@ -101,8 +131,9 @@ Brownout must be 2,7 V
 
 Congratulations, you have just upgraded the firmware of your RepRap !
 
-You can use pronterface.py to do some manual verifications by moving the printer's tip along 
-the axes and verifying that the physical displacements match the ones indicated on the interface. 
+You can use pronterface.py to do some manual verifications by moving
+the printer's tip along the axes and verifying that the physical
+displacements match the ones indicated on the interface.
 
 
 
