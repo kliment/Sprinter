@@ -33,6 +33,9 @@
 #elif defined HEATER_USES_MAX6675
 #define temp2analogh( c ) temp2analog_max6675(c)
 #define analog2temp( c ) analog2temp_max6675(c)
+#elif defined HEATER_USES_MAX31855
+#define temp2analogh( c ) temp2analog_max31855(c)
+#define analog2temp( c ) analog2temp_max31855(c)
 #endif
 
 #if defined BED_USES_THERMISTOR
@@ -44,6 +47,9 @@
 #elif defined BED_USES_MAX6675
 #define temp2analogBed( c ) temp2analog_max6675(c)
 #define analog2tempBed( c ) analog2temp_max6675(c)
+#elif defined HEATER_USES_MAX31855
+#define temp2analogBed( c ) temp2analog_max31855(c)
+#define analog2tempBed( c ) analog2temp_max31855(c)
 #endif
 
 #if defined (HEATER_USES_THERMISTOR) || defined (BED_USES_THERMISTOR)
@@ -59,6 +65,11 @@ int analog2temp_ad595(int raw);
 #if defined (HEATER_USES_MAX6675) || defined (BED_USES_MAX6675)
 int temp2analog_max6675(int celsius);
 int analog2temp_max6675(int raw);
+#endif
+
+#if defined (HEATER_USES_MAX31855) || defined (BED_USES_MAX31855)
+int temp2analog_max31855(int celsius);
+int analog2temp_max31855(int raw);
 #endif
 
 

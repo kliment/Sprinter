@@ -838,6 +838,20 @@ void setup()
   SET_OUTPUT(MAX6675_SS);
   WRITE(MAX6675_SS,1);
 #endif  
+
+#ifdef HEATER_USES_MAX31855
+  SET_OUTPUT(SCK_PIN);
+  WRITE(SCK_PIN,0);
+  
+  SET_OUTPUT(MOSI_PIN);
+  WRITE(MOSI_PIN,1);
+  
+  SET_INPUT(MISO_PIN);
+  WRITE(MISO_PIN,1);
+  
+  SET_OUTPUT(MAX31855_SS);
+  WRITE(MAX31855_SS,1);
+#endif  
  
 #ifdef SDSUPPORT
 
@@ -1493,13 +1507,13 @@ FORCE_INLINE void process_commands()
         #endif
         break;
       case 105: // M105
-        #if (TEMP_0_PIN > -1) || defined (HEATER_USES_MAX6675)|| defined HEATER_USES_AD595
+        #if (TEMP_0_PIN > -1) || defined (HEATER_USES_MAX31855)|| defined (HEATER_USES_MAX6675)|| defined HEATER_USES_AD595
           hotendtC = analog2temp(current_raw);
         #endif
         #if TEMP_1_PIN > -1 || defined BED_USES_AD595
           bedtempC = analog2tempBed(current_bed_raw);
         #endif
-        #if (TEMP_0_PIN > -1) || defined (HEATER_USES_MAX6675) || defined HEATER_USES_AD595
+        #if (TEMP_0_PIN > -1) || defined (HEATER_USES_MAX31855) || defined (HEATER_USES_MAX6675) || defined HEATER_USES_AD595
             showString(PSTR("ok T:"));
             Serial.print(hotendtC); 
           #ifdef PIDTEMP

@@ -354,10 +354,13 @@ const int dropsegments=5; //everything with less than this number of steps will 
 #define HEATER_USES_THERMISTOR
 //#define HEATER_USES_AD595
 //#define HEATER_USES_MAX6675
+//#define HEATER_USES_MAX31855
 
 // Select one of these only to define how the bed temp is read.
 #define BED_USES_THERMISTOR
 //#define BED_USES_AD595
+//#define HEATER_USES_MAX6675
+//#define HEATER_USES_MAX31855
 
 //This is for controlling a fan to cool down the stepper drivers
 //it will turn on when any driver is enabled

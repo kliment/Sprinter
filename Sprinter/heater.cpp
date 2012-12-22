@@ -162,6 +162,59 @@ int read_max6675()
 }
 #endif
 
+#ifdef HEATER_USES_MAX31855
+unsigned long max31855_previous_millis = 0;
+long max31855_temp = 2000;
+
+int read_max31855()
+{
+  if (millis() - max31855_previous_millis < HEAT_INTERVAL) 
+    return max31855_temp;
+  
+  max31855_previous_millis = millis();
+
+  max31855_temp = 0;
+    
+  #ifdef	PRR
+    PRR &= ~(1<<PRSPI);
+  #elif defined PRR0
+    PRR0 &= ~(1<<PRSPI);
+  #endif
+  
+  SPCR = (1<<MSTR) | (1<<SPE) | (1<<SPR0);
+  
+  // enable TT_MAX31855
+  WRITE(MAX31855_SS, 0);
+  
+  // ensure 100ns delay - a bit extra is fine
+  delay(1);
+  
+  // read MAX31855  
+  for int i = 0; i < 4; i++)
+  {
+	max31855_temp <<= 8;
+	SPDR = 0;
+	for (;(SPSR & (1<<SPIF)) == 0;);
+	max31855_temp |= SPDR;
+  }
+	
+  // disable TT_MAX6675
+  WRITE(MAX31855_SS, 1);
+
+  if (max31855_temp & 4) 
+  {
+    // thermocouple open
+    max31855_temp = 2000;
+  }
+  else 
+  {
+    max31855_temp = max31855_temp >> 3;
+  }
+
+  return max31855_temp;
+}
+#endif
+
 
 //------------------------------------------------------------------------
 // Soft PWM for Heater and FAN
