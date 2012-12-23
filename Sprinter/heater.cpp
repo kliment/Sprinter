@@ -422,6 +422,10 @@ void PID_autotune(int PIDAT_test_temp)
         current_raw = read_max6675();
         PIDAT_input_help += analog2temp(current_raw);
         PIDAT_count_input++;
+	  #elif defined HEATER_USES_MAX31855
+        current_raw = read_max31855();
+        PIDAT_input_help += analog2temp(current_raw);
+        PIDAT_count_input++;		
       #endif
     }
     
@@ -637,6 +641,8 @@ void PID_autotune(int PIDAT_test_temp)
     current_raw = analogRead(TEMP_0_PIN);    
   #elif defined HEATER_USES_MAX6675
     current_raw = read_max6675();
+  #elif defined HEATER_USES_MAX31855
+    current_raw = read_max31855();
   #endif
   
   //MIN / MAX save to display the jitter of Heaterbarrel
@@ -694,7 +700,7 @@ void PID_autotune(int PIDAT_test_temp)
     }
   #endif
 
-  #if (TEMP_0_PIN > -1) || defined (HEATER_USES_MAX6675) || defined (HEATER_USES_AD595)
+  #if (TEMP_0_PIN > -1) || defined (HEATER_USES_MAX31855) || defined (HEATER_USES_MAX6675) || defined (HEATER_USES_AD595)
     #ifdef PIDTEMP
       
       int current_temp = analog2temp(current_raw);
@@ -861,6 +867,13 @@ int temp2analog_max6675(int celsius)
 }
 #endif
 
+#if defined (HEATER_USES_MAX31855) || defined (BED_USES_MAX31855)
+int temp2analog_max31855(int celsius) 
+{
+    return celsius * 4;
+}
+#endif
+
 #if defined (HEATER_USES_THERMISTOR) || defined (BED_USES_THERMISTOR)
 int analog2temp_thermistor(int raw,const short table[][2], int numtemps) {
     int celsius = 0;
@@ -897,6 +910,13 @@ int analog2temp_ad595(int raw)
 
 #if defined (HEATER_USES_MAX6675) || defined (BED_USES_MAX6675)
 int analog2temp_max6675(int raw)
+{
+    return raw / 4;
+}
+#endif
+
+#if defined (HEATER_USES_MAX31855) || defined (BED_USES_MAX31855)
+int analog2temp_max31855(int raw)
 {
     return raw / 4;
 }

@@ -1922,7 +1922,7 @@ FORCE_INLINE void process_commands()
 #endif      
 #ifdef DEBUG_HEATER_TEMP
       case 601: // M601  show Extruder Temp jitter
-        #if (TEMP_0_PIN > -1) || defined (HEATER_USES_MAX6675)|| defined HEATER_USES_AD595
+        #if (TEMP_0_PIN > -1) || defined (HEATER_USES_MAX31855)|| defined (HEATER_USES_MAX6675)|| defined HEATER_USES_AD595
           if(current_raw_maxval > 0)
             tt_maxval = analog2temp(current_raw_maxval);
           if(current_raw_minval < 10000)  
