@@ -201,17 +201,20 @@ int read_max31855()
   // disable TT_MAX6675
   WRITE(MAX31855_SS, 1);
 
-  if (max31855_temp & 4) 
+  // validity tests
+  if (max31855_temp & 0x3000F) 
   {
-    // thermocouple open
-    max31855_temp = 2000;
+    if(max31855_temp == 0x00000000 || max31855_temp == 0xFFFFFFFF) max31855_temp = 2016; // transmission error
+    else if(max31855_temp & 0x04) max31855_temp = 2012; // short to power
+    else if(max31855_temp & 0x02) max31855_temp = 2008; // short to ground
+    else if(max31855_temp & 0x01) max31855_temp = 2004; // no thermocouple
+    else max31855_temp = 2000; // general fault
   }
-  else 
+  else
   {
-    max31855_temp = max31855_temp >> 3;
+    max31855_temp >>= 18;
   }
-
-  return max31855_temp;
+  return int(max31855_temp);
 }
 #endif
 
