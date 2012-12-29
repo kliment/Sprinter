@@ -20,6 +20,7 @@
 #define MOTHERBOARD 33
 
 //// Thermistor settings:
+// -1 is thermocouple
 // 1 is 100k thermistor
 // 2 is 200k thermistor
 // 3 is mendel-parts thermistor
