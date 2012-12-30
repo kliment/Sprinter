@@ -106,8 +106,8 @@ unsigned long previous_millis_heater, previous_millis_bed_heater, previous_milli
 
 
 
-#define HEAT_INTERVAL 250
 #ifdef HEATER_USES_MAX6675
+#define HEAT_INTERVAL 250
 unsigned long max6675_previous_millis = 0;
 int max6675_temp = 2000;
 
@@ -163,6 +163,7 @@ int read_max6675()
 #endif
 
 #ifdef HEATER_USES_MAX31855
+#define HEAT_INTERVAL 120
 unsigned long max31855_previous_millis = 0;
 long max31855_temp = 2000;
 
@@ -173,7 +174,7 @@ int read_max31855()
   
   max31855_previous_millis = millis();
 
-  max31855_temp = 0;
+  max31855_temp = 0L;
     
   #ifdef	PRR
     PRR &= ~(1<<PRSPI);
@@ -190,15 +191,15 @@ int read_max31855()
   delay(1);
   
   // read MAX31855  
-  for int i = 0; i < 4; i++)
+  for(int i = 0; i < 4; i++)
   {
 	max31855_temp <<= 8;
 	SPDR = 0;
 	for (;(SPSR & (1<<SPIF)) == 0;);
 	max31855_temp |= SPDR;
   }
-	
-  // disable TT_MAX6675
+  
+  // disable TT_MAX31855
   WRITE(MAX31855_SS, 1);
 
   // validity tests
