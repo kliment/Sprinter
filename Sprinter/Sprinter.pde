@@ -396,7 +396,7 @@ unsigned char manage_monitor = 255;
   void initsd()
   {
   sdactive = false;
-  #if SDSS >- 1
+  #if SDSS > -1
     if(root.isOpen())
         root.close();
 
@@ -837,6 +837,24 @@ void setup()
   
   SET_OUTPUT(MAX6675_SS);
   WRITE(MAX6675_SS,1);
+  
+  SET_OUTPUT(SPI_SS);
+#endif  
+
+#ifdef HEATER_USES_MAX31855
+  SET_OUTPUT(SCK_PIN);
+  WRITE(SCK_PIN,0);
+  
+  SET_OUTPUT(MOSI_PIN);
+  WRITE(MOSI_PIN,1);
+  
+  SET_INPUT(MISO_PIN);
+  WRITE(MISO_PIN,1);
+  
+  SET_OUTPUT(MAX31855_SS);
+  WRITE(MAX31855_SS,1);
+  
+  SET_OUTPUT(SPI_SS);
 #endif  
  
 #ifdef SDSUPPORT
@@ -1488,18 +1506,18 @@ FORCE_INLINE void process_commands()
 #ifdef CHAIN_OF_COMMAND
           st_synchronize(); // wait for all movements to finish
 #endif
-        #if TEMP_1_PIN > -1 || defined BED_USES_AD595
+        #if TEMP_1_PIN > -1 || defined (BED_USES_MAX31855)|| defined (BED_USES_MAX6675)|| defined BED_USES_AD595
             if (code_seen('S')) target_bed_raw = temp2analogBed(code_value());
         #endif
         break;
       case 105: // M105
-        #if (TEMP_0_PIN > -1) || defined (HEATER_USES_MAX6675)|| defined HEATER_USES_AD595
+        #if (TEMP_0_PIN > -1) || defined (HEATER_USES_MAX31855)|| defined (HEATER_USES_MAX6675)|| defined HEATER_USES_AD595
           hotendtC = analog2temp(current_raw);
         #endif
-        #if TEMP_1_PIN > -1 || defined BED_USES_AD595
+        #if TEMP_1_PIN > -1 || defined (BED_USES_MAX31855)|| defined (BED_USES_MAX6675)|| defined BED_USES_AD595
           bedtempC = analog2tempBed(current_bed_raw);
         #endif
-        #if (TEMP_0_PIN > -1) || defined (HEATER_USES_MAX6675) || defined HEATER_USES_AD595
+        #if (TEMP_0_PIN > -1) || defined (HEATER_USES_MAX31855) || defined (HEATER_USES_MAX6675) || defined HEATER_USES_AD595
             showString(PSTR("ok T:"));
             Serial.print(hotendtC); 
           #ifdef PIDTEMP
@@ -1518,7 +1536,7 @@ FORCE_INLINE void process_commands()
               Serial.print(autotemp_setpoint);
             #endif
           #endif
-          #if TEMP_1_PIN > -1 || defined BED_USES_AD595
+          #if TEMP_1_PIN > -1 || defined (BED_USES_MAX31855)|| defined (BED_USES_MAX6675)|| defined BED_USES_AD595
             showString(PSTR(" B:"));
             Serial.println(bedtempC); 
           #else
@@ -1908,7 +1926,7 @@ FORCE_INLINE void process_commands()
 #endif      
 #ifdef DEBUG_HEATER_TEMP
       case 601: // M601  show Extruder Temp jitter
-        #if (TEMP_0_PIN > -1) || defined (HEATER_USES_MAX6675)|| defined HEATER_USES_AD595
+        #if (TEMP_0_PIN > -1) || defined (HEATER_USES_MAX31855)|| defined (HEATER_USES_MAX6675)|| defined HEATER_USES_AD595
           if(current_raw_maxval > 0)
             tt_maxval = analog2temp(current_raw_maxval);
           if(current_raw_minval < 10000)  

@@ -20,6 +20,7 @@
 #define MOTHERBOARD 33
 
 //// Thermistor settings:
+// -1 is thermocouple
 // 1 is 100k thermistor
 // 2 is 200k thermistor
 // 3 is mendel-parts thermistor
@@ -354,10 +355,13 @@ const int dropsegments=5; //everything with less than this number of steps will 
 #define HEATER_USES_THERMISTOR
 //#define HEATER_USES_AD595
 //#define HEATER_USES_MAX6675
+//#define HEATER_USES_MAX31855
 
 // Select one of these only to define how the bed temp is read.
 #define BED_USES_THERMISTOR
 //#define BED_USES_AD595
+//#define BED_USES_MAX6675
+//#define BED_USES_MAX31855
 
 //This is for controlling a fan to cool down the stepper drivers
 //it will turn on when any driver is enabled
