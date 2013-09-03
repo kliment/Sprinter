@@ -794,7 +794,7 @@ int temp2analog_thermistor(int celsius, const short table[][2], int numtemps)
 #if defined (HEATER_USES_AD595) || defined (BED_USES_AD595)
 int temp2analog_ad595(int celsius) 
 {
-    return celsius * 1024 / (500);
+    return (celsius * 1024.0) / (500.0);
 }
 #endif
 
@@ -835,7 +835,7 @@ int analog2temp_thermistor(int raw,const short table[][2], int numtemps) {
 #if defined (HEATER_USES_AD595) || defined (BED_USES_AD595)
 int analog2temp_ad595(int raw)
 {
-        return raw * 500 / 1024;
+        return (raw * 500.0) / 1024.0;
 }
 #endif
 
