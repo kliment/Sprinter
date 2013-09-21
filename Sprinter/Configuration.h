@@ -311,7 +311,7 @@ const int dropsegments=5; //everything with less than this number of steps will 
 #define LED_PWM_FOR_BRIGHTNESS(brightness) ((64*brightness-1384)/(300-brightness))
 #endif
 
-// Change this value (range 30-255) to limit the current to the nozzle
+// Change this value (range 30 - 255) to limit the current to the nozzle
 #define HEATER_CURRENT 255
 
 // How often should the heater check for new temp readings, in milliseconds
@@ -341,8 +341,9 @@ const int dropsegments=5; //everything with less than this number of steps will 
 //#define WATCHPERIOD 5000 //5 seconds
 
 // Actual temperature must be close to target for this long before M109 returns success
-//#define TEMP_RESIDENCY_TIME 20  // (seconds)
-//#define TEMP_HYSTERESIS 5       // (C°) range of +/- temperatures considered "close" to the target one
+#define TEMP_RESIDENCY_TIME 10  // (seconds)
+#define TEMP_HYSTERESIS 3       // (C°) range of +/- temperatures considered "close" to the target one
+#define TEMP_WINDOW     1       // (degC) Window around target to start the recidency timer x degC early.
 
 //// The minimal temperature defines the temperature below which the heater will not be enabled
 #define MINTEMP 5
@@ -352,6 +353,7 @@ const int dropsegments=5; //everything with less than this number of steps will 
 // This feature exists to protect your hotend from overheating accidentally, but *NOT* from thermistor short/failure!
 // You should use MINTEMP for thermistor short/failure protection.
 #define MAXTEMP 275
+#define MAXTEMP_BED 140
 
 // Select one of these only to define how the nozzle temp is read.
 #define HEATER_USES_THERMISTOR

@@ -149,6 +149,10 @@
 - Analog pins was added with the wrong pin number, needs to be offset +55 to protect against using the pin as a digital
 - Min step delay in microseconds (EXTEND_STEP_PULSE_USEC)
 
+ Version 1.3.24T / 21.09.2013
+- M105 show same format as Marlin work better with new Pronterface
+- Optimize TEMP_RESIDENCY function 
+
 */
 
 #include <avr/pgmspace.h>
@@ -255,7 +259,7 @@ void __cxa_pure_virtual(){};
 // M603 - Show Free Ram
 
 
-#define _VERSION_TEXT "1.3.23T / 28.11.2012"
+#define _VERSION_TEXT "1.3.24T / 21.09.2013"
 
 //Stepper Movement Variables
 char axis_codes[NUM_AXIS] = {'X', 'Y', 'Z', 'E'};
@@ -1508,6 +1512,18 @@ FORCE_INLINE void process_commands()
         #if (TEMP_0_PIN > -1) || defined (HEATER_USES_MAX6675) || defined HEATER_USES_AD595
             showString(PSTR("ok T:"));
             Serial.print(hotendtC); 
+            showString(PSTR(" /"));
+            Serial.print(analog2temp(target_raw)); 
+            
+          #if TEMP_1_PIN > -1 || defined BED_USES_AD595
+            showString(PSTR(" B:"));
+            Serial.print(bedtempC); 
+            showString(PSTR(" /"));
+            Serial.print(analog2temp(target_bed_raw)); 
+          #else
+            Serial.print(PSTR(" B:0 /0"));
+          #endif  
+            
           #ifdef PIDTEMP
             showString(PSTR(" @:"));
             Serial.print(heater_duty); 
@@ -1523,23 +1539,40 @@ FORCE_INLINE void process_commands()
               showString(PSTR(",AU:"));
               Serial.print(autotemp_setpoint);
             #endif
-          #endif
-          #if TEMP_1_PIN > -1 || defined BED_USES_AD595
-            showString(PSTR(" B:"));
-            Serial.println(bedtempC); 
           #else
-            Serial.println();
+             showString(PSTR(" @:0"));
+             #if (HEATER_0_PIN > -1)
+               if(READ(HEATER_0_PIN))
+                 Serial.println(255);
+               else
+                 Serial.println(0);
+             #else
+               Serial.println(0);
+             #endif
           #endif
+          
+          showString(PSTR(" B@:"));
+          #if (HEATER_1_PIN > -1)
+            if(READ(HEATER_1_PIN))
+              Serial.println(255);
+            else
+              Serial.println(0);
+          #else
+            Serial.println(0);
+          #endif  
         #else
           #error No temperature source available
         #endif
         return;
         //break;
-      case 109: { // M109 - Wait for extruder heater to reach target.
-#ifdef CHAIN_OF_COMMAND
+      case 109: // M109 - Wait for extruder heater to reach target.
+      {
+        #ifdef CHAIN_OF_COMMAND
           st_synchronize(); // wait for all movements to finish
-#endif
+        #endif
+        
         if (code_seen('S')) target_raw = temp2analogh(target_temp = code_value());
+        
         #ifdef WATCHPERIOD
             if(target_raw>current_raw)
             {
@@ -1561,27 +1594,51 @@ FORCE_INLINE void process_commands()
         residencyStart = -1;
         /* continue to loop until we have reached the target temp   
            _and_ until TEMP_RESIDENCY_TIME hasn't passed since we reached it */
-        while( (target_direction ? (current_raw < target_raw) : (current_raw > target_raw))
-            || (residencyStart > -1 && (millis() - residencyStart) < TEMP_RESIDENCY_TIME*1000) ) {
+        while((residencyStart == -1) ||
+              (residencyStart >= 0 && (((unsigned int) (millis() - residencyStart)) < (TEMP_RESIDENCY_TIME * 1000UL))) ) {
       #else
         while ( target_direction ? (current_raw < target_raw) : (current_raw > target_raw) ) {
-      #endif
-          if( (millis() - codenum) > 1000 ) //Print Temp Reading every 1 second while heating up/cooling down
+      #endif //TEMP_RESIDENCY_TIME
+          //Print Temp Reading every 1 second while heating up/cooling down      
+          if( (millis() - codenum) > 1000UL ) 
           {
             showString(PSTR("T:"));
+          #ifndef TEMP_RESIDENCY_TIME
             Serial.println( analog2temp(current_raw) );
+          #else
+            Serial.print( analog2temp(current_raw) );
+            showString(PSTR(" E:0"));
+            showString(PSTR(" W:"));
+            if(residencyStart > -1)
+            {
+              codenum = ((TEMP_RESIDENCY_TIME * 1000UL) - (millis() - residencyStart)) / 1000UL;
+              Serial.print( codenum );
+            }
+            else
+            {
+              Serial.print("?");
+            }
+              
+            showString(PSTR(" D:"));
+            Serial.println( analog2temp(current_raw) - analog2temp(target_raw) );
+          #endif
             codenum = millis();
           }
+
+          //Call Heatercontrol
           manage_heater();
+
           #if (MINIMUM_FAN_START_SPEED > 0)
             manage_fan_start_speed();
           #endif
           #ifdef TEMP_RESIDENCY_TIME
             /* start/restart the TEMP_RESIDENCY_TIME timer whenever we reach target temp for the first time
                or when current temp falls outside the hysteresis after target temp was reached */
-            if (   (residencyStart == -1 &&  target_direction && current_raw >= target_raw)
-                || (residencyStart == -1 && !target_direction && current_raw <= target_raw)
-                || (residencyStart > -1 && labs(analog2temp(current_raw) - analog2temp(target_raw)) > TEMP_HYSTERESIS) ) {
+
+            if ((residencyStart == -1 &&  target_direction && (analog2temp(current_raw) >= (analog2temp(target_raw)-TEMP_WINDOW))) ||
+                (residencyStart == -1 && !target_direction && (analog2temp(current_raw) <= (analog2temp(target_raw)+TEMP_WINDOW))) ||
+                (residencyStart > -1 && labs(analog2temp(current_raw) - analog2temp(target_raw)) > TEMP_HYSTERESIS) ) 
+            {
               residencyStart = millis();
             }
           #endif

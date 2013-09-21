@@ -104,6 +104,10 @@ unsigned long previous_millis_heater, previous_millis_bed_heater, previous_milli
   int maxttemp = temp2analogh(MAXTEMP);
 #endif
 
+#ifdef MAXTEMP_BED
+  int maxttemp_bed = temp2analogBed(MAXTEMP_BED);
+#endif
+
 
 
 #define HEAT_INTERVAL 250
@@ -305,6 +309,9 @@ ISR(TIMER2_OVF_vect)
 // Some information see:
 // http://brettbeauregard.com/blog/2012/01/arduino-pid-autotune-library/
 //------------------------------------------------------------------
+
+//HEATER_CURRENT --> 255
+
 #ifdef PID_AUTOTUNE
 void PID_autotune(int PIDAT_test_temp)
 {
@@ -742,7 +749,11 @@ void PID_autotune(int PIDAT_test_temp)
   
   
   #ifdef MINTEMP
+    #ifdef MAXTEMP_BED
+    if(current_bed_raw >= target_bed_raw || current_bed_raw < minttemp || current_bed_raw > maxttemp_bed)
+    #else
     if(current_bed_raw >= target_bed_raw || current_bed_raw < minttemp)
+    #endif
   #else
     if(current_bed_raw >= target_bed_raw)
   #endif
