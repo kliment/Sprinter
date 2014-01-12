@@ -239,9 +239,9 @@ const int dropsegments=5; //everything with less than this number of steps will 
 
 // Arc interpretation settings:
 //Step to split a cirrcle in small Lines 
-#define MM_PER_ARC_SEGMENT 1
+#define MM_PER_ARC_SEGMENT 0.5
 //After this count of steps a new SIN / COS caluclation is startet to correct the circle interpolation
-#define N_ARC_CORRECTION 25
+#define N_ARC_CORRECTION 40
 
 //-----------------------------------------------------------------------
 //// FANCONTROL WITH SOFT PWM
@@ -307,6 +307,10 @@ const int dropsegments=5; //everything with less than this number of steps will 
 // magic formula 1, to get approximate "zero error" PWM duty. Take few measurements with low PWM duty and make linear fit to get the formula
 // for my makergear hot-end: linear fit {50,10},{60,20},{80,30},{105,50},{176,100},{128,64},{208,128}
 #define HEATER_DUTY_FOR_SETPOINT(setpoint) ((int)((187L*(long)setpoint)>>8)-27)  
+
+//For reprap-feb Extruder V4 with heaterelement
+//#define HEATER_DUTY_FOR_SETPOINT(setpoint) ((int)((72L*(long)setpoint)>>8)-14)  
+
 // magic formula 2, to make led brightness approximately linear
 #define LED_PWM_FOR_BRIGHTNESS(brightness) ((64*brightness-1384)/(300-brightness))
 #endif

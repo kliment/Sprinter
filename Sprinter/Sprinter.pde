@@ -151,7 +151,16 @@
 
  Version 1.3.24T / 21.09.2013
 - M105 show same format as Marlin work better with new Pronterface
-- Optimize TEMP_RESIDENCY function 
+
+ Version 1.3.25T / 12.01.2014
+- M105 use the wrong convert function for Heatbed Target Temperatur
+- Correct bug in calculate_trapezoid_for_block(..)
+- smoother Steps for arc funtion G2/G3
+- example for HEATER_DUTY_FOR_SETPOINT for reprap-fab Extruder V4
+- more cycles for Autotune (M303) old 5 cycles, new 7 cycles
+- New Thermistortable for ATC Semitec 104GT-2 (Type 5) 
+
+. 
 
 */
 
@@ -259,7 +268,7 @@ void __cxa_pure_virtual(){};
 // M603 - Show Free Ram
 
 
-#define _VERSION_TEXT "1.3.24T / 21.09.2013"
+#define _VERSION_TEXT "1.3.25T / 12.01.2014"
 
 //Stepper Movement Variables
 char axis_codes[NUM_AXIS] = {'X', 'Y', 'Z', 'E'};
@@ -1502,7 +1511,7 @@ FORCE_INLINE void process_commands()
             if (code_seen('S')) target_bed_raw = temp2analogBed(code_value());
         #endif
         break;
-      case 105: // M105
+      case 105: // M105  ok T:21.2 /50.0 B:22.2 /50.0 @:127 B@:0
         #if (TEMP_0_PIN > -1) || defined (HEATER_USES_MAX6675)|| defined HEATER_USES_AD595
           hotendtC = analog2temp(current_raw);
         #endif
@@ -1519,7 +1528,7 @@ FORCE_INLINE void process_commands()
             showString(PSTR(" B:"));
             Serial.print(bedtempC); 
             showString(PSTR(" /"));
-            Serial.print(analog2temp(target_bed_raw)); 
+            Serial.print(analog2tempBed(target_bed_raw)); 
           #else
             Serial.print(PSTR(" B:0 /0"));
           #endif  
@@ -2302,9 +2311,9 @@ void calculate_trapezoid_for_block(block_t *block, float entry_factor, float exi
   
   long acceleration = block->acceleration_st;
   int32_t accelerate_steps =
-    ceil(estimate_acceleration_distance(block->initial_rate, block->nominal_rate, acceleration));
+    ceil(estimate_acceleration_distance(initial_rate, block->nominal_rate, acceleration));
   int32_t decelerate_steps =
-    floor(estimate_acceleration_distance(block->nominal_rate, block->final_rate, -acceleration));
+    floor(estimate_acceleration_distance(block->nominal_rate, final_rate, -acceleration));
     
   // Calculate the size of Plateau of Nominal Rate.
   int32_t plateau_steps = block->step_event_count-accelerate_steps-decelerate_steps;
@@ -2312,9 +2321,10 @@ void calculate_trapezoid_for_block(block_t *block, float entry_factor, float exi
   // Is the Plateau of Nominal Rate smaller than nothing? That means no cruising, and we will
   // have to use intersection_distance() to calculate when to abort acceleration and start breaking
   // in order to reach the final_rate exactly at the end of this block.
-  if (plateau_steps < 0) {
+  if (plateau_steps < 0) 
+  {
     accelerate_steps = ceil(
-      intersection_distance(block->initial_rate, block->final_rate, acceleration, block->step_event_count));
+      intersection_distance(initial_rate, final_rate, acceleration, block->step_event_count));
     accelerate_steps = max(accelerate_steps,0); // Check limits due to numerical round-off
     accelerate_steps = min(accelerate_steps,block->step_event_count);
     plateau_steps = 0;

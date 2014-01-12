@@ -420,7 +420,7 @@ void PID_autotune(int PIDAT_test_temp)
             showString(PSTR(" min: "));  Serial.print(PIDAT_min);
             showString(PSTR(" max: "));  Serial.println(PIDAT_max);
             
-            if(PIDAT_cycles > 2) 
+            if(PIDAT_cycles > 3) 
             {
               PIDAT_Ku = (4.0*PIDAT_d)/(3.14159*(PIDAT_max-PIDAT_min));
               PIDAT_Tu = ((float)(PIDAT_t_low + PIDAT_t_high)/1000.0);
@@ -432,9 +432,6 @@ void PID_autotune(int PIDAT_test_temp)
               PIDAT_Ki = 2*PIDAT_Kp/PIDAT_Tu;
               PIDAT_Kd = PIDAT_Kp*PIDAT_Tu/8;
               showString(PSTR(" Clasic PID \r\n"));
-              //showString(PSTR(" Kp: ")); Serial.println(PIDAT_Kp);
-              //showString(PSTR(" Ki: ")); Serial.println(PIDAT_Ki);
-              //showString(PSTR(" Kd: ")); Serial.println(PIDAT_Kd);
               showString(PSTR(" CFG Kp: ")); Serial.println((unsigned int)(PIDAT_Kp*256));
               showString(PSTR(" CFG Ki: ")); Serial.println((unsigned int)(PIDAT_Ki*PIDAT_TIME_FACTOR));
               showString(PSTR(" CFG Kd: ")); Serial.println((unsigned int)(PIDAT_Kd*PIDAT_TIME_FACTOR));
@@ -495,7 +492,7 @@ void PID_autotune(int PIDAT_test_temp)
       return;
     }
     
-    if(PIDAT_cycles > 5) 
+    if(PIDAT_cycles > 7) 
     {
       showString(PSTR("PID Autotune finished ! Place the Kp, Ki and Kd constants in the configuration.h\r\n"));
       return;
@@ -805,7 +802,7 @@ int temp2analog_thermistor(int celsius, const short table[][2], int numtemps)
 #if defined (HEATER_USES_AD595) || defined (BED_USES_AD595)
 int temp2analog_ad595(int celsius) 
 {
-    return celsius * 1024 / (500);
+    return (celsius * 1024.0) / (500.0);
 }
 #endif
 
@@ -846,7 +843,7 @@ int analog2temp_thermistor(int raw,const short table[][2], int numtemps) {
 #if defined (HEATER_USES_AD595) || defined (BED_USES_AD595)
 int analog2temp_ad595(int raw)
 {
-        return raw * 500 / 1024;
+        return (raw * 500.0) / 1024.0;
 }
 #endif
 
